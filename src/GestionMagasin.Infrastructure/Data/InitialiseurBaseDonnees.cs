@@ -17,13 +17,13 @@ namespace GestionMagasin.Infrastructure.Data;
 public class InitialiseurBaseDonnees
 {
     /// <summary>Identifiant du compte créé à la toute première installation.</summary>
-    public const string NomUtilisateurAdministrateurParDefaut = "admin";
+    public const string NomUtilisateurAdministrateurParDefaut = ComptesParDefaut.NomUtilisateurAdministrateur;
 
     /// <summary>
     /// Mot de passe initial du compte administrateur. Le logiciel impose son
     /// changement à la première connexion.
     /// </summary>
-    public const string MotDePasseAdministrateurParDefaut = "Admin@2026";
+    public const string MotDePasseAdministrateurParDefaut = ComptesParDefaut.MotDePasseAdministrateur;
 
     private readonly ContexteMagasin _contexte;
     private readonly IHacheurMotDePasse _hacheur;

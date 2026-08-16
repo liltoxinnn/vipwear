@@ -8,6 +8,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
+    <!--
+      Entity Framework est référencé ici uniquement pour les opérateurs LINQ
+      asynchrones (ToListAsync, SumAsync…) appliqués aux requêtes exposées par
+      les dépôts. Les services ne connaissent ni le contexte, ni PostgreSQL :
+      le choix de la base reste confiné au projet Infrastructure.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
   </ItemGroup>
 
   <ItemGroup>
