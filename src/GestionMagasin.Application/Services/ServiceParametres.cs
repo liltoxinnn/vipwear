@@ -15,44 +15,42 @@ public class ServiceParametres : IServiceParametres
     private readonly IServiceAudit _audit;
     private readonly ISessionUtilisateur _session;
     private readonly IFournisseurHorodatage _horodatage;
-
-    private ParametresMagasin? _cache;
-    private readonly SemaphoreSlim _verrou = new(1, 1);
+    private readonly CacheParametresMagasin _cache;
 
     public ServiceParametres(
         IUniteDeTravail uniteDeTravail,
         IServiceAudit audit,
         ISessionUtilisateur session,
-        IFournisseurHorodatage horodatage)
+        IFournisseurHorodatage horodatage,
+        CacheParametresMagasin cache)
     {
         _uniteDeTravail = uniteDeTravail;
         _audit = audit;
         _session = session;
         _horodatage = horodatage;
+        _cache = cache;
     }
 
     public async Task<ParametresMagasin> ObtenirAsync(CancellationToken jeton = default)
     {
-        if (_cache is not null)
+        var enCache = _cache.Lire();
+
+        if (enCache is not null)
         {
-            return _cache;
+            return enCache;
         }
 
-        await _verrou.WaitAsync(jeton).ConfigureAwait(false);
+        // Aucune fiche en base signifie que l'initialisation n'a pas encore eu
+        // lieu : une fiche par défaut est renvoyée pour que l'interface reste
+        // utilisable, sans être enregistrée.
+        var parametres = await _uniteDeTravail.Depot<ParametresMagasin>().Requete()
+            .FirstOrDefaultAsync(jeton)
+            .ConfigureAwait(false)
+            ?? new ParametresMagasin { Id = 1 };
 
-        try
-        {
-            _cache ??= await _uniteDeTravail.Depot<ParametresMagasin>().Requete()
-                .FirstOrDefaultAsync(jeton)
-                .ConfigureAwait(false)
-                ?? new ParametresMagasin { Id = 1 };
+        _cache.Enregistrer(parametres);
 
-            return _cache;
-        }
-        finally
-        {
-            _verrou.Release();
-        }
+        return parametres;
     }
 
     public async Task<ParametresMagasin> EnregistrerAsync(
@@ -103,7 +101,7 @@ public class ServiceParametres : IServiceParametres
 
         // Le cache est vidé pour que les prochains tickets reprennent
         // immédiatement les nouvelles informations.
-        _cache = null;
+        _cache.Vider();
 
         return await ObtenirAsync(jeton).ConfigureAwait(false);
     }
