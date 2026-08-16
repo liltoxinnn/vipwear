@@ -16,6 +16,14 @@ public interface IDepotInventaire : IDepotGenerique<Inventaire>
     /// </summary>
     Task<Inventaire?> ObtenirPourMiseAJourAsync(int varianteProduitId, CancellationToken jeton = default);
 
+    /// <summary>
+    /// Comme <see cref="ObtenirPourMiseAJourAsync"/>, mais crée la ligne à
+    /// zéro si elle n'existe pas encore. La création et le verrouillage sont
+    /// réalisés en une seule opération atomique : deux transactions
+    /// simultanées ne peuvent pas créer deux lignes pour la même variante.
+    /// </summary>
+    Task<Inventaire> ObtenirOuCreerPourMiseAJourAsync(int varianteProduitId, CancellationToken jeton = default);
+
     /// <summary>Charge la ligne d'inventaire d'une variante sans la verrouiller.</summary>
     Task<Inventaire?> ObtenirParVarianteAsync(int varianteProduitId, CancellationToken jeton = default);
 
