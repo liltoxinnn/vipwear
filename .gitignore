@@ -1,0 +1,49 @@
+## Fichiers de compilation .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+artifacts/
+publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.DotSettings.user
+
+## Fichiers générés
+*.pdb
+*.cache
+*.log
+logs/
+TestResults/
+coverage*.json
+coverage*.xml
+*.trx
+
+## Paquets NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+## Configuration locale sensible (chaînes de connexion réelles)
+appsettings.Local.json
+appsettings.Production.json
+*.local.json
+
+## Systèmes d'exploitation
+.DS_Store
+Thumbs.db
+desktop.ini

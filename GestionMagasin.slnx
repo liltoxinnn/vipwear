@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GestionMagasin.App/GestionMagasin.App.csproj" />
+    <Project Path="src/GestionMagasin.Application/GestionMagasin.Application.csproj" />
+    <Project Path="src/GestionMagasin.Domain/GestionMagasin.Domain.csproj" />
+    <Project Path="src/GestionMagasin.Infrastructure/GestionMagasin.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GestionMagasin.Tests/GestionMagasin.Tests.csproj" />
+  </Folder>
+</Solution>
