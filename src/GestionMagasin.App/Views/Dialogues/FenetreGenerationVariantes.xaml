@@ -1,0 +1,126 @@
+<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreGenerationVariantes"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Générer les déclinaisons"
+        Height="580" Width="640"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{StaticResource PinceauFond}">
+
+    <Border Margin="18" Style="{StaticResource Carte}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,14">
+                <TextBlock Text="Générer les déclinaisons" Style="{StaticResource TexteSousTitre}" />
+                <TextBlock Text="{Binding NomProduit}" Style="{StaticResource TexteAttenue}" Margin="0,4,0,0" />
+                <TextBlock Text="Cochez les tailles et les couleurs à combiner. Les déclinaisons déjà existantes seront ignorées."
+                           Style="{StaticResource TexteSecondaire}"
+                           TextWrapping="Wrap" Margin="0,8,0,0" />
+            </StackPanel>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" BorderBrush="{StaticResource PinceauBordure}"
+                        BorderThickness="1" CornerRadius="6" Padding="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Tailles" Style="{StaticResource TexteEtiquette}" />
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Tailles}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Style="{StaticResource CaseACocher}"
+                                                  Content="{Binding Nom}"
+                                                  IsChecked="{Binding Selectionne}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="2" BorderBrush="{StaticResource PinceauBordure}"
+                        BorderThickness="1" CornerRadius="6" Padding="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Couleurs" Style="{StaticResource TexteEtiquette}" />
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Couleurs}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Style="{StaticResource CaseACocher}"
+                                                  IsChecked="{Binding Selectionne}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Width="13" Height="13" CornerRadius="3"
+                                                        BorderBrush="{StaticResource PinceauBordureForte}"
+                                                        BorderThickness="1"
+                                                        Background="{Binding Complement, Converter={StaticResource CodeCouleur}}"
+                                                        VerticalAlignment="Center" Margin="0,0,7,0" />
+                                                <TextBlock Text="{Binding Nom}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </CheckBox>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <StackPanel Grid.Row="2" Margin="0,14,0,0">
+                <Grid Margin="0,0,0,14">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Tout cocher"
+                                Style="{StaticResource BoutonSecondaire}"
+                                Command="{Binding ToutSelectionnerCommand}"
+                                Margin="0,0,8,0" />
+                        <Button Content="Tout décocher"
+                                Style="{StaticResource BoutonSecondaire}"
+                                Command="{Binding ToutDeselectionnerCommand}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <TextBlock Text="Seuil d'alerte" Style="{StaticResource TexteSecondaire}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox Style="{StaticResource ChampTexte}" Width="80"
+                                 Text="{Binding SeuilMinimum}"
+                                 HorizontalContentAlignment="Right" />
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Annuler"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Command="{Binding AnnulerCommand}"
+                            Width="120" IsCancel="True" Margin="0,0,10,0" />
+
+                    <Button Content="Générer"
+                            Style="{StaticResource BoutonPrincipal}"
+                            Command="{Binding GenererCommand}"
+                            Width="140" IsDefault="True" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

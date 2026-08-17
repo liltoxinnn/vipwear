@@ -6,7 +6,9 @@ using System.Windows.Threading;
 using GestionMagasin.App.Converters;
 using GestionMagasin.App.Services;
 using GestionMagasin.App.ViewModels;
+using GestionMagasin.App.ViewModels.Dialogues;
 using GestionMagasin.App.Views;
+using GestionMagasin.App.Views.Dialogues;
 using GestionMagasin.Application.Common;
 using GestionMagasin.Application.Services.Abstractions;
 using GestionMagasin.Infrastructure;
@@ -48,6 +50,9 @@ public partial class App : System.Windows.Application
             }
 
             await ChargerParametresAffichageAsync().ConfigureAwait(true);
+
+            // Les écrans ouvrent leurs fenêtres de saisie via le conteneur.
+            Views.VueProduits.Fournisseur = _hote.Services;
 
             AfficherFenetreConnexion();
         }
@@ -128,6 +133,13 @@ public partial class App : System.Windows.Application
                 // --- Fenêtres ---
                 services.AddTransient<FenetreConnexion>();
                 services.AddSingleton<FenetrePrincipale>();
+                services.AddTransient<FenetreChangementMotDePasse>();
+                services.AddTransient<FenetreProduit>();
+                services.AddTransient<FenetreVariante>();
+                services.AddTransient<FenetreGenerationVariantes>();
+                services.AddTransient<FenetreMouvementStock>();
+                services.AddTransient<FenetreAchat>();
+                services.AddTransient<FenetreReception>();
 
                 // --- Vues-modèles ---
                 services.AddTransient<VueModeleConnexion>();
@@ -144,6 +156,14 @@ public partial class App : System.Windows.Application
                 services.AddTransient<VueModeleRapports>();
                 services.AddTransient<VueModeleUtilisateurs>();
                 services.AddTransient<VueModeleParametres>();
+
+                // --- Vues-modèles des fenêtres de saisie ---
+                services.AddTransient<VueModeleFormulaireProduit>();
+                services.AddTransient<VueModeleFormulaireVariante>();
+                services.AddTransient<VueModeleGenerationVariantes>();
+                services.AddTransient<VueModeleMouvementStock>();
+                services.AddTransient<VueModeleFormulaireAchat>();
+                services.AddTransient<VueModeleReception>();
             })
             .Build();
     }

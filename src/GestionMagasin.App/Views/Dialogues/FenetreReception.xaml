@@ -1,0 +1,74 @@
+<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreReception"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Réception de marchandise"
+        Height="600" Width="820"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="{StaticResource PinceauFond}">
+
+    <Border Margin="18" Style="{StaticResource Carte}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,14">
+                <TextBlock Text="Réception de marchandise" Style="{StaticResource TexteSousTitre}" />
+
+                <TextBlock Style="{StaticResource TexteAttenue}" Margin="0,4,0,0">
+                    <Run Text="Commande " /><Run Text="{Binding NumeroAchat, Mode=OneWay}" />
+                    <Run Text=" • " /><Run Text="{Binding Fournisseur, Mode=OneWay}" />
+                </TextBlock>
+
+                <TextBlock Text="Saisissez les quantités réellement reçues. Le stock sera augmenté d'autant à la validation."
+                           Style="{StaticResource TexteSecondaire}"
+                           TextWrapping="Wrap" Margin="0,8,0,0" />
+            </StackPanel>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding Lignes}"
+                      Style="{StaticResource Tableau}"
+                      IsReadOnly="False"
+                      RowHeight="40">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Code article" Binding="{Binding Sku}" Width="160" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Désignation" Binding="{Binding Designation}" Width="*" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Commandé" Binding="{Binding QuantiteCommandee}" Width="100" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Déjà reçu" Binding="{Binding DejaRecue}" Width="100" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Restant" Binding="{Binding Restante}" Width="90" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Reçu maintenant"
+                                        Binding="{Binding QuantiteRecue, UpdateSourceTrigger=PropertyChanged}"
+                                        Width="140" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <Grid Grid.Row="2" Margin="0,14,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Tout recevoir"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Command="{Binding ToutRecevoirCommand}"
+                            Margin="0,0,8,0" />
+
+                    <Button Content="Tout remettre à zéro"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Command="{Binding RienRecevoirCommand}" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Annuler"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Command="{Binding AnnulerCommand}"
+                            Width="120" IsCancel="True" Margin="0,0,10,0" />
+
+                    <Button Content="Valider la réception"
+                            Style="{StaticResource BoutonSucces}"
+                            Command="{Binding ValiderCommand}"
+                            Width="180" IsDefault="True" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

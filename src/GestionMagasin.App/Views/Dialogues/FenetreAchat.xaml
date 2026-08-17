@@ -1,0 +1,196 @@
+<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreAchat"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Nouvelle commande fournisseur"
+        Height="720" Width="1000"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="{StaticResource PinceauFond}">
+
+    <Grid Margin="18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="12" />
+            <ColumnDefinition Width="340" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Style="{StaticResource Carte}" Padding="14">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                    <TextBlock Text="Articles à commander" Style="{StaticResource TexteSousTitre}" />
+
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0"
+                                 Style="{StaticResource ChampTexte}"
+                                 Text="{Binding Recherche, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="SurToucheRecherche"
+                                 ToolTip="Nom du produit, référence ou code article" />
+
+                        <Button Grid.Column="1"
+                                Content="Rechercher"
+                                Style="{StaticResource BoutonSecondaire}"
+                                Command="{Binding RechercherCommand}"
+                                Width="120" Margin="8,0,0,0" />
+                    </Grid>
+                </StackPanel>
+
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding Resultats}"
+                          Style="{StaticResource Tableau}"
+                          MaxHeight="180"
+                          Margin="0,0,0,12"
+                          Visibility="{Binding Resultats.Count, Converter={StaticResource NonVideVisibilite}}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Code article" Binding="{Binding Sku}" Width="150" />
+                        <DataGridTextColumn Header="Couleur" Binding="{Binding Couleur}" Width="110" />
+                        <DataGridTextColumn Header="Taille" Binding="{Binding Taille}" Width="80" />
+                        <DataGridTextColumn Header="Prix d'achat"
+                                            Binding="{Binding PrixAchat, Converter={StaticResource Montant}}"
+                                            Width="*" />
+                        <DataGridTextColumn Header="Stock" Binding="{Binding QuantiteDisponible}" Width="70" />
+                        <DataGridTemplateColumn Header="Action" Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Ajouter"
+                                            Style="{StaticResource BoutonSecondaire}"
+                                            Padding="8,3" MinHeight="26" FontSize="11"
+                                            Command="{Binding DataContext.AjouterArticleCommand,
+                                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <DataGrid Grid.Row="2"
+                          ItemsSource="{Binding Lignes}"
+                          Style="{StaticResource Tableau}"
+                          IsReadOnly="False"
+                          RowHeight="40">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Code article" Binding="{Binding Sku}" Width="150" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Désignation" Binding="{Binding Designation}" Width="*" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Quantité"
+                                            Binding="{Binding Quantite, UpdateSourceTrigger=PropertyChanged}"
+                                            Width="90" />
+                        <DataGridTextColumn Header="Prix unitaire"
+                                            Binding="{Binding PrixUnitaire, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
+                                            Width="120" />
+                        <DataGridTextColumn Header="Total"
+                                            Binding="{Binding Total, Converter={StaticResource Montant}}"
+                                            Width="140" IsReadOnly="True" />
+                        <DataGridTemplateColumn Header="" Width="50">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="✕"
+                                            Style="{StaticResource BoutonSecondaire}"
+                                            Foreground="{StaticResource PinceauDanger}"
+                                            Width="28" MinHeight="26" Padding="0"
+                                            Command="{Binding DataContext.RetirerLigneCommand,
+                                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="2" Style="{StaticResource Carte}" Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="Commande" Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
+
+                    <TextBlock Text="Fournisseur *" Style="{StaticResource TexteEtiquette}" />
+                    <ComboBox Style="{StaticResource ChampListe}"
+                              ItemsSource="{Binding Fournisseurs}"
+                              SelectedItem="{Binding Fournisseur}"
+                              DisplayMemberPath="Nom"
+                              Margin="0,0,0,14" />
+
+                    <Border Background="{StaticResource PinceauSurfaceAlterne}"
+                            CornerRadius="6" Padding="12" Margin="0,0,0,14">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <TextBlock Text="Sous-total" Style="{StaticResource TexteSecondaire}" />
+                                <TextBlock Text="{Binding SousTotal, Converter={StaticResource Montant}}"
+                                           FontWeight="SemiBold" HorizontalAlignment="Right" />
+                            </Grid>
+
+                            <Grid Margin="0,0,0,8">
+                                <TextBlock Text="Remise" Style="{StaticResource TexteSecondaire}"
+                                           VerticalAlignment="Center" />
+                                <TextBox Style="{StaticResource ChampTexte}"
+                                         Text="{Binding Remise, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N2}}"
+                                         Width="110" MinHeight="30" Padding="7,4"
+                                         HorizontalAlignment="Right"
+                                         HorizontalContentAlignment="Right" />
+                            </Grid>
+
+                            <Separator Margin="0,4,0,8" />
+
+                            <Grid>
+                                <TextBlock Text="TOTAL" FontWeight="Bold" FontSize="15" />
+                                <TextBlock Text="{Binding Total, Converter={StaticResource Montant}}"
+                                           FontSize="17" FontWeight="Bold"
+                                           Foreground="{StaticResource PinceauPrincipal}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Montant versé au fournisseur" Style="{StaticResource TexteEtiquette}" />
+                    <TextBox Style="{StaticResource ChampTexte}"
+                             Text="{Binding MontantPaye, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N2}}"
+                             HorizontalContentAlignment="Right"
+                             Margin="0,0,0,12" />
+
+                    <CheckBox Style="{StaticResource CaseACocher}"
+                              Content="Réceptionner immédiatement"
+                              IsChecked="{Binding ReceptionImmediate}"
+                              ToolTip="La marchandise rejoint le stock dès l'enregistrement de la commande"
+                              Margin="0,0,0,4" />
+
+                    <TextBlock Text="Sans cette option, le stock ne bougera qu'à la réception de la marchandise."
+                               Style="{StaticResource TexteAttenue}"
+                               TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                    <TextBlock Text="Observations" Style="{StaticResource TexteEtiquette}" />
+                    <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Notes}"
+                             AcceptsReturn="True" Height="60" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="2">
+                    <Button Content="Enregistrer la commande"
+                            Style="{StaticResource BoutonPrincipal}"
+                            Command="{Binding EnregistrerCommand}"
+                            Margin="0,0,0,8" />
+
+                    <Button Content="Annuler"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Command="{Binding AnnulerCommand}"
+                            IsCancel="True" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

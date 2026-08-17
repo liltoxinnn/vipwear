@@ -258,7 +258,7 @@
                     </Grid>
 
                     <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding Journal}"
+                              ItemsSource="{Binding EntreesAudit}"
                               Style="{StaticResource Tableau}">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Date"

@@ -56,7 +56,7 @@ public partial class VueModeleUtilisateurs : VueModeleBase
 
     public ObservableCollection<PermissionSelectionnable> Permissions { get; } = [];
 
-    public ObservableCollection<JournalAuditDto> Journal { get; } = [];
+    public ObservableCollection<JournalAuditDto> EntreesAudit { get; } = [];
 
     [ObservableProperty]
     private UtilisateurDto? _utilisateurSelectionne;
@@ -138,7 +138,7 @@ public partial class VueModeleUtilisateurs : VueModeleBase
 
     private async Task ChargerJournalAsync()
     {
-        Journal.Clear();
+        EntreesAudit.Clear();
 
         if (!PeutVoirJournal)
         {
@@ -149,7 +149,7 @@ public partial class VueModeleUtilisateurs : VueModeleBase
 
         foreach (var entree in entrees)
         {
-            Journal.Add(entree);
+            EntreesAudit.Add(entree);
         }
     }
 
