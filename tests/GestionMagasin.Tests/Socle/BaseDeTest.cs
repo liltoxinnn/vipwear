@@ -24,8 +24,17 @@ namespace GestionMagasin.Tests.Socle;
 /// </summary>
 public abstract class BaseDeTest : IAsyncLifetime
 {
-    private const string ModeleChaineConnexion =
-        "Host=127.0.0.1;Port=5432;Database={0};Username=vipwear;Password=vipwear;Include Error Detail=true";
+    /// <summary>
+    /// Connexion au serveur PostgreSQL utilisé par les tests. Le nom de la
+    /// base est laissé en paramètre : chaque classe de tests crée la sienne.
+    ///
+    /// La valeur peut être remplacée par la variable d'environnement
+    /// GESTIONMAGASIN_TESTS_CONNEXION, afin que chacun puisse exécuter les
+    /// tests avec ses propres identifiants sans modifier le code.
+    /// </summary>
+    private static readonly string ModeleChaineConnexion =
+        Environment.GetEnvironmentVariable("GESTIONMAGASIN_TESTS_CONNEXION")
+        ?? "Host=localhost;Port=5432;Database={0};Username=postgres;Password=postgres;Include Error Detail=true";
 
     private readonly string _nomBase = $"test_magasin_{Guid.NewGuid():N}";
 
