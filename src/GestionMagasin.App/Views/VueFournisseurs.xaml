@@ -1,0 +1,171 @@
+﻿<UserControl x:Class="GestionMagasin.App.Views.VueFournisseurs"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="20,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource BarreOutils}" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <TextBox Style="{StaticResource ChampTexte}"
+                             Width="260"
+                             Text="{Binding Recherche, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="SurToucheRecherche"
+                             ToolTip="Nom, entreprise ou téléphone" />
+
+                    <CheckBox Style="{StaticResource CaseACocher}"
+                              Content="Afficher les fournisseurs inactifs"
+                              IsChecked="{Binding InclureInactifs}"
+                              Margin="14,0,0,0" />
+
+                    <Button Content="Rechercher"
+                            Style="{StaticResource BoutonPrincipal}"
+                            Command="{Binding RechercherCommand}"
+                            Margin="12,0,0,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Modifier"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Command="{Binding ModifierCommand}"
+                            Margin="0,0,8,0" />
+
+                    <Button Content="Activer / Désactiver"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Command="{Binding BasculerEtatCommand}"
+                            Margin="0,0,8,0" />
+
+                    <Button Content="Nouveau fournisseur"
+                            Style="{StaticResource BoutonPrincipal}"
+                            Command="{Binding NouveauCommand}"
+                            IsEnabled="{Binding PeutGerer}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.4*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource Carte}" Padding="12">
+                <DataGrid ItemsSource="{Binding Fournisseurs}"
+                          SelectedItem="{Binding FournisseurSelectionne}"
+                          Style="{StaticResource Tableau}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Nom" Binding="{Binding Nom}" Width="*" />
+                        <DataGridTextColumn Header="Entreprise" Binding="{Binding Entreprise}" Width="*" />
+                        <DataGridTextColumn Header="Téléphone" Binding="{Binding Telephone}" Width="140" />
+                        <DataGridTextColumn Header="Commandes" Binding="{Binding NombreCommandes}" Width="100" />
+                        <DataGridTextColumn Header="Total"
+                                            Binding="{Binding TotalCommandes, Converter={StaticResource Montant}}"
+                                            Width="140" />
+                        <DataGridTextColumn Header="Solde dû"
+                                            Binding="{Binding SoldeDu, Converter={StaticResource Montant}}"
+                                            Width="140" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Carte}" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0"
+                                Visibility="{Binding ModeEdition, Converter={StaticResource BooleenVisibilite}}">
+                        <TextBlock Text="Fiche fournisseur" Style="{StaticResource TexteSousTitre}" Margin="0,0,0,12" />
+
+                        <TextBlock Text="Nom *" Style="{StaticResource TexteEtiquette}" />
+                        <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Nom}" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Entreprise" Style="{StaticResource TexteEtiquette}" />
+                        <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Entreprise}" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Téléphone" Style="{StaticResource TexteEtiquette}" />
+                        <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Telephone}" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Adresse e-mail" Style="{StaticResource TexteEtiquette}" />
+                        <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Email}" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Adresse" Style="{StaticResource TexteEtiquette}" />
+                        <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Adresse}"
+                                 AcceptsReturn="True" Height="54" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                        <TextBlock Text="Notes" Style="{StaticResource TexteEtiquette}" />
+                        <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Notes}"
+                                 AcceptsReturn="True" Height="54" TextWrapping="Wrap" Margin="0,0,0,14" />
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Annuler"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding AnnulerEditionCommand}"
+                                    Width="110" Margin="0,0,8,0" />
+
+                            <Button Content="Enregistrer"
+                                    Style="{StaticResource BoutonPrincipal}"
+                                    Command="{Binding EnregistrerCommand}"
+                                    Width="130" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid Grid.Row="1"
+                          Visibility="{Binding ModeEdition, Converter={StaticResource BooleenVisibilite}, ConverterParameter=inverse}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock Text="{Binding FournisseurSelectionne.Nom}"
+                                       Style="{StaticResource TexteSousTitre}" />
+
+                            <TextBlock Text="{Binding FournisseurSelectionne.Entreprise}"
+                                       Style="{StaticResource TexteSecondaire}" Margin="0,3,0,0" />
+
+                            <TextBlock Style="{StaticResource TexteAttenue}" Margin="0,4,0,0">
+                                <Run Text="{Binding FournisseurSelectionne.Telephone, Mode=OneWay}" />
+                                <Run Text=" • " />
+                                <Run Text="{Binding FournisseurSelectionne.Email, Mode=OneWay}" />
+                            </TextBlock>
+
+                            <TextBlock Text="Historique des commandes"
+                                       Style="{StaticResource TexteEtiquette}" Margin="0,14,0,0" />
+                        </StackPanel>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding Historique}"
+                                  Style="{StaticResource Tableau}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="N° de commande" Binding="{Binding NumeroAchat}" Width="150" />
+                                <DataGridTextColumn Header="Date"
+                                                    Binding="{Binding DateAchat, Converter={StaticResource Date}}"
+                                                    Width="110" />
+                                <DataGridTextColumn Header="Total"
+                                                    Binding="{Binding Total, Converter={StaticResource Montant}}"
+                                                    Width="*" />
+                                <DataGridTextColumn Header="Reste dû"
+                                                    Binding="{Binding MontantRestant, Converter={StaticResource Montant}}"
+                                                    Width="130" />
+                                <DataGridTextColumn Header="Statut" Binding="{Binding LibelleStatut}" Width="170" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

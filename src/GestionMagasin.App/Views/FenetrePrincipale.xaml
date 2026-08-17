@@ -1,0 +1,201 @@
+﻿<Window x:Class="GestionMagasin.App.Views.FenetrePrincipale"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Gestion Magasin"
+        Height="820" Width="1400"
+        MinHeight="680" MinWidth="1120"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        Background="{StaticResource PinceauFond}">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="235" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ================= Menu latéral ================= -->
+        <Border Grid.Column="0" Background="{StaticResource PinceauPrincipal}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Identité du magasin -->
+                <StackPanel Grid.Row="0" Margin="18,22,18,18">
+                    <TextBlock Text="{Binding NomMagasin}"
+                               Foreground="White"
+                               FontSize="17"
+                               FontWeight="Bold"
+                               TextWrapping="Wrap" />
+                    <TextBlock Text="Logiciel de gestion"
+                               Foreground="#A9BCDC"
+                               FontSize="11"
+                               Margin="0,3,0,0" />
+                </StackPanel>
+
+                <!-- Entrées de navigation -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Menu}" Margin="0,4">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding DataContext.OuvrirCommand,
+                                                  RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        Cursor="Hand"
+                                        HorizontalContentAlignment="Stretch"
+                                        BorderThickness="0"
+                                        Padding="0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Fond"
+                                                    Background="Transparent"
+                                                    BorderBrush="Transparent"
+                                                    BorderThickness="4,0,0,0"
+                                                    Padding="14,11">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="26" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock Grid.Column="0"
+                                                               Text="{Binding Icone}"
+                                                               Foreground="#C6D5EC"
+                                                               FontSize="14"
+                                                               VerticalAlignment="Center" />
+
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Libelle}"
+                                                               Foreground="#E4EBF7"
+                                                               FontSize="13.5"
+                                                               VerticalAlignment="Center" />
+
+                                                    <TextBlock Grid.Column="2"
+                                                               Text="{Binding Raccourci}"
+                                                               Foreground="#7C93BC"
+                                                               FontSize="10.5"
+                                                               VerticalAlignment="Center" />
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Fond" Property="Background" Value="#2A4779" />
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding EstActive}" Value="True">
+                                                    <Setter TargetName="Fond" Property="Background" Value="#2E4F8F" />
+                                                    <Setter TargetName="Fond" Property="BorderBrush" Value="#7FA8F0" />
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Utilisateur connecté -->
+                <Border Grid.Row="2"
+                        Background="{StaticResource PinceauPrincipalFonce}"
+                        Padding="16,14">
+                    <StackPanel>
+                        <TextBlock Text="{Binding NomUtilisateur}"
+                                   Foreground="White"
+                                   FontWeight="SemiBold"
+                                   FontSize="13"
+                                   TextTrimming="CharacterEllipsis" />
+
+                        <TextBlock Text="{Binding RoleUtilisateur}"
+                                   Foreground="#A9BCDC"
+                                   FontSize="11"
+                                   Margin="0,2,0,10" />
+
+                        <Button Content="Se déconnecter"
+                                Command="{Binding SeDeconnecterCommand}"
+                                Cursor="Hand"
+                                Foreground="White"
+                                Background="#3A5B96"
+                                BorderBrush="#4E70AC"
+                                BorderThickness="1"
+                                FontSize="12"
+                                Padding="10,7" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ================= Zone de travail ================= -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Bandeau supérieur -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource PinceauSurface}"
+                    BorderBrush="{StaticResource PinceauBordure}"
+                    BorderThickness="0,0,0,1"
+                    Padding="24,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{Binding PageCourante.Titre}"
+                                   Style="{StaticResource TexteTitre}" />
+                        <TextBlock Text="{Binding PageCourante.SousTitre}"
+                                   Style="{StaticResource TexteSecondaire}"
+                                   Margin="0,2,0,0"
+                                   Visibility="{Binding PageCourante.SousTitre,
+                                                Converter={StaticResource NonVideVisibilite}}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding DateDuJour}"
+                                   Style="{StaticResource TexteSecondaire}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,16,0" />
+
+                        <Button Content="Actualiser"
+                                Style="{StaticResource BoutonSecondaire}"
+                                Command="{Binding RafraichirCommand}"
+                                ToolTip="Recharger les données de l'écran (F5)" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Page affichée -->
+            <Grid Grid.Row="1">
+                <ContentControl Content="{Binding PageCourante}" />
+
+                <!-- Voile d'attente -->
+                <Border Background="#66FFFFFF"
+                        Visibility="{Binding PageCourante.EstOccupe,
+                                     Converter={StaticResource BooleenVisibilite}}">
+                    <Border Style="{StaticResource Carte}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Padding="26,20">
+                        <StackPanel>
+                            <TextBlock Text="Traitement en cours…"
+                                       Style="{StaticResource TexteSousTitre}"
+                                       HorizontalAlignment="Center" />
+                            <ProgressBar IsIndeterminate="True"
+                                         Height="4"
+                                         Width="190"
+                                         Margin="0,12,0,0"
+                                         Foreground="{StaticResource PinceauAccent}" />
+                        </StackPanel>
+                    </Border>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

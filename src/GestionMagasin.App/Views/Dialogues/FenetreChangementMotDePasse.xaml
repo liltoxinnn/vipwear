@@ -1,0 +1,69 @@
+﻿<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreChangementMotDePasse"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Changer mon mot de passe"
+        Height="440" Width="460"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{StaticResource PinceauFond}">
+
+    <Border Margin="18" Style="{StaticResource Carte}">
+        <StackPanel>
+            <TextBlock Text="Changer mon mot de passe" Style="{StaticResource TexteSousTitre}" />
+
+            <TextBlock Text="Le mot de passe doit contenir au moins 8 caractères, dont une lettre et un chiffre."
+                       Style="{StaticResource TexteAttenue}"
+                       TextWrapping="Wrap"
+                       Margin="0,6,0,18" />
+
+            <TextBlock Text="Mot de passe actuel" Style="{StaticResource TexteEtiquette}" />
+            <PasswordBox x:Name="ChampActuel"
+                         Padding="9,7" MinHeight="34" FontSize="13"
+                         VerticalContentAlignment="Center"
+                         BorderBrush="{StaticResource PinceauBordureForte}"
+                         Margin="0,0,0,14" />
+
+            <TextBlock Text="Nouveau mot de passe" Style="{StaticResource TexteEtiquette}" />
+            <PasswordBox x:Name="ChampNouveau"
+                         Padding="9,7" MinHeight="34" FontSize="13"
+                         VerticalContentAlignment="Center"
+                         BorderBrush="{StaticResource PinceauBordureForte}"
+                         Margin="0,0,0,14" />
+
+            <TextBlock Text="Confirmer le nouveau mot de passe" Style="{StaticResource TexteEtiquette}" />
+            <PasswordBox x:Name="ChampConfirmation"
+                         Padding="9,7" MinHeight="34" FontSize="13"
+                         VerticalContentAlignment="Center"
+                         BorderBrush="{StaticResource PinceauBordureForte}"
+                         Margin="0,0,0,14" />
+
+            <Border x:Name="ZoneErreur"
+                    Background="{StaticResource PinceauFondDanger}"
+                    CornerRadius="5"
+                    Padding="12,9"
+                    Margin="0,0,0,14"
+                    Visibility="Collapsed">
+                <TextBlock x:Name="TexteErreur"
+                           Foreground="{StaticResource PinceauDanger}"
+                           FontSize="12"
+                           TextWrapping="Wrap" />
+            </Border>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Annuler"
+                        Style="{StaticResource BoutonSecondaire}"
+                        Width="120"
+                        IsCancel="True"
+                        Click="SurAnnuler"
+                        Margin="0,0,10,0" />
+
+                <Button Content="Enregistrer"
+                        Style="{StaticResource BoutonPrincipal}"
+                        Width="120"
+                        IsDefault="True"
+                        Click="SurEnregistrer" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

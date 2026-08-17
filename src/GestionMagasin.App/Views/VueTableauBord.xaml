@@ -1,0 +1,336 @@
+﻿<UserControl x:Class="GestionMagasin.App.Views.VueTableauBord"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,20">
+        <StackPanel>
+
+            <!-- ============ Indicateurs du jour ============ -->
+            <TextBlock Text="Aujourd'hui" Style="{StaticResource TexteSousTitre}" Margin="0,0,0,10" />
+
+            <UniformGrid Columns="4" Margin="0,0,0,20">
+                <Border Style="{StaticResource Carte}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Chiffre d'affaires" Style="{StaticResource TexteEtiquette}" />
+                        <TextBlock Text="{Binding Jour.ChiffreAffaires, Converter={StaticResource Montant}}"
+                                   FontSize="21" FontWeight="Bold"
+                                   Foreground="{StaticResource PinceauPrincipal}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Carte}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Bénéfice estimé" Style="{StaticResource TexteEtiquette}" />
+                        <TextBlock Text="{Binding Jour.BeneficeEstime, Converter={StaticResource Montant}}"
+                                   FontSize="21" FontWeight="Bold"
+                                   Foreground="{StaticResource PinceauSucces}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Carte}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Ventes" Style="{StaticResource TexteEtiquette}" />
+                        <TextBlock Text="{Binding Jour.NombreVentes}"
+                                   FontSize="21" FontWeight="Bold"
+                                   Foreground="{StaticResource PinceauTexte}" />
+                        <TextBlock Style="{StaticResource TexteAttenue}" Margin="0,2,0,0">
+                            <Run Text="Ticket moyen :" />
+                            <Run Text="{Binding Jour.TicketMoyen, Converter={StaticResource Montant}, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <TextBlock Text="Articles vendus" Style="{StaticResource TexteEtiquette}" />
+                        <TextBlock Text="{Binding Jour.ArticlesVendus}"
+                                   FontSize="21" FontWeight="Bold"
+                                   Foreground="{StaticResource PinceauTexte}" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- ============ Indicateurs du mois ============ -->
+            <TextBlock Text="Ce mois-ci" Style="{StaticResource TexteSousTitre}" Margin="0,0,0,10" />
+
+            <UniformGrid Columns="4" Margin="0,0,0,20">
+                <Border Style="{StaticResource Carte}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Chiffre d'affaires" Style="{StaticResource TexteEtiquette}" />
+                        <TextBlock Text="{Binding Mois.ChiffreAffaires, Converter={StaticResource Montant}}"
+                                   FontSize="19" FontWeight="Bold"
+                                   Foreground="{StaticResource PinceauPrincipal}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Carte}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Bénéfice estimé" Style="{StaticResource TexteEtiquette}" />
+                        <TextBlock Text="{Binding Mois.BeneficeEstime, Converter={StaticResource Montant}}"
+                                   FontSize="19" FontWeight="Bold"
+                                   Foreground="{StaticResource PinceauSucces}" />
+                        <TextBlock Style="{StaticResource TexteAttenue}" Margin="0,2,0,0">
+                            <Run Text="Taux de marge :" />
+                            <Run Text="{Binding Mois.TauxMarge, Mode=OneWay, StringFormat={}{0:N2} %}" />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Carte}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Valeur du stock" Style="{StaticResource TexteEtiquette}" />
+                        <TextBlock Text="{Binding Stock.ValeurAuPrixAchat, Converter={StaticResource Montant}}"
+                                   FontSize="19" FontWeight="Bold"
+                                   Foreground="{StaticResource PinceauTexte}" />
+                        <TextBlock Style="{StaticResource TexteAttenue}" Margin="0,2,0,0">
+                            <Run Text="{Binding Stock.QuantiteTotale, Mode=OneWay}" />
+                            <Run Text="articles en rayon" />
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <TextBlock Text="Alertes de stock" Style="{StaticResource TexteEtiquette}" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Stock.NombreStockFaible}"
+                                       FontSize="19" FontWeight="Bold"
+                                       Foreground="{StaticResource PinceauAvertissement}" />
+                            <TextBlock Text="faible" Style="{StaticResource TexteAttenue}"
+                                       VerticalAlignment="Bottom" Margin="4,0,12,3" />
+                            <TextBlock Text="{Binding Stock.NombreRuptures}"
+                                       FontSize="19" FontWeight="Bold"
+                                       Foreground="{StaticResource PinceauDanger}" />
+                            <TextBlock Text="ruptures" Style="{StaticResource TexteAttenue}"
+                                       VerticalAlignment="Bottom" Margin="4,0,0,3" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- ============ Graphiques ============ -->
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Ventes des 30 derniers jours -->
+                <Border Grid.Column="0" Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <TextBlock Text="Chiffre d'affaires des 30 derniers jours"
+                                   Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
+
+                        <ItemsControl ItemsSource="{Binding EvolutionVentes}" Height="210">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="1" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid VerticalAlignment="Bottom" Margin="1,0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Barre proportionnelle au maximum de la période -->
+                                        <Rectangle Grid.Row="0"
+                                                   Fill="{StaticResource PinceauAccent}"
+                                                   VerticalAlignment="Bottom"
+                                                   RadiusX="2" RadiusY="2"
+                                                   ToolTipService.InitialShowDelay="200">
+                                            <Rectangle.Height>
+                                                <MultiBinding Converter="{StaticResource Proportion}"
+                                                              ConverterParameter="180">
+                                                    <Binding Path="Valeur" />
+                                                    <Binding Path="DataContext.MaximumVentesJournalieres"
+                                                             RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                                </MultiBinding>
+                                            </Rectangle.Height>
+                                            <Rectangle.ToolTip>
+                                                <ToolTip>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Libelle}" FontWeight="Bold" />
+                                                        <TextBlock Text="{Binding Valeur, Converter={StaticResource Montant}}" />
+                                                        <TextBlock>
+                                                            <Run Text="{Binding ValeurSecondaire, Mode=OneWay, StringFormat={}{0:N0}}" />
+                                                            <Run Text="vente(s)" />
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </ToolTip>
+                                            </Rectangle.ToolTip>
+                                        </Rectangle>
+
+                                        <TextBlock Grid.Row="1"
+                                                   Text="{Binding Libelle}"
+                                                   FontSize="8"
+                                                   Foreground="{StaticResource PinceauTexteAttenue}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,4,0,0"
+                                                   LayoutTransform="{x:Null}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Répartition des règlements -->
+                <Border Grid.Column="2" Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <TextBlock Text="Modes de paiement du mois"
+                                   Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
+
+                        <ItemsControl ItemsSource="{Binding RepartitionPaiements}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,0,0,12">
+                                        <Grid>
+                                            <TextBlock Text="{Binding ModePaiement}" FontSize="12" />
+                                            <TextBlock Text="{Binding Montant, Converter={StaticResource Montant}}"
+                                                       FontSize="12" FontWeight="SemiBold"
+                                                       HorizontalAlignment="Right" />
+                                        </Grid>
+
+                                        <Border Background="{StaticResource PinceauBordure}"
+                                                Height="7" CornerRadius="4" Margin="0,5,0,0">
+                                            <Border Background="{StaticResource PinceauAccent}"
+                                                    Height="7" CornerRadius="4"
+                                                    HorizontalAlignment="Left"
+                                                    Width="{Binding Pourcentage}" />
+                                        </Border>
+
+                                        <TextBlock Style="{StaticResource TexteAttenue}" Margin="0,3,0,0">
+                                            <Run Text="{Binding Pourcentage, Mode=OneWay, StringFormat={}{0:N1}}" />
+                                            <Run Text="% —" />
+                                            <Run Text="{Binding NombreReglements, Mode=OneWay}" />
+                                            <Run Text="règlement(s)" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Aucun règlement enregistré ce mois-ci."
+                                   Style="{StaticResource TexteAttenue}"
+                                   Visibility="{Binding RepartitionPaiements.Count,
+                                                Converter={StaticResource NonVideVisibilite},
+                                                ConverterParameter=inverse}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ============ Meilleures ventes et alertes ============ -->
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <TextBlock Text="Meilleures ventes du mois"
+                                   Style="{StaticResource TexteSousTitre}" Margin="0,0,0,10" />
+
+                        <DataGrid ItemsSource="{Binding MeilleuresVentes}"
+                                  Style="{StaticResource Tableau}"
+                                  MaxHeight="260">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Article" Binding="{Binding Designation}" Width="*" />
+                                <DataGridTextColumn Header="Vendus" Binding="{Binding QuantiteVendue}" Width="70" />
+                                <DataGridTextColumn Header="Chiffre d'affaires"
+                                                    Binding="{Binding ChiffreAffaires, Converter={StaticResource Montant}}"
+                                                    Width="130" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Text="Aucune vente enregistrée ce mois-ci."
+                                   Style="{StaticResource TexteAttenue}"
+                                   Margin="0,8,0,0"
+                                   Visibility="{Binding MeilleuresVentes.Count,
+                                                Converter={StaticResource NonVideVisibilite},
+                                                ConverterParameter=inverse}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <TextBlock Text="Articles à réapprovisionner"
+                                   Style="{StaticResource TexteSousTitre}" Margin="0,0,0,10" />
+
+                        <DataGrid ItemsSource="{Binding StockFaible}"
+                                  Style="{StaticResource Tableau}"
+                                  MaxHeight="120">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Article" Binding="{Binding Designation}" Width="*" />
+                                <DataGridTextColumn Header="Stock" Binding="{Binding QuantiteDisponible}" Width="60" />
+                                <DataGridTextColumn Header="Seuil" Binding="{Binding SeuilMinimum}" Width="60" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Text="Produits en rupture"
+                                   Style="{StaticResource TexteSousTitre}" Margin="0,14,0,10" />
+
+                        <DataGrid ItemsSource="{Binding Ruptures}"
+                                  Style="{StaticResource Tableau}"
+                                  MaxHeight="120">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Article" Binding="{Binding Designation}" Width="*" />
+                                <DataGridTextColumn Header="Code article" Binding="{Binding Sku}" Width="130" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ============ Dernières ventes ============ -->
+            <Border Style="{StaticResource Carte}" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="Dernières ventes"
+                               Style="{StaticResource TexteSousTitre}" Margin="0,0,0,10" />
+
+                    <DataGrid ItemsSource="{Binding DernieresVentes}"
+                              Style="{StaticResource Tableau}"
+                              MaxHeight="280">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="N° de vente" Binding="{Binding NumeroVente}" Width="140" />
+                            <DataGridTextColumn Header="Date"
+                                                Binding="{Binding DateVente, Converter={StaticResource Date}, ConverterParameter=heure}"
+                                                Width="150" />
+                            <DataGridTextColumn Header="Client" Binding="{Binding ClientNom}" Width="*" />
+                            <DataGridTextColumn Header="Vendeur" Binding="{Binding UtilisateurNom}" Width="160" />
+                            <DataGridTextColumn Header="Articles" Binding="{Binding NombreArticles}" Width="80" />
+                            <DataGridTextColumn Header="Total"
+                                                Binding="{Binding Total, Converter={StaticResource Montant}}"
+                                                Width="130" />
+                            <DataGridTemplateColumn Header="Statut" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource Pastille}"
+                                                Background="{Binding LibelleStatut, Converter={StaticResource CouleurEtat}, ConverterParameter=fond}">
+                                            <TextBlock Text="{Binding LibelleStatut}"
+                                                       Style="{StaticResource TextePastille}"
+                                                       Foreground="{Binding LibelleStatut, Converter={StaticResource CouleurEtat}}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock Text="Aucune vente enregistrée pour le moment."
+                               Style="{StaticResource TexteAttenue}"
+                               Margin="0,8,0,0"
+                               Visibility="{Binding DernieresVentes.Count,
+                                            Converter={StaticResource NonVideVisibilite},
+                                            ConverterParameter=inverse}" />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

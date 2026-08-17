@@ -1,0 +1,206 @@
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using GestionMagasin.App.Services;
+using GestionMagasin.Application.Common;
+using GestionMagasin.Application.Services.Abstractions;
+using GestionMagasin.Domain.Securite;
+using Microsoft.Extensions.Logging;
+
+namespace GestionMagasin.App.ViewModels;
+
+/// <summary>Entrée du menu latéral.</summary>
+public partial class EntreeMenu : ObservableObject
+{
+    public required string Libelle { get; init; }
+
+    /// <summary>Pictogramme simple, sans dépendance à une police externe.</summary>
+    public required string Icone { get; init; }
+
+    /// <summary>Permission requise pour voir cette entrée. Vide = toujours visible.</summary>
+    public string? PermissionRequise { get; init; }
+
+    public required Type TypeVueModele { get; init; }
+
+    /// <summary>Raccourci clavier affiché à droite du libellé.</summary>
+    public string? Raccourci { get; init; }
+
+    [ObservableProperty]
+    private bool _estActive;
+}
+
+/// <summary>
+/// Vue-modèle de la fenêtre principale : menu, page affichée et informations
+/// de l'utilisateur connecté.
+/// </summary>
+public partial class VueModelePrincipale : VueModeleBase
+{
+    private readonly IServiceNavigation _navigation;
+    private readonly IServiceAuthentification _authentification;
+    private readonly IServiceParametres _parametres;
+    private readonly SessionUtilisateur _session;
+
+    public VueModelePrincipale(
+        IServiceNavigation navigation,
+        IServiceAuthentification authentification,
+        IServiceParametres parametres,
+        SessionUtilisateur session,
+        IServiceDialogue dialogue,
+        ILogger<VueModelePrincipale> journal)
+        : base(dialogue, journal)
+    {
+        _navigation = navigation;
+        _authentification = authentification;
+        _parametres = parametres;
+        _session = session;
+
+        _navigation.PageChangee += (_, page) => PageCourante = page;
+
+        ConstruireMenu();
+    }
+
+    public override string Titre => "Gestion Magasin";
+
+    [ObservableProperty]
+    private VueModeleBase? _pageCourante;
+
+    [ObservableProperty]
+    private string _nomMagasin = "Gestion Magasin";
+
+    [ObservableProperty]
+    private string _nomUtilisateur = string.Empty;
+
+    [ObservableProperty]
+    private string _roleUtilisateur = string.Empty;
+
+    [ObservableProperty]
+    private string _dateDuJour = string.Empty;
+
+    /// <summary>Entrées de menu visibles pour l'utilisateur connecté.</summary>
+    public ObservableCollection<EntreeMenu> Menu { get; } = [];
+
+    /// <summary>Déclenché lorsque l'utilisateur se déconnecte.</summary>
+    public event EventHandler? DeconnexionDemandee;
+
+    public override async Task ChargerAsync()
+    {
+        var magasin = await _parametres.ObtenirAsync().ConfigureAwait(true);
+
+        NomMagasin = magasin.NomMagasin;
+        NomUtilisateur = _session.NomComplet;
+        RoleUtilisateur = _session.NomRole;
+        DateDuJour = DateTime.Now.ToString("dddd d MMMM yyyy", FormatageMontant.CultureApplication);
+
+        ConstruireMenu();
+
+        // Le caissier arrive directement en caisse, les autres profils sur le
+        // tableau de bord : chacun démarre sur l'écran qui le concerne.
+        if (_session.Possede(CodesPermissions.VoirRapports))
+        {
+            await NaviguerAsync<VueModeleTableauBord>().ConfigureAwait(true);
+        }
+        else if (_session.Possede(CodesPermissions.EffectuerVente))
+        {
+            await NaviguerAsync<VueModeleCaisse>().ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>
+    /// Construit le menu en ne retenant que les entrées autorisées par le
+    /// rôle : un écran inaccessible n'est jamais affiché.
+    /// </summary>
+    private void ConstruireMenu()
+    {
+        Menu.Clear();
+
+        EntreeMenu[] entrees =
+        [
+            new() { Libelle = "Tableau de bord", Icone = "▤", TypeVueModele = typeof(VueModeleTableauBord),
+                    PermissionRequise = CodesPermissions.VoirRapports, Raccourci = "F1" },
+            new() { Libelle = "Caisse", Icone = "▣", TypeVueModele = typeof(VueModeleCaisse),
+                    PermissionRequise = CodesPermissions.EffectuerVente, Raccourci = "F2" },
+            new() { Libelle = "Produits", Icone = "◫", TypeVueModele = typeof(VueModeleProduits),
+                    PermissionRequise = CodesPermissions.VoirProduits, Raccourci = "F3" },
+            new() { Libelle = "Stock", Icone = "▦", TypeVueModele = typeof(VueModeleStock),
+                    PermissionRequise = CodesPermissions.VoirStock, Raccourci = "F4" },
+            new() { Libelle = "Ventes", Icone = "▥", TypeVueModele = typeof(VueModeleVentes),
+                    PermissionRequise = CodesPermissions.EffectuerVente, Raccourci = "F5" },
+            new() { Libelle = "Achats", Icone = "▧", TypeVueModele = typeof(VueModeleAchats),
+                    PermissionRequise = CodesPermissions.VoirAchats, Raccourci = "F6" },
+            new() { Libelle = "Fournisseurs", Icone = "◨", TypeVueModele = typeof(VueModeleFournisseurs),
+                    PermissionRequise = CodesPermissions.VoirAchats, Raccourci = "F7" },
+            new() { Libelle = "Clients", Icone = "◧", TypeVueModele = typeof(VueModeleClients),
+                    PermissionRequise = CodesPermissions.VoirClients, Raccourci = "F8" },
+            new() { Libelle = "Retours", Icone = "◩", TypeVueModele = typeof(VueModeleRetours),
+                    PermissionRequise = CodesPermissions.EffectuerRetour, Raccourci = "F9" },
+            new() { Libelle = "Rapports", Icone = "◪", TypeVueModele = typeof(VueModeleRapports),
+                    PermissionRequise = CodesPermissions.VoirRapports, Raccourci = "F10" },
+            new() { Libelle = "Utilisateurs", Icone = "◈", TypeVueModele = typeof(VueModeleUtilisateurs),
+                    PermissionRequise = CodesPermissions.GererUtilisateurs, Raccourci = "F11" },
+            new() { Libelle = "Paramètres", Icone = "◇", TypeVueModele = typeof(VueModeleParametres),
+                    PermissionRequise = CodesPermissions.GererParametres, Raccourci = "F12" }
+        ];
+
+        foreach (var entree in entrees)
+        {
+            if (entree.PermissionRequise is null || _session.Possede(entree.PermissionRequise))
+            {
+                Menu.Add(entree);
+            }
+        }
+    }
+
+    [RelayCommand]
+    private async Task OuvrirAsync(EntreeMenu? entree)
+    {
+        if (entree is null || EstOccupe)
+        {
+            return;
+        }
+
+        await ExecuterAsync(async () =>
+        {
+            await NaviguerParTypeAsync(entree.TypeVueModele).ConfigureAwait(true);
+        }, contexteJournal: $"ouverture de l'écran {entree.Libelle}").ConfigureAwait(true);
+    }
+
+    /// <summary>Ouvre un écran depuis le code, en mettant le menu à jour.</summary>
+    public async Task NaviguerAsync<T>() where T : VueModeleBase =>
+        await NaviguerParTypeAsync(typeof(T)).ConfigureAwait(true);
+
+    private async Task NaviguerParTypeAsync(Type typeVueModele)
+    {
+        foreach (var element in Menu)
+        {
+            element.EstActive = element.TypeVueModele == typeVueModele;
+        }
+
+        // La navigation est générique : la méthode correspondante est
+        // appelée par réflexion pour éviter un long aiguillage à maintenir.
+        var methode = typeof(IServiceNavigation)
+            .GetMethod(nameof(IServiceNavigation.NaviguerAsync))!
+            .MakeGenericMethod(typeVueModele);
+
+        await (Task)methode.Invoke(_navigation, null)!;
+    }
+
+    [RelayCommand]
+    private async Task RafraichirAsync() =>
+        await ExecuterAsync(() => _navigation.RafraichirAsync(),
+            contexteJournal: "rafraîchissement de l'écran").ConfigureAwait(true);
+
+    [RelayCommand]
+    private async Task SeDeconnecterAsync()
+    {
+        if (!Dialogue.Confirmer(
+                "Êtes-vous sûr de vouloir vous déconnecter ?",
+                "Déconnexion"))
+        {
+            return;
+        }
+
+        await _authentification.DeconnecterAsync().ConfigureAwait(true);
+
+        DeconnexionDemandee?.Invoke(this, EventArgs.Empty);
+    }
+}

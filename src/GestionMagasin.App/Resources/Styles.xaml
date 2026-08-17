@@ -1,0 +1,309 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- ============================================================
+         Typographie
+         ============================================================ -->
+
+    <sys:Double x:Key="TailleTitre">24</sys:Double>
+    <sys:Double x:Key="TailleSousTitre">16</sys:Double>
+    <sys:Double x:Key="TailleNormale">13</sys:Double>
+    <sys:Double x:Key="TaillePetite">11.5</sys:Double>
+
+    <Style x:Key="TexteTitre" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource TailleTitre}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexte}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+    <Style x:Key="TexteSousTitre" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource TailleSousTitre}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexte}" />
+    </Style>
+
+    <Style x:Key="TexteSecondaire" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexteSecondaire}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="TexteAttenue" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource TaillePetite}" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexteAttenue}" />
+    </Style>
+
+    <Style x:Key="TexteEtiquette" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource TaillePetite}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexteSecondaire}" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+
+    <Style x:Key="TexteMontant" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
+        <Setter Property="FontFamily" Value="Consolas, Courier New" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexte}" />
+    </Style>
+
+    <!-- ============================================================
+         Boutons
+         ============================================================ -->
+
+    <Style x:Key="BoutonBase" TargetType="Button">
+        <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="16,9" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fond"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="5">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="{TemplateBinding Padding}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fond" Property="Opacity" Value="0.88" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Fond" Property="Opacity" Value="0.75" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Fond" Property="Opacity" Value="0.45" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="BoutonPrincipal" TargetType="Button" BasedOn="{StaticResource BoutonBase}">
+        <Setter Property="Background" Value="{StaticResource PinceauPrincipal}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauPrincipal}" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexteSurPrincipale}" />
+    </Style>
+
+    <Style x:Key="BoutonSecondaire" TargetType="Button" BasedOn="{StaticResource BoutonBase}">
+        <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauBordureForte}" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexte}" />
+    </Style>
+
+    <Style x:Key="BoutonSucces" TargetType="Button" BasedOn="{StaticResource BoutonBase}">
+        <Setter Property="Background" Value="{StaticResource PinceauSucces}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauSucces}" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <Style x:Key="BoutonDanger" TargetType="Button" BasedOn="{StaticResource BoutonBase}">
+        <Setter Property="Background" Value="{StaticResource PinceauDanger}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauDanger}" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!-- Bouton de caisse : grande cible, lisible et rapide à viser -->
+    <Style x:Key="BoutonCaisse" TargetType="Button" BasedOn="{StaticResource BoutonPrincipal}">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="MinHeight" Value="52" />
+        <Setter Property="Padding" Value="20,12" />
+    </Style>
+
+    <!-- ============================================================
+         Champs de saisie
+         ============================================================ -->
+
+    <Style x:Key="ChampTexte" TargetType="TextBox">
+        <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
+        <Setter Property="Padding" Value="9,7" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauBordureForte}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexte}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="5">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Margin="{TemplateBinding Padding}"
+                                      VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter Property="BorderBrush" Value="{StaticResource PinceauAccent}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Background" Value="{StaticResource PinceauSurfaceAlterne}" />
+                            <Setter Property="Foreground" Value="{StaticResource PinceauTexteAttenue}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Champ de scan : grand, en évidence, prêt à recevoir la douchette -->
+    <Style x:Key="ChampScan" TargetType="TextBox" BasedOn="{StaticResource ChampTexte}">
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="Padding" Value="14,10" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauAccent}" />
+    </Style>
+
+    <Style x:Key="ChampListe" TargetType="ComboBox">
+        <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauBordureForte}" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexte}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="ChampDate" TargetType="DatePicker">
+        <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauBordureForte}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="CaseACocher" TargetType="CheckBox">
+        <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexte}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,4" />
+    </Style>
+
+    <!-- ============================================================
+         Conteneurs
+         ============================================================ -->
+
+    <Style x:Key="Carte" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauBordure}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <Style x:Key="BarreOutils" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauBordure}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+
+    <!-- ============================================================
+         Tableaux
+         ============================================================ -->
+
+    <Style x:Key="Tableau" TargetType="DataGrid">
+        <Setter Property="AutoGenerateColumns" Value="False" />
+        <Setter Property="CanUserAddRows" Value="False" />
+        <Setter Property="CanUserDeleteRows" Value="False" />
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="SelectionMode" Value="Single" />
+        <Setter Property="SelectionUnit" Value="FullRow" />
+        <Setter Property="GridLinesVisibility" Value="Horizontal" />
+        <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource PinceauBordure}" />
+        <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauBordure}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="RowHeight" Value="38" />
+        <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
+        <Setter Property="HeadersVisibility" Value="Column" />
+        <Setter Property="EnableRowVirtualization" Value="True" />
+        <Setter Property="EnableColumnVirtualization" Value="True" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ColumnHeaderStyle">
+            <Setter.Value>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="{StaticResource PinceauPrincipal}" />
+                    <Setter Property="Foreground" Value="White" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                    <Setter Property="FontSize" Value="{StaticResource TaillePetite}" />
+                    <Setter Property="Padding" Value="10,9" />
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Left" />
+                </Style>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="RowStyle">
+            <Setter.Value>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
+                    <Style.Triggers>
+                        <Trigger Property="AlternationIndex" Value="1">
+                            <Setter Property="Background" Value="{StaticResource PinceauSurfaceAlterne}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource PinceauFondInfo}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{StaticResource PinceauAccent}" />
+                            <Setter Property="Foreground" Value="White" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="CellStyle">
+            <Setter.Value>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Setter Property="Padding" Value="10,0" />
+                    <Setter Property="VerticalContentAlignment" Value="Center" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="DataGridCell">
+                                <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter VerticalAlignment="Center" />
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="AlternationCount" Value="2" />
+    </Style>
+
+    <!-- ============================================================
+         Pastilles d'état
+         ============================================================ -->
+
+    <Style x:Key="Pastille" TargetType="Border">
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="9,3" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="TextePastille" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+</ResourceDictionary>

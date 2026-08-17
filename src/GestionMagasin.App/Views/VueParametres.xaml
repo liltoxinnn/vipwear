@@ -1,0 +1,245 @@
+﻿<UserControl x:Class="GestionMagasin.App.Views.VueParametres"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <TabControl Margin="20,16" Background="Transparent" BorderThickness="0">
+
+        <!-- ============ Fiche du magasin ============ -->
+        <TabItem Header="Informations du magasin">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Carte}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="Identité du magasin"
+                                       Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
+
+                            <TextBlock Text="Nom du magasin *" Style="{StaticResource TexteEtiquette}" />
+                            <TextBox Style="{StaticResource ChampTexte}" Text="{Binding NomMagasin}" Margin="0,0,0,12" />
+
+                            <TextBlock Text="Adresse" Style="{StaticResource TexteEtiquette}" />
+                            <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Adresse}"
+                                     AcceptsReturn="True" Height="60" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                            <TextBlock Text="Téléphone" Style="{StaticResource TexteEtiquette}" />
+                            <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Telephone}" Margin="0,0,0,12" />
+
+                            <TextBlock Text="Adresse e-mail" Style="{StaticResource TexteEtiquette}" />
+                            <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Email}" Margin="0,0,0,12" />
+
+                            <TextBlock Text="Message imprimé en bas des tickets"
+                                       Style="{StaticResource TexteEtiquette}" />
+                            <TextBox Style="{StaticResource ChampTexte}" Text="{Binding InformationsTicket}"
+                                     AcceptsReturn="True" Height="60" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource Carte}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="Mentions légales et réglages"
+                                       Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
+
+                            <TextBlock Text="Registre du commerce" Style="{StaticResource TexteEtiquette}" />
+                            <TextBox Style="{StaticResource ChampTexte}" Text="{Binding RegistreCommerce}"
+                                     Margin="0,0,0,12" />
+
+                            <TextBlock Text="Numéro d'identification fiscale (NIF)"
+                                       Style="{StaticResource TexteEtiquette}" />
+                            <TextBox Style="{StaticResource ChampTexte}"
+                                     Text="{Binding NumeroIdentificationFiscale}" Margin="0,0,0,12" />
+
+                            <TextBlock Text="Article d'imposition" Style="{StaticResource TexteEtiquette}" />
+                            <TextBox Style="{StaticResource ChampTexte}" Text="{Binding ArticleImposition}"
+                                     Margin="0,0,0,12" />
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Devise *" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Devise}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Symbole affiché *" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBox Style="{StaticResource ChampTexte}" Text="{Binding SymboleDevise}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Taux de TVA (%)" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBox Style="{StaticResource ChampTexte}"
+                                             Text="{Binding TauxTva, StringFormat={}{0:N2}}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Délai de retour (jours)" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBox Style="{StaticResource ChampTexte}" Text="{Binding DelaiRetourJours}"
+                                             ToolTip="Mettre 0 pour accepter les retours sans limite de temps" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Button Content="Enregistrer les paramètres"
+                                    Style="{StaticResource BoutonPrincipal}"
+                                    Command="{Binding EnregistrerCommand}"
+                                    HorizontalAlignment="Right" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
+        </TabItem>
+
+        <!-- ============ Données de référence ============ -->
+        <TabItem Header="Marques, tailles et couleurs">
+            <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Marques -->
+                <Border Grid.Column="0" Style="{StaticResource Carte}" Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Marques"
+                                   Style="{StaticResource TexteSousTitre}" Margin="4,0,0,10" />
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding Marques}"
+                                  SelectedItem="{Binding MarqueSelectionnee}"
+                                  Style="{StaticResource Tableau}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nom" Binding="{Binding Nom}" Width="*" />
+                                <DataGridTextColumn Header="Produits" Binding="{Binding NombreUtilisations}" Width="80" />
+                                <DataGridCheckBoxColumn Header="Actif" Binding="{Binding Actif}" Width="55" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <WrapPanel Grid.Row="2" Margin="0,10,0,0">
+                            <Button Content="Ajouter"
+                                    Style="{StaticResource BoutonPrincipal}"
+                                    Command="{Binding NouvelleMarqueCommand}"
+                                    Margin="0,0,6,6" />
+                            <Button Content="Renommer"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding RenommerMarqueCommand}"
+                                    Margin="0,0,6,6" />
+                            <Button Content="Activer / Désactiver"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding BasculerEtatMarqueCommand}"
+                                    Margin="0,0,0,6" />
+                        </WrapPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Tailles -->
+                <Border Grid.Column="2" Style="{StaticResource Carte}" Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Tailles"
+                                   Style="{StaticResource TexteSousTitre}" Margin="4,0,0,10" />
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding Tailles}"
+                                  SelectedItem="{Binding TailleSelectionnee}"
+                                  Style="{StaticResource Tableau}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nom" Binding="{Binding Nom}" Width="*" />
+                                <DataGridTextColumn Header="Ordre" Binding="{Binding Ordre}" Width="70" />
+                                <DataGridTextColumn Header="Articles" Binding="{Binding NombreUtilisations}" Width="75" />
+                                <DataGridCheckBoxColumn Header="Actif" Binding="{Binding Actif}" Width="55" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <WrapPanel Grid.Row="2" Margin="0,10,0,0">
+                            <Button Content="Ajouter"
+                                    Style="{StaticResource BoutonPrincipal}"
+                                    Command="{Binding NouvelleTailleCommand}"
+                                    Margin="0,0,6,6" />
+                            <Button Content="Activer / Désactiver"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding BasculerEtatTailleCommand}"
+                                    Margin="0,0,0,6" />
+                        </WrapPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Couleurs -->
+                <Border Grid.Column="4" Style="{StaticResource Carte}" Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Couleurs"
+                                   Style="{StaticResource TexteSousTitre}" Margin="4,0,0,10" />
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding Couleurs}"
+                                  SelectedItem="{Binding CouleurSelectionnee}"
+                                  Style="{StaticResource Tableau}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="" Width="40">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border Width="16" Height="16" CornerRadius="3"
+                                                    BorderBrush="{StaticResource PinceauBordureForte}"
+                                                    BorderThickness="1"
+                                                    Background="{Binding Complement, Converter={StaticResource CodeCouleur}}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Nom" Binding="{Binding Nom}" Width="*" />
+                                <DataGridTextColumn Header="Articles" Binding="{Binding NombreUtilisations}" Width="75" />
+                                <DataGridCheckBoxColumn Header="Actif" Binding="{Binding Actif}" Width="55" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <WrapPanel Grid.Row="2" Margin="0,10,0,0">
+                            <Button Content="Ajouter"
+                                    Style="{StaticResource BoutonPrincipal}"
+                                    Command="{Binding NouvelleCouleurCommand}"
+                                    Margin="0,0,6,6" />
+                            <Button Content="Activer / Désactiver"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding BasculerEtatCouleurCommand}"
+                                    Margin="0,0,0,6" />
+                        </WrapPanel>
+                    </Grid>
+                </Border>
+            </Grid>
+        </TabItem>
+
+    </TabControl>
+</UserControl>

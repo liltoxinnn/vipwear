@@ -1,0 +1,60 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:vm="clr-namespace:GestionMagasin.App.ViewModels"
+                    xmlns:vues="clr-namespace:GestionMagasin.App.Views">
+
+    <!--
+        Association entre chaque vue-modèle et son écran. La zone principale de
+        la fenêtre affiche simplement la vue-modèle courante : WPF choisit
+        l'écran correspondant grâce à ces modèles.
+    -->
+
+    <DataTemplate DataType="{x:Type vm:VueModeleTableauBord}">
+        <vues:VueTableauBord />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleCaisse}">
+        <vues:VueCaisse />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleProduits}">
+        <vues:VueProduits />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleStock}">
+        <vues:VueStock />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleVentes}">
+        <vues:VueVentes />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleAchats}">
+        <vues:VueAchats />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleFournisseurs}">
+        <vues:VueFournisseurs />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleClients}">
+        <vues:VueClients />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleRetours}">
+        <vues:VueRetours />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleRapports}">
+        <vues:VueRapports />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleUtilisateurs}">
+        <vues:VueUtilisateurs />
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type vm:VueModeleParametres}">
+        <vues:VueParametres />
+    </DataTemplate>
+
+</ResourceDictionary>

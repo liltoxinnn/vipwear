@@ -1,0 +1,58 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Palette du logiciel. Un bleu profond sert de couleur principale,
+        associé à des gris neutres : l'ensemble reste lisible plusieurs heures
+        d'affilée sur un poste de caisse.
+    -->
+
+    <Color x:Key="CouleurPrincipale">#1F3864</Color>
+    <Color x:Key="CouleurPrincipaleClaire">#2E4F8F</Color>
+    <Color x:Key="CouleurPrincipaleFoncee">#152747</Color>
+    <Color x:Key="CouleurAccent">#4472C4</Color>
+
+    <Color x:Key="CouleurSucces">#1E7E34</Color>
+    <Color x:Key="CouleurAvertissement">#B7791F</Color>
+    <Color x:Key="CouleurDanger">#C0392B</Color>
+    <Color x:Key="CouleurInfo">#2C7BE5</Color>
+
+    <Color x:Key="CouleurFond">#F4F6FA</Color>
+    <Color x:Key="CouleurSurface">#FFFFFF</Color>
+    <Color x:Key="CouleurSurfaceAlterne">#F8FAFC</Color>
+    <Color x:Key="CouleurBordure">#DDE3EC</Color>
+    <Color x:Key="CouleurBordureForte">#C3CCDA</Color>
+
+    <Color x:Key="CouleurTexte">#1A2233</Color>
+    <Color x:Key="CouleurTexteSecondaire">#5A6577</Color>
+    <Color x:Key="CouleurTexteAttenue">#8A94A6</Color>
+    <Color x:Key="CouleurTexteSurPrincipale">#FFFFFF</Color>
+
+    <SolidColorBrush x:Key="PinceauPrincipal" Color="{StaticResource CouleurPrincipale}" />
+    <SolidColorBrush x:Key="PinceauPrincipalClair" Color="{StaticResource CouleurPrincipaleClaire}" />
+    <SolidColorBrush x:Key="PinceauPrincipalFonce" Color="{StaticResource CouleurPrincipaleFoncee}" />
+    <SolidColorBrush x:Key="PinceauAccent" Color="{StaticResource CouleurAccent}" />
+
+    <SolidColorBrush x:Key="PinceauSucces" Color="{StaticResource CouleurSucces}" />
+    <SolidColorBrush x:Key="PinceauAvertissement" Color="{StaticResource CouleurAvertissement}" />
+    <SolidColorBrush x:Key="PinceauDanger" Color="{StaticResource CouleurDanger}" />
+    <SolidColorBrush x:Key="PinceauInfo" Color="{StaticResource CouleurInfo}" />
+
+    <SolidColorBrush x:Key="PinceauFond" Color="{StaticResource CouleurFond}" />
+    <SolidColorBrush x:Key="PinceauSurface" Color="{StaticResource CouleurSurface}" />
+    <SolidColorBrush x:Key="PinceauSurfaceAlterne" Color="{StaticResource CouleurSurfaceAlterne}" />
+    <SolidColorBrush x:Key="PinceauBordure" Color="{StaticResource CouleurBordure}" />
+    <SolidColorBrush x:Key="PinceauBordureForte" Color="{StaticResource CouleurBordureForte}" />
+
+    <SolidColorBrush x:Key="PinceauTexte" Color="{StaticResource CouleurTexte}" />
+    <SolidColorBrush x:Key="PinceauTexteSecondaire" Color="{StaticResource CouleurTexteSecondaire}" />
+    <SolidColorBrush x:Key="PinceauTexteAttenue" Color="{StaticResource CouleurTexteAttenue}" />
+    <SolidColorBrush x:Key="PinceauTexteSurPrincipale" Color="{StaticResource CouleurTexteSurPrincipale}" />
+
+    <!-- Fonds atténués employés pour les pastilles d'état -->
+    <SolidColorBrush x:Key="PinceauFondSucces" Color="#E6F4EA" />
+    <SolidColorBrush x:Key="PinceauFondAvertissement" Color="#FDF3E1" />
+    <SolidColorBrush x:Key="PinceauFondDanger" Color="#FBEAE8" />
+    <SolidColorBrush x:Key="PinceauFondInfo" Color="#E8F1FD" />
+
+</ResourceDictionary>
