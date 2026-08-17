@@ -66,8 +66,11 @@ public partial class VueModeleMouvementStock : VueModeleBase
     [ObservableProperty]
     private int _stockActuel;
 
+    // Nullable à dessein : en refermant la fenêtre, WPF vide la sélection de
+    // la liste déroulante et réécrit « rien » ici. Tout ce qui lit le sens du
+    // mouvement doit donc supporter cette valeur.
     [ObservableProperty]
-    private SensMouvement _sensChoisi;
+    private SensMouvement? _sensChoisi;
 
     [ObservableProperty]
     private TypeMouvementStock _typeMouvement;
@@ -81,10 +84,16 @@ public partial class VueModeleMouvementStock : VueModeleBase
     [ObservableProperty]
     private string _motif = string.Empty;
 
+    /// <summary>
+    /// Sens retenu pour le mouvement. Une entrée par défaut : c'est le geste
+    /// le plus courant, et la fenêtre ne doit jamais rester sans sens valide.
+    /// </summary>
+    private bool EstEntree => SensChoisi?.EstEntree ?? true;
+
     /// <summary>Quantité qui figurera en stock après validation.</summary>
     public int StockApres => EstAjustement
         ? QuantiteConstatee
-        : SensChoisi.EstEntree
+        : EstEntree
             ? StockActuel + Quantite
             : StockActuel - Quantite;
 
@@ -97,7 +106,7 @@ public partial class VueModeleMouvementStock : VueModeleBase
 
     partial void OnQuantiteConstateeChanged(int value) => NotifierResultat();
 
-    partial void OnSensChoisiChanged(SensMouvement value) => NotifierResultat();
+    partial void OnSensChoisiChanged(SensMouvement? value) => NotifierResultat();
 
     partial void OnStockActuelChanged(int value) => NotifierResultat();
 
@@ -151,7 +160,7 @@ public partial class VueModeleMouvementStock : VueModeleBase
 
         var message = EstAjustement
             ? $"Ajuster le stock de « {Designation} » de {StockActuel} à {QuantiteConstatee} ?"
-            : $"Enregistrer {(SensChoisi.EstEntree ? "une entrée" : "une sortie")} de {Quantite} " +
+            : $"Enregistrer {(EstEntree ? "une entrée" : "une sortie")} de {Quantite} " +
               $"article(s) pour « {Designation} » ?" + Environment.NewLine +
               $"Le stock passera de {StockActuel} à {StockApres}.";
 
@@ -168,7 +177,7 @@ public partial class VueModeleMouvementStock : VueModeleBase
                     await _stock.AjusterStockAsync(VarianteProduitId, QuantiteConstatee, Motif)
                         .ConfigureAwait(true);
                 }
-                else if (SensChoisi.EstEntree)
+                else if (EstEntree)
                 {
                     await _stock.EnregistrerEntreeManuelleAsync(
                         VarianteProduitId, Quantite, TypeMouvement, Motif).ConfigureAwait(true);

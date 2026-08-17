@@ -5,6 +5,7 @@ using GestionMagasin.App.Services;
 using GestionMagasin.Application.Common;
 using GestionMagasin.Application.Services.Abstractions;
 using GestionMagasin.Domain.Securite;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace GestionMagasin.App.ViewModels;
@@ -36,22 +37,24 @@ public partial class EntreeMenu : ObservableObject
 public partial class VueModelePrincipale : VueModeleBase
 {
     private readonly IServiceNavigation _navigation;
-    private readonly IServiceAuthentification _authentification;
-    private readonly IServiceParametres _parametres;
     private readonly SessionUtilisateur _session;
+
+    // La fenêtre principale vit aussi longtemps que le logiciel. Elle ne peut
+    // donc pas conserver de services liés à un contexte de données : elle
+    // retiendrait le même contexte toute la journée. Ses rares accès aux
+    // données ouvrent une portée le temps de l'opération.
+    private readonly IServiceScopeFactory _portees;
 
     public VueModelePrincipale(
         IServiceNavigation navigation,
-        IServiceAuthentification authentification,
-        IServiceParametres parametres,
+        IServiceScopeFactory portees,
         SessionUtilisateur session,
         IServiceDialogue dialogue,
         ILogger<VueModelePrincipale> journal)
         : base(dialogue, journal)
     {
         _navigation = navigation;
-        _authentification = authentification;
-        _parametres = parametres;
+        _portees = portees;
         _session = session;
 
         _navigation.PageChangee += (_, page) => PageCourante = page;
@@ -84,9 +87,14 @@ public partial class VueModelePrincipale : VueModeleBase
 
     public override async Task ChargerAsync()
     {
-        var magasin = await _parametres.ObtenirAsync().ConfigureAwait(true);
+        using (var portee = _portees.CreateScope())
+        {
+            var parametres = portee.ServiceProvider.GetRequiredService<IServiceParametres>();
+            var magasin = await parametres.ObtenirAsync().ConfigureAwait(true);
 
-        NomMagasin = magasin.NomMagasin;
+            NomMagasin = magasin.NomMagasin;
+        }
+
         NomUtilisateur = _session.NomComplet;
         RoleUtilisateur = _session.NomRole;
         DateDuJour = DateTime.Now.ToString("dddd d MMMM yyyy", FormatageMontant.CultureApplication);
@@ -199,7 +207,11 @@ public partial class VueModelePrincipale : VueModeleBase
             return;
         }
 
-        await _authentification.DeconnecterAsync().ConfigureAwait(true);
+        using (var portee = _portees.CreateScope())
+        {
+            var authentification = portee.ServiceProvider.GetRequiredService<IServiceAuthentification>();
+            await authentification.DeconnecterAsync().ConfigureAwait(true);
+        }
 
         DeconnexionDemandee?.Invoke(this, EventArgs.Empty);
     }
