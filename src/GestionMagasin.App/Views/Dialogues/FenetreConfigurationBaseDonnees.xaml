@@ -1,0 +1,103 @@
+﻿<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreConfigurationBaseDonnees"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configuration de la base de données"
+        Height="700" Width="560"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{StaticResource PinceauFond}">
+
+    <Border Margin="20" Style="{StaticResource Carte}" Padding="26">
+        <StackPanel>
+
+            <TextBlock Text="Configuration de la base de données"
+                       Style="{StaticResource TexteTitre}"
+                       FontSize="19" />
+
+            <TextBlock Style="{StaticResource TexteSecondaire}" Margin="0,8,0,20">
+                Le logiciel a besoin d'un serveur PostgreSQL pour enregistrer les données
+                du magasin. Indiquez ci-dessous comment le joindre. Ces informations ne
+                seront demandées qu'une seule fois.
+            </TextBlock>
+
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Serveur" Style="{StaticResource TexteEtiquette}" />
+                    <TextBox x:Name="ChampServeur"
+                             Style="{StaticResource ChampTexte}"
+                             Text="localhost" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Port" Style="{StaticResource TexteEtiquette}" />
+                    <TextBox x:Name="ChampPort"
+                             Style="{StaticResource ChampTexte}"
+                             Text="5432"
+                             HorizontalContentAlignment="Right" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="Nom de la base de données" Style="{StaticResource TexteEtiquette}" />
+            <TextBox x:Name="ChampBase"
+                     Style="{StaticResource ChampTexte}"
+                     Text="gestionmagasin"
+                     Margin="0,0,0,4" />
+            <TextBlock Text="Si elle n'existe pas encore, le logiciel la créera automatiquement."
+                       Style="{StaticResource TexteAttenue}"
+                       Margin="0,0,0,12" />
+
+            <TextBlock Text="Utilisateur du serveur" Style="{StaticResource TexteEtiquette}" />
+            <TextBox x:Name="ChampUtilisateur"
+                     Style="{StaticResource ChampTexte}"
+                     Text="postgres"
+                     Margin="0,0,0,12" />
+
+            <TextBlock Text="Mot de passe du serveur" Style="{StaticResource TexteEtiquette}" />
+            <PasswordBox x:Name="ChampMotDePasse"
+                         Padding="9,7" MinHeight="34" FontSize="13"
+                         VerticalContentAlignment="Center"
+                         BorderBrush="{StaticResource PinceauBordureForte}"
+                         Margin="0,0,0,4" />
+            <TextBlock Text="Celui choisi lors de l'installation de PostgreSQL."
+                       Style="{StaticResource TexteAttenue}"
+                       Margin="0,0,0,18" />
+
+            <!-- Retour du test -->
+            <Border x:Name="ZoneMessage"
+                    CornerRadius="6"
+                    Padding="14,11"
+                    Margin="0,0,0,16"
+                    Visibility="Collapsed">
+                <TextBlock x:Name="TexteMessage"
+                           FontSize="12.5"
+                           TextWrapping="Wrap" />
+            </Border>
+
+            <Button x:Name="BoutonTester"
+                    Content="Tester la connexion"
+                    Style="{StaticResource BoutonSecondaire}"
+                    Click="SurTester"
+                    Margin="0,0,0,10" />
+
+            <Button x:Name="BoutonDemarrer"
+                    Content="Enregistrer et démarrer le logiciel"
+                    Style="{StaticResource BoutonCaisse}"
+                    Click="SurDemarrer"
+                    IsDefault="True"
+                    IsEnabled="False"
+                    Margin="0,0,0,10" />
+
+            <Button Content="Quitter"
+                    Style="{StaticResource BoutonSecondaire}"
+                    Click="SurQuitter"
+                    IsCancel="True" />
+
+        </StackPanel>
+    </Border>
+</Window>

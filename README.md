@@ -125,11 +125,44 @@ Les migrations sont appliquées automatiquement au premier démarrage, ainsi que
 l'amorçage des données de référence (permissions, rôles, tailles, couleurs,
 fiche magasin).
 
-### 4. Publier une version installable
+---
 
-```bash
-dotnet publish src/GestionMagasin.App -c Release -r win-x64 --self-contained false
+## Livrer le logiciel à un magasin
+
+Un script prépare le dossier de livraison complet :
+
+```powershell
+.\publier.ps1
 ```
+
+Il produit `livraison/GestionMagasin-1.0.0.zip`, prêt à être transmis, avec le
+guide d'installation à l'intérieur.
+
+| Mode | Commande | Taille | Prérequis sur le poste du magasin |
+|---|---|---|---|
+| Autonome (défaut) | `.\publier.ps1` | ~70 Mo | PostgreSQL seulement |
+| Allégé | `.\publier.ps1 -Allegee` | ~15 Mo | PostgreSQL + .NET 10 Desktop Runtime |
+
+Le mode autonome embarque le moteur .NET : le magasin décompresse et
+double-clique, sans rien installer d'autre que PostgreSQL.
+
+### Configuration chez le client
+
+Le magasin ne modifie **jamais** de fichier de configuration. Au premier
+démarrage, si la base n'est pas joignable, le logiciel affiche une fenêtre
+**« Configuration de la base de données »** où l'on saisit serveur, port,
+nom de base, utilisateur et mot de passe.
+
+Le bouton *Tester la connexion* vérifie l'accès, **crée la base si elle
+n'existe pas**, et n'autorise le démarrage qu'en cas de succès. Les
+informations sont enregistrées dans `appsettings.Local.json`, à côté de
+l'exécutable — une mise à jour du logiciel ne les efface pas.
+
+Le document [GUIDE-INSTALLATION.md](GUIDE-INSTALLATION.md) accompagne la
+livraison : il est rédigé pour le personnel du magasin, sans jargon
+technique, et couvre l'installation de PostgreSQL, la première connexion,
+la configuration du magasin, la création des comptes employés et la
+sauvegarde des données.
 
 ---
 

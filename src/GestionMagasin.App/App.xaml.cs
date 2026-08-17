@@ -13,6 +13,7 @@ using GestionMagasin.Application.Common;
 using GestionMagasin.Application.Services.Abstractions;
 using GestionMagasin.Infrastructure;
 using GestionMagasin.Infrastructure.Data;
+using GestionMagasin.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -34,12 +35,17 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        // Toute l'interface est en français : dates, nombres et messages
-        // système suivent cette culture.
-        AppliquerCultureFrancaise();
-
         try
         {
+            // La connexion est vérifiée avant tout le reste : à la première
+            // installation, le magasin est invité à la configurer plutôt que
+            // de subir un message d'erreur technique.
+            if (!await GarantirConnexionAsync().ConfigureAwait(true))
+            {
+                Shutdown(0);
+                return;
+            }
+
             _hote = ConstruireHote();
             await _hote.StartAsync().ConfigureAwait(true);
 
@@ -87,6 +93,51 @@ public partial class App : System.Windows.Application
 
     // ------------------------------------------------------------------
 
+    /// <summary>
+    /// S'assure qu'une base de données joignable est configurée. Si ce n'est
+    /// pas le cas, la fenêtre de configuration est proposée à l'utilisateur.
+    /// </summary>
+    /// <returns>Faux si l'utilisateur renonce et quitte le logiciel.</returns>
+    private static async Task<bool> GarantirConnexionAsync()
+    {
+        var chaine = LireChaineConnexion();
+
+        if (!string.IsNullOrWhiteSpace(chaine))
+        {
+            var resultat = await TesteurConnexion.VerifierEtPreparerAsync(chaine).ConfigureAwait(true);
+
+            if (resultat.Reussie)
+            {
+                return true;
+            }
+
+            Log.Warning("Base de données injoignable : {Message}", resultat.Message);
+        }
+
+        var fenetre = new FenetreConfigurationBaseDonnees(chaine);
+
+        return fenetre.ShowDialog() == true;
+    }
+
+    /// <summary>Relit la chaîne de connexion effective des fichiers de configuration.</summary>
+    private static string? LireChaineConnexion() =>
+        new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.Local.json", optional: true)
+            .AddEnvironmentVariables("GESTIONMAGASIN_")
+            .Build()
+            .GetConnectionString("BaseDonnees");
+
+    /// <summary>
+    /// Dossier où sont écrits les journaux techniques. Il est communiqué à
+    /// l'utilisateur en cas d'erreur, pour qu'il sache quoi transmettre.
+    /// </summary>
+    internal static string DossierJournaux { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "GestionMagasin",
+        "journaux");
+
     private static IHost ConstruireHote()
     {
         var dossierApplication = AppContext.BaseDirectory;
@@ -98,10 +149,7 @@ public partial class App : System.Windows.Application
             .AddEnvironmentVariables("GESTIONMAGASIN_")
             .Build();
 
-        var dossierJournaux = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "GestionMagasin",
-            "journaux");
+        var dossierJournaux = DossierJournaux;
 
         Directory.CreateDirectory(dossierJournaux);
 
@@ -191,9 +239,10 @@ public partial class App : System.Windows.Application
             journal.LogCritical(erreur, "Préparation de la base de données impossible.");
 
             MessageBox.Show(
-                "La connexion à la base de données a échoué." + Environment.NewLine + Environment.NewLine +
-                "Vérifiez que le serveur PostgreSQL est démarré et que les informations de " +
-                "connexion du fichier « appsettings.json » sont correctes.",
+                "La préparation de la base de données a échoué." + Environment.NewLine + Environment.NewLine +
+                "Vérifiez que le serveur PostgreSQL est démarré et que le compte utilisé a le " +
+                "droit de créer des tables. Relancez ensuite le logiciel : la fenêtre de " +
+                "configuration vous sera proposée.",
                 "Base de données inaccessible",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
@@ -220,6 +269,8 @@ public partial class App : System.Windows.Application
         connexion.Show();
     }
 
+    private static bool _cultureAppliquee;
+
     /// <summary>
     /// Force la culture française sur les fils d'exécution et sur le moteur
     /// de rendu WPF, afin que dates et nombres s'affichent au format attendu.
@@ -233,10 +284,28 @@ public partial class App : System.Windows.Application
         Thread.CurrentThread.CurrentCulture = culture;
         Thread.CurrentThread.CurrentUICulture = culture;
 
+        // OverrideMetadata n'accepte qu'un seul appel par propriété : le
+        // second lèverait une exception au démarrage.
+        if (_cultureAppliquee)
+        {
+            return;
+        }
+
+        _cultureAppliquee = true;
+
         FrameworkElement.LanguageProperty.OverrideMetadata(
             typeof(FrameworkElement),
             new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(culture.IetfLanguageTag)));
     }
+
+    // Une erreur survenue pendant l'affichage se reproduit à chaque passe de
+    // rendu. Comme la boîte de dialogue continue de faire tourner la boucle de
+    // messages de Windows, la même erreur reviendrait pendant qu'elle est
+    // ouverte et empilerait des dizaines de fenêtres devant l'utilisateur.
+    // Ces deux garde-fous garantissent qu'un incident n'est signalé qu'une fois.
+    private bool _signalementEnCours;
+    private string? _derniereErreur;
+    private DateTime _derniereErreurLe;
 
     /// <summary>
     /// Dernier filet de sécurité : une erreur non interceptée est journalisée
@@ -244,20 +313,71 @@ public partial class App : System.Windows.Application
     /// </summary>
     private void SurExceptionNonGeree(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        // L'application reste en vie : une caisse ne doit pas se fermer au
+        // milieu d'un encaissement.
+        e.Handled = true;
+
         Log.Error(e.Exception, "Erreur non interceptée dans l'interface.");
 
-        MessageBox.Show(
-            "Une erreur inattendue est survenue." + Environment.NewLine + Environment.NewLine +
-            "L'opération en cours a été interrompue. Vos données enregistrées ne sont pas affectées.",
-            "Erreur inattendue",
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+        if (_signalementEnCours)
+        {
+            return;
+        }
 
-        e.Handled = true;
+        var signature = e.Exception.GetType().FullName + "|" + e.Exception.StackTrace;
+        var maintenant = DateTime.UtcNow;
+
+        if (signature == _derniereErreur
+            && maintenant - _derniereErreurLe < TimeSpan.FromSeconds(15))
+        {
+            return;
+        }
+
+        _derniereErreur = signature;
+        _derniereErreurLe = maintenant;
+        _signalementEnCours = true;
+
+        try
+        {
+            MessageBox.Show(
+                ComposerMessageErreur(e.Exception),
+                "Erreur inattendue",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        finally
+        {
+            _signalementEnCours = false;
+        }
+    }
+
+    /// <summary>
+    /// Rédige le message affiché : la cause réelle y figure, ainsi que l'endroit
+    /// où trouver le détail technique. Sans cela, l'utilisateur n'a rien à
+    /// transmettre pour faire corriger le problème.
+    /// </summary>
+    private static string ComposerMessageErreur(Exception erreur)
+    {
+        // Une règle métier non respectée est déjà rédigée pour l'utilisateur.
+        var cause = erreur is Domain.Exceptions.ExceptionMetier
+            ? erreur.Message
+            : $"{erreur.Message} ({erreur.GetType().Name})";
+
+        return
+            "Une erreur inattendue est survenue." + Environment.NewLine + Environment.NewLine +
+            "Détail : " + cause + Environment.NewLine + Environment.NewLine +
+            "L'opération en cours a été interrompue. Vos données enregistrées ne sont pas affectées." +
+            Environment.NewLine + Environment.NewLine +
+            "Le détail technique a été enregistré dans :" + Environment.NewLine +
+            DossierJournaux;
     }
 
     public App()
     {
+        // La culture est fixée avant toute création de fenêtre : les libellés
+        // et les formats de date en dépendent dès le premier affichage.
+        AppliquerCultureFrancaise();
+
         DispatcherUnhandledException += SurExceptionNonGeree;
     }
 }

@@ -54,8 +54,12 @@ public partial class VueModeleRapports : VueModeleBase
         new(TypePeriode.Personnalisee, "Période personnalisée")
     ];
 
+    // Nullable à dessein : lorsque l'écran est quitté, WPF vide la sélection
+    // de la liste déroulante avant de détruire la vue et réécrit « rien » dans
+    // cette propriété. Le type doit accepter cette valeur, sans quoi tout ce
+    // qui lit la période plante au moment de changer d'écran.
     [ObservableProperty]
-    private ChoixPeriode _periodeChoisie;
+    private ChoixPeriode? _periodeChoisie;
 
     [ObservableProperty]
     private DateTime? _dateDebut;
@@ -67,7 +71,10 @@ public partial class VueModeleRapports : VueModeleBase
     private string _libellePeriode = string.Empty;
 
     /// <summary>Vrai lorsque les champs de dates doivent être proposés.</summary>
-    public bool PeriodePersonnalisee => PeriodeChoisie.Type == TypePeriode.Personnalisee;
+    public bool PeriodePersonnalisee => PeriodeChoisie?.Type == TypePeriode.Personnalisee;
+
+    /// <summary>Période effectivement retenue, « Ce mois-ci » à défaut de choix.</summary>
+    private TypePeriode TypeRetenu => PeriodeChoisie?.Type ?? TypePeriode.Mois;
 
     // --- Résultats ---
 
@@ -96,9 +103,16 @@ public partial class VueModeleRapports : VueModeleBase
 
     public ObservableCollection<VentesParModePaiementDto> VentesParModePaiement { get; } = [];
 
-    partial void OnPeriodeChoisieChanged(ChoixPeriode value)
+    partial void OnPeriodeChoisieChanged(ChoixPeriode? value)
     {
         OnPropertyChanged(nameof(PeriodePersonnalisee));
+
+        // Sélection vidée par la fermeture de l'écran, et non par l'utilisateur :
+        // il n'y a aucun rapport à recalculer.
+        if (value is null)
+        {
+            return;
+        }
 
         _ = ChargerAsync();
     }
@@ -143,7 +157,7 @@ public partial class VueModeleRapports : VueModeleBase
 
     private Periode ConstruirePeriode() =>
         CalculateurPeriode.Construire(
-            PeriodeChoisie.Type,
+            TypeRetenu,
             DateTime.Now,
             DateDebut,
             DateFin);

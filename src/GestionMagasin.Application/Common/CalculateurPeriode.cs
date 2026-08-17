@@ -1,3 +1,4 @@
+using System.Globalization;
 using GestionMagasin.Application.DTOs;
 
 namespace GestionMagasin.Application.Common;
@@ -20,6 +21,13 @@ public enum TypePeriode
 /// </summary>
 public static class CalculateurPeriode
 {
+    /// <summary>
+    /// Les libellés sont mis en forme avec la culture du logiciel, jamais avec
+    /// celle du poste : sur un Windows configuré en anglais, « MMMM » donnerait
+    /// « August » au lieu de « août » au milieu d'une phrase française.
+    /// </summary>
+    private static CultureInfo Culture => FormatageMontant.CultureApplication;
+
     public static Periode Construire(
         TypePeriode type,
         DateTime referenceLocale,
@@ -31,19 +39,19 @@ public static class CalculateurPeriode
             TypePeriode.Jour => Depuis(
                 referenceLocale.Date,
                 referenceLocale.Date.AddDays(1),
-                $"Journée du {referenceLocale:dd/MM/yyyy}"),
+                string.Format(Culture, "Journée du {0:dd/MM/yyyy}", referenceLocale)),
 
             TypePeriode.Semaine => ConstruireSemaine(referenceLocale),
 
             TypePeriode.Mois => Depuis(
                 new DateTime(referenceLocale.Year, referenceLocale.Month, 1, 0, 0, 0, DateTimeKind.Local),
                 new DateTime(referenceLocale.Year, referenceLocale.Month, 1, 0, 0, 0, DateTimeKind.Local).AddMonths(1),
-                $"Mois de {referenceLocale:MMMM yyyy}"),
+                string.Format(Culture, "Mois de {0:MMMM yyyy}", referenceLocale)),
 
             TypePeriode.Annee => Depuis(
                 new DateTime(referenceLocale.Year, 1, 1, 0, 0, 0, DateTimeKind.Local),
                 new DateTime(referenceLocale.Year + 1, 1, 1, 0, 0, 0, DateTimeKind.Local),
-                $"Année {referenceLocale:yyyy}"),
+                string.Format(Culture, "Année {0:yyyy}", referenceLocale)),
 
             TypePeriode.Personnalisee => ConstruirePersonnalisee(debutPersonnalise, finPersonnalisee),
 
@@ -65,7 +73,7 @@ public static class CalculateurPeriode
         var fin = referenceLocale.Date.AddDays(1);
         var debut = fin.AddDays(-nombreJours);
 
-        return Depuis(debut, fin, $"{nombreJours} derniers jours");
+        return Depuis(debut, fin, string.Format(Culture, "{0} derniers jours", nombreJours));
     }
 
     /// <summary>Fenêtre glissante des N derniers mois, mois en cours inclus.</summary>
@@ -75,7 +83,7 @@ public static class CalculateurPeriode
         var fin = debutMoisCourant.AddMonths(1);
         var debut = debutMoisCourant.AddMonths(-(nombreMois - 1));
 
-        return Depuis(debut, fin, $"{nombreMois} derniers mois");
+        return Depuis(debut, fin, string.Format(Culture, "{0} derniers mois", nombreMois));
     }
 
     private static Periode ConstruireSemaine(DateTime referenceLocale)
@@ -85,7 +93,7 @@ public static class CalculateurPeriode
         var debut = referenceLocale.Date.AddDays(-decalage);
         var fin = debut.AddDays(7);
 
-        return Depuis(debut, fin, $"Semaine du {debut:dd/MM/yyyy} au {fin.AddDays(-1):dd/MM/yyyy}");
+        return Depuis(debut, fin, string.Format(Culture, "Semaine du {0:dd/MM/yyyy} au {1:dd/MM/yyyy}", debut, fin.AddDays(-1)));
     }
 
     private static Periode ConstruirePersonnalisee(DateTime? debut, DateTime? fin)
@@ -107,7 +115,7 @@ public static class CalculateurPeriode
         return Depuis(
             debut.Value.Date,
             fin.Value.Date.AddDays(1),
-            $"Du {debut.Value:dd/MM/yyyy} au {fin.Value:dd/MM/yyyy}");
+            string.Format(Culture, "Du {0:dd/MM/yyyy} au {1:dd/MM/yyyy}", debut.Value, fin.Value));
     }
 
     private static Periode Depuis(DateTime debutLocal, DateTime finLocale, string libelle) => new()

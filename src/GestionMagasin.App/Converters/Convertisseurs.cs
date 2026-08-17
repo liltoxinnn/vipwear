@@ -87,6 +87,11 @@ public class ConvertisseurNonVideVisibilite : IValueConverter
             null => false,
             string texte => !string.IsNullOrWhiteSpace(texte),
             int nombre => nombre > 0,
+            long nombre => nombre > 0,
+            // Sans ce cas, le bandeau « Monnaie à rendre » de la caisse
+            // resterait affiché avec un montant nul.
+            decimal montant => montant > 0m,
+            double montant => montant > 0d,
             System.Collections.ICollection collection => collection.Count > 0,
             _ => true
         };
