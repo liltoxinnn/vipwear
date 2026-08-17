@@ -61,7 +61,8 @@ public partial class VueAchats : UserControl
 
     private async void SurFormulaireAchat(object? sender, EventArgs e)
     {
-        var fenetre = VueProduits.Fournisseur.GetRequiredService<FenetreAchat>();
+        using var isolee = VueProduits.Fabrique.Creer<FenetreAchat>();
+        var fenetre = isolee.Fenetre;
 
         fenetre.Owner = Window.GetWindow(this);
 
@@ -75,7 +76,8 @@ public partial class VueAchats : UserControl
 
     private async void SurReception(object? sender, AchatDto achat)
     {
-        var fenetre = VueProduits.Fournisseur.GetRequiredService<FenetreReception>();
+        using var isolee = VueProduits.Fabrique.Creer<FenetreReception>();
+        var fenetre = isolee.Fenetre;
 
         fenetre.Owner = Window.GetWindow(this);
         fenetre.VueModele.Preparer(achat);

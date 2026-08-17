@@ -109,7 +109,8 @@ public partial class VueModeleStock : VueModeleBase
 
     partial void OnLigneSelectionneeChanged(LigneStockDto? value)
     {
-        _ = ChargerHistoriqueAsync(value?.VarianteProduitId);
+        _ = ExecuterAsync(() => ChargerHistoriqueAsync(value?.VarianteProduitId),
+            contexteJournal: "chargement de l'historique de stock");
     }
 
     private async Task ChargerHistoriqueAsync(int? varianteId)

@@ -172,7 +172,8 @@ public partial class VueModeleRetours : VueModeleBase
 
     partial void OnRetourSelectionneChanged(ResumeRetourDto? value)
     {
-        _ = ChargerDetailAsync(value?.Id);
+        _ = ExecuterAsync(() => ChargerDetailAsync(value?.Id),
+            contexteJournal: "chargement du détail d'un retour");
     }
 
     private async Task ChargerDetailAsync(int? retourId)

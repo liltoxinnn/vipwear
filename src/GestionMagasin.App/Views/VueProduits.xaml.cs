@@ -1,10 +1,10 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using GestionMagasin.App.Services;
 using GestionMagasin.App.ViewModels;
 using GestionMagasin.App.Views.Dialogues;
 using GestionMagasin.Application.DTOs;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace GestionMagasin.App.Views;
 
@@ -66,7 +66,8 @@ public partial class VueProduits : UserControl
 
     private async void SurFormulaireProduit(object? sender, ProduitDto? produit)
     {
-        var fenetre = Fournisseur.GetRequiredService<FenetreProduit>();
+        using var isolee = Fabrique.Creer<FenetreProduit>();
+        var fenetre = isolee.Fenetre;
 
         fenetre.Owner = Window.GetWindow(this);
 
@@ -80,7 +81,8 @@ public partial class VueProduits : UserControl
 
     private async void SurFormulaireVariante(object? sender, (ProduitDto Produit, VarianteDto? Variante) contexte)
     {
-        var fenetre = Fournisseur.GetRequiredService<FenetreVariante>();
+        using var isolee = Fabrique.Creer<FenetreVariante>();
+        var fenetre = isolee.Fenetre;
 
         fenetre.Owner = Window.GetWindow(this);
 
@@ -94,7 +96,8 @@ public partial class VueProduits : UserControl
 
     private async void SurGenerationVariantes(object? sender, ProduitDto produit)
     {
-        var fenetre = Fournisseur.GetRequiredService<FenetreGenerationVariantes>();
+        using var isolee = Fabrique.Creer<FenetreGenerationVariantes>();
+        var fenetre = isolee.Fenetre;
 
         fenetre.Owner = Window.GetWindow(this);
 
@@ -106,6 +109,6 @@ public partial class VueProduits : UserControl
         }
     }
 
-    /// <summary>Conteneur de services de l'application, renseigné au démarrage.</summary>
-    internal static IServiceProvider Fournisseur { get; set; } = null!;
+    /// <summary>Fabrique des fenêtres de saisie, renseignée au démarrage.</summary>
+    internal static IFabriqueFenetres Fabrique { get; set; } = null!;
 }

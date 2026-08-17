@@ -97,7 +97,8 @@ public partial class VueModeleFournisseurs : VueModeleBase
 
     partial void OnFournisseurSelectionneChanged(FournisseurDto? value)
     {
-        _ = ChargerHistoriqueAsync(value?.Id);
+        _ = ExecuterAsync(() => ChargerHistoriqueAsync(value?.Id),
+            contexteJournal: "chargement de l'historique fournisseur");
     }
 
     private async Task ChargerHistoriqueAsync(int? fournisseurId)

@@ -101,7 +101,8 @@ public partial class VueModeleProduits : VueModeleBase
 
     partial void OnProduitSelectionneChanged(ResumeProduitDto? value)
     {
-        _ = ChargerFicheAsync(value?.Id);
+        _ = ExecuterAsync(() => ChargerFicheAsync(value?.Id),
+            contexteJournal: "chargement de la fiche produit");
     }
 
     private async Task ChargerFicheAsync(int? produitId)
@@ -311,19 +312,20 @@ public partial class VueModeleProduits : VueModeleBase
     }
 
     /// <summary>Rafraîchit la liste et la fiche après une création ou une modification.</summary>
-    public async Task RechargerAsync(int? produitId = null)
-    {
-        await ChargerReferencesAsync().ConfigureAwait(true);
-        await ChargerListeAsync().ConfigureAwait(true);
-
-        if (produitId.HasValue)
+    public async Task RechargerAsync(int? produitId = null) =>
+        await ExecuterAsync(async () =>
         {
-            ProduitSelectionne = Produits.FirstOrDefault(p => p.Id == produitId.Value)
-                                 ?? ProduitSelectionne;
+            await ChargerReferencesAsync().ConfigureAwait(true);
+            await ChargerListeAsync().ConfigureAwait(true);
 
-            await ChargerFicheAsync(produitId.Value).ConfigureAwait(true);
-        }
-    }
+            if (produitId.HasValue)
+            {
+                ProduitSelectionne = Produits.FirstOrDefault(p => p.Id == produitId.Value)
+                                     ?? ProduitSelectionne;
+
+                await ChargerFicheAsync(produitId.Value).ConfigureAwait(true);
+            }
+        }, contexteJournal: "rechargement du catalogue").ConfigureAwait(true);
 
     // ==================================================================
     // Export

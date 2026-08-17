@@ -122,7 +122,8 @@ public partial class VueModeleAchats : VueModeleBase
 
     partial void OnAchatSelectionneChanged(ResumeAchatDto? value)
     {
-        _ = ChargerDetailAsync(value?.Id);
+        _ = ExecuterAsync(() => ChargerDetailAsync(value?.Id),
+            contexteJournal: "chargement du détail d'une commande");
     }
 
     private async Task ChargerDetailAsync(int? achatId)

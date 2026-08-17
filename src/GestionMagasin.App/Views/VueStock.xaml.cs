@@ -59,7 +59,8 @@ public partial class VueStock : UserControl
 
     private async void SurMouvementDemande(object? sender, (LigneStockDto Ligne, bool EstAjustement) contexte)
     {
-        var fenetre = VueProduits.Fournisseur.GetRequiredService<FenetreMouvementStock>();
+        using var isolee = VueProduits.Fabrique.Creer<FenetreMouvementStock>();
+        var fenetre = isolee.Fenetre;
 
         fenetre.Owner = Window.GetWindow(this);
         fenetre.VueModele.Preparer(contexte.Ligne, contexte.EstAjustement);

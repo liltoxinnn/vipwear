@@ -95,7 +95,8 @@ public partial class VueModeleClients : VueModeleBase
 
     partial void OnClientSelectionneChanged(ClientDto? value)
     {
-        _ = ChargerHistoriqueAsync(value?.Id);
+        _ = ExecuterAsync(() => ChargerHistoriqueAsync(value?.Id),
+            contexteJournal: "chargement de l'historique client");
     }
 
     private async Task ChargerHistoriqueAsync(int? clientId)

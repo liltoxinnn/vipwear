@@ -16,6 +16,18 @@ public abstract partial class VueModeleBase : ObservableObject
     protected readonly IServiceDialogue Dialogue;
     protected readonly ILogger Journal;
 
+    /// <summary>
+    /// Sérialise les accès aux données de l'écran.
+    ///
+    /// Un écran déclenche naturellement plusieurs lectures qui se
+    /// chevauchent : la liste se recharge, ce qui change la sélection, ce qui
+    /// déclenche le chargement de la fiche détaillée. Or le contexte de
+    /// données d'Entity Framework n'accepte qu'une opération à la fois. Sans
+    /// cette file d'attente, la seconde lecture échoue avec « A second
+    /// operation was started on this context instance ».
+    /// </summary>
+    private readonly SemaphoreSlim _acces = new(1, 1);
+
     protected VueModeleBase(IServiceDialogue dialogue, ILogger journal)
     {
         Dialogue = dialogue;
@@ -47,10 +59,10 @@ public abstract partial class VueModeleBase : ObservableObject
         string? messageSucces = null,
         string? contexteJournal = null)
     {
-        if (EstOccupe)
-        {
-            return false;
-        }
+        // Les opérations ne sont pas abandonnées mais mises à la suite : une
+        // fiche demandée pendant le rechargement d'une liste doit finir par
+        // s'afficher, pas disparaître silencieusement.
+        await _acces.WaitAsync().ConfigureAwait(true);
 
         EstOccupe = true;
         MessageStatut = null;
@@ -76,6 +88,14 @@ public abstract partial class VueModeleBase : ObservableObject
 
             return false;
         }
+        catch (ObjectDisposedException erreur)
+        {
+            // L'écran a été quitté pendant la lecture : ses services ont été
+            // libérés. Il n'y a plus rien à afficher, et rien à signaler.
+            Journal.LogDebug(erreur, "Opération abandonnée : l'écran a été fermé.");
+
+            return false;
+        }
         catch (Exception erreur)
         {
             // Erreur technique : le détail part dans le journal, l'utilisateur
@@ -94,6 +114,7 @@ public abstract partial class VueModeleBase : ObservableObject
         finally
         {
             EstOccupe = false;
+            _acces.Release();
         }
     }
 

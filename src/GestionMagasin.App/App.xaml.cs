@@ -57,8 +57,9 @@ public partial class App : System.Windows.Application
 
             await ChargerParametresAffichageAsync().ConfigureAwait(true);
 
-            // Les écrans ouvrent leurs fenêtres de saisie via le conteneur.
-            Views.VueProduits.Fournisseur = _hote.Services;
+            // Les écrans ouvrent leurs fenêtres de saisie via cette fabrique,
+            // qui donne à chacune sa propre portée de services.
+            Views.VueProduits.Fabrique = _hote.Services.GetRequiredService<IFabriqueFenetres>();
 
             AfficherFenetreConnexion();
         }
@@ -177,6 +178,7 @@ public partial class App : System.Windows.Application
                 // --- Services propres à l'interface ---
                 services.AddSingleton<IServiceDialogue, ServiceDialogue>();
                 services.AddSingleton<IServiceNavigation, ServiceNavigation>();
+                services.AddSingleton<IFabriqueFenetres, FabriqueFenetres>();
 
                 // --- Fenêtres ---
                 services.AddTransient<FenetreConnexion>();

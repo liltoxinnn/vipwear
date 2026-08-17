@@ -55,10 +55,10 @@ public partial class FenetrePrincipale : Window
     /// <summary>Ouvre la fenêtre de changement du mot de passe personnel.</summary>
     public void OuvrirChangementMotDePasse()
     {
-        var fenetre = _fournisseur.GetRequiredService<FenetreChangementMotDePasse>();
+        using var isolee = VueProduits.Fabrique.Creer<FenetreChangementMotDePasse>();
 
-        fenetre.Owner = this;
-        fenetre.ShowDialog();
+        isolee.Fenetre.Owner = this;
+        isolee.Fenetre.ShowDialog();
     }
 
     /// <summary>

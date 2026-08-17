@@ -113,7 +113,8 @@ public partial class VueModeleVentes : VueModeleBase
 
     partial void OnVenteSelectionneeChanged(ResumeVenteDto? value)
     {
-        _ = ChargerDetailAsync(value?.Id);
+        _ = ExecuterAsync(() => ChargerDetailAsync(value?.Id),
+            contexteJournal: "chargement du détail d'une vente");
     }
 
     private async Task ChargerDetailAsync(int? venteId)

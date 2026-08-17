@@ -155,7 +155,8 @@ public partial class VueModeleUtilisateurs : VueModeleBase
 
     partial void OnRoleSelectionneChanged(RoleDto? value)
     {
-        _ = ChargerPermissionsAsync(value?.Id);
+        _ = ExecuterAsync(() => ChargerPermissionsAsync(value?.Id),
+            contexteJournal: "chargement des permissions");
     }
 
     private async Task ChargerPermissionsAsync(int? roleId)
