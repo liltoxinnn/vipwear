@@ -33,7 +33,7 @@
                           Margin="0,0,0,12" />
 
                 <TextBlock Text="Type de mouvement" Style="{StaticResource TexteEtiquette}" />
-                <ComboBox Style="{StaticResource ChampListe}"
+                <ComboBox Style="{StaticResource ChampListeEnum}"
                           ItemsSource="{Binding TypesMouvement}"
                           SelectedItem="{Binding TypeMouvement}"
                           Margin="0,0,0,12" />

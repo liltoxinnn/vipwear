@@ -168,6 +168,27 @@
         <Setter Property="BorderBrush" Value="{StaticResource PinceauAccent}" />
     </Style>
 
+    <!--
+        Liste déroulante affichant une énumération : le libellé français est
+        substitué à l'identifiant technique.
+    -->
+    <Style x:Key="ChampListeEnum" TargetType="ComboBox">
+        <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauBordureForte}" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauTexte}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="ItemTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Converter={StaticResource LibelleEnum}}" />
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="ChampListe" TargetType="ComboBox">
         <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
         <Setter Property="Padding" Value="8,6" />

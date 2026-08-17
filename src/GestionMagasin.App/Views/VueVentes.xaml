@@ -33,7 +33,7 @@
                     <DatePicker Style="{StaticResource ChampDate}" Width="140"
                                 SelectedDate="{Binding DateFin}" />
 
-                    <ComboBox Style="{StaticResource ChampListe}"
+                    <ComboBox Style="{StaticResource ChampListeEnum}"
                               Width="170" Margin="10,0,0,0"
                               ItemsSource="{Binding Statuts}"
                               SelectedItem="{Binding StatutFiltre}"

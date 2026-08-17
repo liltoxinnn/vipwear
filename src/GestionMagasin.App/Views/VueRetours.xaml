@@ -207,14 +207,14 @@
                             <DataGridComboBoxColumn Header="État" Width="120"
                                                     SelectedItemBinding="{Binding EtatArticle, UpdateSourceTrigger=PropertyChanged}">
                                 <DataGridComboBoxColumn.ElementStyle>
-                                    <Style TargetType="ComboBox">
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource ChampListeEnum}">
                                         <Setter Property="ItemsSource"
                                                 Value="{Binding DataContext.EtatsArticle,
                                                         RelativeSource={RelativeSource AncestorType=UserControl}}" />
                                     </Style>
                                 </DataGridComboBoxColumn.ElementStyle>
                                 <DataGridComboBoxColumn.EditingElementStyle>
-                                    <Style TargetType="ComboBox">
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource ChampListeEnum}">
                                         <Setter Property="ItemsSource"
                                                 Value="{Binding DataContext.EtatsArticle,
                                                         RelativeSource={RelativeSource AncestorType=UserControl}}" />

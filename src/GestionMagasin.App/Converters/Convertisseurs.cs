@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using GestionMagasin.Application.Common;
+using GestionMagasin.Domain;
 
 namespace GestionMagasin.App.Converters;
 
@@ -191,6 +192,30 @@ public class ConvertisseurProportion : IMultiValueConverter
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException("La conversion inverse n'est pas prévue.");
+}
+
+/// <summary>
+/// Traduit une valeur d'énumération en libellé français. Sans lui, une liste
+/// déroulante afficherait l'identifiant technique (« CarteBancaire ») au lieu
+/// du texte attendu par l'utilisateur (« Carte bancaire »).
+/// </summary>
+public class ConvertisseurLibelleEnum : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value switch
+        {
+            Domain.Enums.TypeMouvementStock v => v.Libelle(),
+            Domain.Enums.ModePaiement v => v.Libelle(),
+            Domain.Enums.StatutVente v => v.Libelle(),
+            Domain.Enums.StatutAchat v => v.Libelle(),
+            Domain.Enums.StatutRetour v => v.Libelle(),
+            Domain.Enums.EtatArticleRetour v => v.Libelle(),
+            null => "Tous",
+            _ => value.ToString() ?? string.Empty
+        };
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException("La conversion inverse n'est pas prévue.");
 }
 

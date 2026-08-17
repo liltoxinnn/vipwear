@@ -256,7 +256,7 @@
 
                     <!-- Règlement -->
                     <TextBlock Text="Mode de paiement" Style="{StaticResource TexteEtiquette}" />
-                    <ComboBox Style="{StaticResource ChampListe}"
+                    <ComboBox Style="{StaticResource ChampListeEnum}"
                               ItemsSource="{Binding ModesPaiement}"
                               SelectedItem="{Binding ModePaiement}"
                               Margin="0,0,0,12" />
