@@ -60,6 +60,32 @@ if (Test-Path $configLocale) {
     Remove-Item $configLocale -Force
 }
 
+# La configuration livrée ne contient aucun identifiant. Le poste du magasin
+# a son propre mot de passe PostgreSQL, choisi à son installation : le
+# logiciel le demande au premier démarrage. Livrer un mot de passe par défaut
+# reviendrait à le publier, et masquerait cette étape si le magasin utilisait
+# par hasard le même.
+$configLivree = Join-Path $cheminSortie "appsettings.json"
+
+@'
+{
+  "ConnectionStrings": {
+    "BaseDonnees": ""
+  },
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.EntityFrameworkCore.Database.Command": "Warning"
+      }
+    }
+  }
+}
+'@ | Set-Content -Path $configLivree -Encoding UTF8
+
+Write-Host "Configuration livree sans identifiants : le magasin saisira les siens au premier demarrage." -ForegroundColor Gray
+
 # Guide d'installation destiné au magasin.
 $guide = "GUIDE-INSTALLATION.md"
 if (Test-Path $guide) {

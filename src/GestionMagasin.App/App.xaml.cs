@@ -165,9 +165,16 @@ public partial class App : System.Windows.Application
                 "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
-        var chaineConnexion = configuration.GetConnectionString("BaseDonnees")
-            ?? throw new InvalidOperationException(
-                "La chaîne de connexion « BaseDonnees » est absente du fichier appsettings.json.");
+        var chaineConnexion = configuration.GetConnectionString("BaseDonnees");
+
+        // La configuration livrée au magasin part sans identifiants : une
+        // valeur vide compte comme absente, sans quoi elle serait transmise
+        // telle quelle au pilote PostgreSQL.
+        if (string.IsNullOrWhiteSpace(chaineConnexion))
+        {
+            throw new InvalidOperationException(
+                "La chaîne de connexion « BaseDonnees » n'est pas renseignée.");
+        }
 
         return Host.CreateDefaultBuilder()
             .UseSerilog()
