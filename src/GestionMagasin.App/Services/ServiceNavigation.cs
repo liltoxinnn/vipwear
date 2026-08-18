@@ -17,6 +17,12 @@ public interface IServiceNavigation
 
     /// <summary>Recharge les données de la page affichée.</summary>
     Task RafraichirAsync();
+
+    /// <summary>
+    /// Oublie l'écran courant et libère ses services. Appelé à la
+    /// déconnexion, pour que la session suivante reparte de zéro.
+    /// </summary>
+    void Reinitialiser();
 }
 
 /// <inheritdoc cref="IServiceNavigation"/>
@@ -59,6 +65,13 @@ public class ServiceNavigation : IServiceNavigation, IDisposable
         // L'écran quitté n'est libéré qu'une fois le nouveau chargé : une
         // lecture encore en cours sur l'ancien peut ainsi se terminer.
         precedente?.Dispose();
+    }
+
+    public void Reinitialiser()
+    {
+        _portee?.Dispose();
+        _portee = null;
+        PageCourante = null;
     }
 
     public void Dispose()

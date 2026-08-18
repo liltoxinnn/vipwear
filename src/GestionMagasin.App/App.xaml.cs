@@ -181,8 +181,11 @@ public partial class App : System.Windows.Application
                 services.AddSingleton<IFabriqueFenetres, FabriqueFenetres>();
 
                 // --- Fenêtres ---
+                // Ces deux fenêtres sont recréées à chaque session : une
+                // fenêtre WPF fermée ne peut plus être réaffichée. Les garder
+                // uniques empêcherait toute reconnexion après déconnexion.
                 services.AddTransient<FenetreConnexion>();
-                services.AddSingleton<FenetrePrincipale>();
+                services.AddTransient<FenetrePrincipale>();
                 services.AddTransient<FenetreChangementMotDePasse>();
                 services.AddTransient<FenetreProduit>();
                 services.AddTransient<FenetreVariante>();
@@ -193,7 +196,7 @@ public partial class App : System.Windows.Application
 
                 // --- Vues-modèles ---
                 services.AddTransient<VueModeleConnexion>();
-                services.AddSingleton<VueModelePrincipale>();
+                services.AddTransient<VueModelePrincipale>();
                 services.AddTransient<VueModeleTableauBord>();
                 services.AddTransient<VueModeleCaisse>();
                 services.AddTransient<VueModeleProduits>();

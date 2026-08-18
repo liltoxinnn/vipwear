@@ -15,12 +15,17 @@ public partial class FenetrePrincipale : Window
 {
     private readonly VueModelePrincipale _vueModele;
     private readonly IServiceProvider _fournisseur;
+    private readonly Services.IServiceNavigation _navigation;
 
-    public FenetrePrincipale(VueModelePrincipale vueModele, IServiceProvider fournisseur)
+    public FenetrePrincipale(
+        VueModelePrincipale vueModele,
+        Services.IServiceNavigation navigation,
+        IServiceProvider fournisseur)
     {
         InitializeComponent();
 
         _vueModele = vueModele;
+        _navigation = navigation;
         _fournisseur = fournisseur;
 
         DataContext = vueModele;
@@ -93,12 +98,18 @@ public partial class FenetrePrincipale : Window
 
     private void SurDeconnexion(object? sender, EventArgs e)
     {
+        _vueModele.DeconnexionDemandee -= SurDeconnexion;
+
+        // La session est refermée avant d'ouvrir l'écran de connexion :
+        // l'écran affiché est libéré et la vue-modèle se détache du service
+        // de navigation, qui, lui, dure toute l'exécution du logiciel.
+        _vueModele.Liberer();
+        _navigation.Reinitialiser();
+
         var connexion = _fournisseur.GetRequiredService<FenetreConnexion>();
 
         System.Windows.Application.Current.MainWindow = connexion;
         connexion.Show();
-
-        _vueModele.DeconnexionDemandee -= SurDeconnexion;
 
         Close();
     }

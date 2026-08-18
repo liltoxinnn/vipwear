@@ -72,6 +72,8 @@ public partial class VueModeleConnexion : VueModeleBase
 
         EstOccupe = true;
 
+        var authentifie = false;
+
         try
         {
             var resultat = await _authentification
@@ -87,8 +89,7 @@ public partial class VueModeleConnexion : VueModeleBase
 
             MotDePasseAChanger = resultat.MotDePasseAChanger;
             MotDePasse = string.Empty;
-
-            ConnexionReussie?.Invoke(this, EventArgs.Empty);
+            authentifie = true;
         }
         catch (Exception erreur)
         {
@@ -100,6 +101,14 @@ public partial class VueModeleConnexion : VueModeleBase
         finally
         {
             EstOccupe = false;
+        }
+
+        // L'ouverture de la fenêtre principale est déclenchée hors du bloc
+        // ci-dessus : une erreur d'affichage n'a rien à voir avec la base de
+        // données et ne doit pas être signalée comme telle.
+        if (authentifie)
+        {
+            ConnexionReussie?.Invoke(this, EventArgs.Empty);
         }
     }
 

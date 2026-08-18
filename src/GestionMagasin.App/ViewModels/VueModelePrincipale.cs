@@ -45,6 +45,8 @@ public partial class VueModelePrincipale : VueModeleBase
     // données ouvrent une portée le temps de l'opération.
     private readonly IServiceScopeFactory _portees;
 
+    private readonly EventHandler<VueModeleBase> _surPageChangee;
+
     public VueModelePrincipale(
         IServiceNavigation navigation,
         IServiceScopeFactory portees,
@@ -57,7 +59,12 @@ public partial class VueModelePrincipale : VueModeleBase
         _portees = portees;
         _session = session;
 
-        _navigation.PageChangee += (_, page) => PageCourante = page;
+        // La référence est conservée pour pouvoir se désabonner : le service
+        // de navigation vit plus longtemps que cette vue-modèle, recréée à
+        // chaque session. Sans cela, les sessions précédentes resteraient
+        // branchées dessus.
+        _surPageChangee = (_, page) => PageCourante = page;
+        _navigation.PageChangee += _surPageChangee;
 
         ConstruireMenu();
     }
@@ -84,6 +91,9 @@ public partial class VueModelePrincipale : VueModeleBase
 
     /// <summary>Déclenché lorsque l'utilisateur se déconnecte.</summary>
     public event EventHandler? DeconnexionDemandee;
+
+    /// <summary>Détache la session en cours du service de navigation.</summary>
+    public void Liberer() => _navigation.PageChangee -= _surPageChangee;
 
     public override async Task ChargerAsync()
     {
