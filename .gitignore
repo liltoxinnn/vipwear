@@ -47,3 +47,6 @@ appsettings.Production.json
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Dossier de livraison : paquet autonome de 176 Mo, reconstruit par publier.ps1
+livraison/
