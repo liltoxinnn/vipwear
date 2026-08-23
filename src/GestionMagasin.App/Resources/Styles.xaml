@@ -422,6 +422,181 @@
     </DataTemplate>
 
     <!-- ============================================================
+         Vignette de produit en caisse
+
+         Une vignette par produit, et non par déclinaison : la taille et la
+         couleur se choisissent ensuite, avec leur stock affiché.
+         ============================================================ -->
+    <DataTemplate x:Key="CarteProduit">
+        <Button Command="{Binding DataContext.ChoisirArticleCommand,
+                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                CommandParameter="{Binding}"
+                Cursor="Hand"
+                Margin="0,0,10,10"
+                Padding="0"
+                BorderThickness="0">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Vignette"
+                            Width="196"
+                            Background="{StaticResource PinceauSurface}"
+                            BorderBrush="{StaticResource PinceauBordure}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="12,11"
+                            SnapsToDevicePixels="True">
+                        <StackPanel>
+                            <!-- Pastilles : le repère le plus rapide en rayon -->
+                            <ItemsControl ItemsSource="{Binding Couleurs}" Margin="0,0,0,8">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Width="14" Height="14"
+                                                CornerRadius="7"
+                                                Margin="0,0,4,0"
+                                                BorderBrush="{StaticResource PinceauBordureForte}"
+                                                BorderThickness="1"
+                                                ToolTip="{Binding Nom}"
+                                                Background="{Binding Code, Converter={StaticResource CodeCouleur}}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="{Binding Nom}"
+                                       FontSize="13.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource PinceauTexte}"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxHeight="36"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="{Binding Resume}"
+                                       Style="{StaticResource TexteAttenue}"
+                                       FontSize="11"
+                                       Margin="0,3,0,0" />
+
+                            <Grid Margin="0,9,0,0">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource TexteAttenue}"
+                                               FontSize="9.5"
+                                               Text="à partir de"
+                                               Visibility="{Binding PrixUnique,
+                                                            Converter={StaticResource BooleenVisibilite},
+                                                            ConverterParameter=inverse}" />
+
+                                    <TextBlock Text="{Binding PrixMinimum, Converter={StaticResource Montant}}"
+                                               FontSize="14"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource PinceauOrFonce}" />
+                                </StackPanel>
+
+                                <Border HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Background="{StaticResource PinceauSurfaceAlterne}"
+                                        BorderBrush="{StaticResource PinceauBordure}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="6,2">
+                                    <TextBlock Style="{StaticResource TexteAttenue}" FontSize="10.5">
+                                        <Run Text="{Binding StockTotal, Mode=OneWay}" />
+                                        <Run Text="en stock" />
+                                    </TextBlock>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Vignette" Property="BorderBrush" Value="{StaticResource PinceauOr}" />
+                            <Setter TargetName="Vignette" Property="BorderThickness" Value="2" />
+                            <Setter TargetName="Vignette" Property="Padding" Value="11,10" />
+                            <Setter TargetName="Vignette" Property="Background" Value="{StaticResource PinceauFondOr}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Vignette" Property="Background" Value="{StaticResource PinceauOrClair}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+    </DataTemplate>
+
+    <!-- ============================================================
+         Bouton de taille dans le choix d'une déclinaison
+
+         Le stock est écrit sur le bouton : le caissier voit ce qu'il reste
+         avant de cliquer, au lieu de l'apprendre par un refus.
+         ============================================================ -->
+    <DataTemplate x:Key="BoutonTaille">
+        <Button Command="{Binding DataContext.AjouterArticleCommand,
+                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                CommandParameter="{Binding}"
+                IsEnabled="{Binding EnRupture, Converter={StaticResource BooleenInverse}}"
+                Cursor="Hand"
+                Margin="0,0,8,8"
+                Padding="0"
+                BorderThickness="0"
+                ToolTip="{Binding Sku}">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Case"
+                            MinWidth="78"
+                            Background="{StaticResource PinceauSurface}"
+                            BorderBrush="{StaticResource PinceauBordureForte}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="10,7"
+                            SnapsToDevicePixels="True">
+                        <StackPanel>
+                            <TextBlock x:Name="Taille"
+                                       Text="{Binding Taille}"
+                                       FontSize="15"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource PinceauTexte}"
+                                       HorizontalAlignment="Center" />
+
+                            <TextBlock x:Name="Stock"
+                                       Style="{StaticResource TexteAttenue}"
+                                       FontSize="10.5"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,2,0,0">
+                                <Run Text="{Binding QuantiteDisponible, Mode=OneWay}" />
+                                <Run Text="en stock" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Case" Property="Background" Value="{StaticResource PinceauFondOr}" />
+                            <Setter TargetName="Case" Property="BorderBrush" Value="{StaticResource PinceauOr}" />
+                            <Setter TargetName="Case" Property="BorderThickness" Value="2" />
+                            <Setter TargetName="Case" Property="Padding" Value="9,6" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Case" Property="Background" Value="{StaticResource PinceauOrClair}" />
+                        </Trigger>
+                        <!-- Rupture : la case reste visible mais barrée, et non retirée.
+                             Le caissier doit savoir que la taille existe et qu'elle manque. -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Case" Property="Background" Value="{StaticResource PinceauSurfaceAlterne}" />
+                            <Setter TargetName="Case" Property="BorderBrush" Value="{StaticResource PinceauBordure}" />
+                            <Setter TargetName="Taille" Property="Foreground" Value="{StaticResource PinceauTexteAttenue}" />
+                            <Setter TargetName="Taille" Property="TextDecorations" Value="Strikethrough" />
+                            <Setter TargetName="Stock" Property="Foreground" Value="{StaticResource PinceauDanger}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+    </DataTemplate>
+
+    <!-- ============================================================
          Pastilles d'état
          ============================================================ -->
 

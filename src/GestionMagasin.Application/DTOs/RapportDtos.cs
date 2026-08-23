@@ -188,7 +188,4 @@ public record TableauBordDto
     public IReadOnlyList<LigneStockDto> StockFaible { get; init; } = Array.Empty<LigneStockDto>();
 
     public IReadOnlyList<LigneStockDto> Ruptures { get; init; } = Array.Empty<LigneStockDto>();
-
-    public IReadOnlyList<VentesParModePaiementDto> RepartitionPaiements { get; init; }
-        = Array.Empty<VentesParModePaiementDto>();
 }

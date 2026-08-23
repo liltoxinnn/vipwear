@@ -272,3 +272,15 @@ même pendant que le logiciel travaille.
 
 En caisse, le curseur reste dans le champ de scan : vous pouvez enchaîner
 les articles à la douchette sans jamais toucher la souris.
+
+Trois façons d'ajouter un article, au choix :
+
+| | Quand l'employer |
+|---|---|
+| **Scanner** le code-barres | L'étiquette est lisible — c'est le plus rapide |
+| **Rechercher** par nom ou référence | L'article est connu de nom |
+| **Cliquer** sur le produit dans « Tout le rayon » | L'étiquette est arrachée, ou le client hésite |
+
+Au clic sur un produit, ses **couleurs** apparaissent, et sous chacune ses
+**tailles avec le stock restant**. Une taille épuisée reste affichée, barrée :
+vous savez qu'elle existe et qu'elle manque.

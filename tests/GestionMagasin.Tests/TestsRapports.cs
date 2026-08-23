@@ -100,9 +100,101 @@ public class TestsRapports : BaseDeTest
         Assert.Equal(7500m, synthese.ChiffreAffaires);
         Assert.Equal(1, synthese.NombreRetours);
 
+        // Quatre articles sortis, un rendu : trois restent vendus.
+        Assert.Equal(3, synthese.ArticlesVendus);
+
         // L'article revendable est revenu en stock : son coût d'achat est
         // annulé. Marge = 3 articles × 1 500 = 4 500 DA
         Assert.Equal(4500m, synthese.BeneficeEstime);
+    }
+
+    /// <summary>
+    /// Un article vendu puis repris le même jour ne rapporte rien. Il figurait
+    /// pourtant en tête des meilleures ventes du tableau de bord, juste sous
+    /// un chiffre d'affaires à zéro : les deux chiffres se contredisaient.
+    /// </summary>
+    [Fact]
+    public async Task Un_article_entierement_rendu_quitte_les_meilleures_ventes()
+    {
+        var (_, garde) = await ConstructeurDonnees.CreerArticleAsync(
+            Produits, quantiteInitiale: 50, prixAchat: 400m, prixVente: 1000m);
+
+        var (_, rendu) = await ConstructeurDonnees.CreerArticleAsync(
+            Produits, quantiteInitiale: 50, prixAchat: 600m, prixVente: 1400m);
+
+        await ConstructeurDonnees.VendreAsync(Ventes, garde.Id, 1, 1000m);
+        var vente = await ConstructeurDonnees.VendreAsync(Ventes, rendu.Id, 3, 1400m);
+
+        var avant = await Rapports.ObtenirMeilleuresVentesAsync(Aujourdhui);
+
+        Assert.Equal(rendu.Id, avant[0].VarianteProduitId);
+        Assert.Equal(3, avant[0].QuantiteVendue);
+
+        await Retours.EnregistrerRetourAsync(new DemandeRetour
+        {
+            VenteId = vente.Id,
+            Lignes =
+            [
+                new LigneRetourDemande
+                {
+                    LigneVenteId = vente.Lignes[0].Id,
+                    Quantite = 3,
+                    EtatArticle = EtatArticleRetour.Revendable
+                }
+            ]
+        });
+
+        var apres = await Rapports.ObtenirMeilleuresVentesAsync(Aujourdhui);
+
+        // L'article intégralement rendu disparaît ; l'autre prend sa place.
+        Assert.DoesNotContain(apres, c => c.VarianteProduitId == rendu.Id);
+        Assert.Single(apres);
+        Assert.Equal(garde.Id, apres[0].VarianteProduitId);
+        Assert.Equal(1, apres[0].QuantiteVendue);
+    }
+
+    /// <summary>
+    /// Un retour partiel n'efface pas l'article : il en réduit la quantité,
+    /// le chiffre d'affaires et la marge.
+    /// </summary>
+    [Fact]
+    public async Task Un_retour_partiel_reduit_le_classement_sans_l_effacer()
+    {
+        var (_, variante) = await ConstructeurDonnees.CreerArticleAsync(
+            Produits, quantiteInitiale: 50, prixAchat: 1000m, prixVente: 2500m);
+
+        var vente = await ConstructeurDonnees.VendreAsync(Ventes, variante.Id, 4, 2500m);
+
+        await Retours.EnregistrerRetourAsync(new DemandeRetour
+        {
+            VenteId = vente.Id,
+            Lignes =
+            [
+                new LigneRetourDemande
+                {
+                    LigneVenteId = vente.Lignes[0].Id,
+                    Quantite = 1,
+                    EtatArticle = EtatArticleRetour.Revendable
+                }
+            ]
+        });
+
+        var classement = await Rapports.ObtenirMeilleuresVentesAsync(Aujourdhui);
+
+        var ligne = Assert.Single(classement);
+
+        Assert.Equal(3, ligne.QuantiteVendue);
+        Assert.Equal(7500m, ligne.ChiffreAffaires);
+
+        // L'article revendable annule son coût d'achat : 3 × 1 500 = 4 500 DA
+        Assert.Equal(4500m, ligne.Benefice);
+
+        // Le classement et la carte du tableau de bord disent la même chose.
+        var synthese = await Rapports.ObtenirSyntheseAsync(Aujourdhui);
+
+        Assert.Equal(synthese.ChiffreAffaires, ligne.ChiffreAffaires);
+        Assert.Equal(synthese.BeneficeEstime, ligne.Benefice);
+        Assert.Equal(synthese.ArticlesVendus, ligne.QuantiteVendue);
     }
 
     [Fact]

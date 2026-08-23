@@ -164,19 +164,113 @@
                     <Grid Grid.Row="2"
                           Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}, ConverterParameter=inverse}">
 
-                        <ScrollViewer VerticalScrollBarVisibility="Visible"
-                                      HorizontalScrollBarVisibility="Disabled">
-                            <ItemsControl ItemsSource="{Binding Catalogue}"
-                                          ItemTemplate="{StaticResource CarteArticle}"
-                                          ItemsPanel="{StaticResource GrilleArticles}" />
-                        </ScrollViewer>
+                        <!-- Rayon : une vignette par produit -->
+                        <Grid Visibility="{Binding ArticleChoisi, Converter={StaticResource NonVideVisibilite}, ConverterParameter=inverse}">
+                            <ScrollViewer VerticalScrollBarVisibility="Visible"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding Catalogue}"
+                                              ItemTemplate="{StaticResource CarteProduit}"
+                                              ItemsPanel="{StaticResource GrilleArticles}" />
+                            </ScrollViewer>
 
-                        <TextBlock Text="Aucun article en stock. Ajoutez des quantités depuis l'écran Stock."
-                                   Style="{StaticResource TexteAttenue}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   TextWrapping="Wrap"
-                                   Visibility="{Binding CatalogueVide, Converter={StaticResource BooleenVisibilite}}" />
+                            <TextBlock Text="Aucun article en stock. Ajoutez des quantités depuis l'écran Stock."
+                                       Style="{StaticResource TexteAttenue}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding CatalogueVide, Converter={StaticResource BooleenVisibilite}}" />
+                        </Grid>
+
+                        <!--
+                            Choix de la couleur et de la taille.
+
+                            Le stock est écrit sur chaque case : le caissier
+                            sait ce qu'il reste avant de cliquer, au lieu de
+                            l'apprendre par un refus devant le client. Une
+                            taille en rupture reste affichée, barrée — elle
+                            existe, et c'est une information.
+                        -->
+                        <Grid Visibility="{Binding ArticleChoisi, Converter={StaticResource NonVideVisibilite}}"
+                              DataContext="{Binding ArticleChoisi}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0"
+                                    Background="{StaticResource PinceauFondOr}"
+                                    BorderBrush="{StaticResource PinceauOr}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="14,10"
+                                    Margin="4,0,4,12">
+                                <Grid>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Nom}"
+                                                   FontSize="15"
+                                                   FontWeight="Bold"
+                                                   Foreground="{StaticResource PinceauTexte}" />
+
+                                        <TextBlock Text="Choisissez la couleur, puis la taille"
+                                                   Style="{StaticResource TexteSecondaire}"
+                                                   FontSize="12"
+                                                   Margin="0,2,0,0" />
+                                    </StackPanel>
+
+                                    <Button Content="Retour au rayon"
+                                            Style="{StaticResource BoutonSecondaire}"
+                                            Command="{Binding DataContext.FermerChoixCommand,
+                                                      RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Padding="12,5"
+                                            MinHeight="32"
+                                            FontSize="12" />
+                                </Grid>
+                            </Border>
+
+                            <ScrollViewer Grid.Row="1"
+                                          VerticalScrollBarVisibility="Visible"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding Couleurs}" Margin="4,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,0,0,16">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                    <Border Width="16" Height="16"
+                                                            CornerRadius="8"
+                                                            BorderBrush="{StaticResource PinceauBordureForte}"
+                                                            BorderThickness="1"
+                                                            Background="{Binding Code, Converter={StaticResource CodeCouleur}}"
+                                                            VerticalAlignment="Center" />
+
+                                                    <TextBlock Text="{Binding Nom}"
+                                                               FontSize="13.5"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource PinceauTexte}"
+                                                               Margin="8,0,0,0"
+                                                               VerticalAlignment="Center" />
+
+                                                    <TextBlock Style="{StaticResource TexteAttenue}"
+                                                               FontSize="11.5"
+                                                               Margin="8,0,0,0"
+                                                               VerticalAlignment="Center">
+                                                        <Run Text="—" />
+                                                        <Run Text="{Binding StockTotal, Mode=OneWay}" />
+                                                        <Run Text="en stock" />
+                                                    </TextBlock>
+                                                </StackPanel>
+
+                                                <ItemsControl ItemsSource="{Binding Tailles}"
+                                                              ItemTemplate="{StaticResource BoutonTaille}"
+                                                              ItemsPanel="{StaticResource GrilleArticles}"
+                                                              Margin="24,0,0,0" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
                     </Grid>
                 </Grid>
             </Border>

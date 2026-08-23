@@ -57,7 +57,6 @@ public partial class VueModeleTableauBord : VueModeleBase
 
     public ObservableCollection<LigneStockDto> Ruptures { get; } = [];
 
-    public ObservableCollection<VentesParModePaiementDto> RepartitionPaiements { get; } = [];
 
     public override async Task ChargerAsync() =>
         await ExecuterAsync(async () =>
@@ -74,7 +73,6 @@ public partial class VueModeleTableauBord : VueModeleBase
             Remplir(DernieresVentes, tableau.DernieresVentes);
             Remplir(StockFaible, tableau.StockFaible);
             Remplir(Ruptures, tableau.Ruptures);
-            Remplir(RepartitionPaiements, tableau.RepartitionPaiements);
 
             // Une échelle strictement positive évite une division par zéro
             // lorsque aucune vente n'a encore été enregistrée.

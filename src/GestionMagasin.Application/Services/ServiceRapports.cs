@@ -49,7 +49,14 @@ public class ServiceRapports : IServiceRapports
 
         var lignes = LignesVenteRetenues(periode);
 
-        var articlesVendus = await lignes.SumAsync(l => (int?)l.Quantite, jeton).ConfigureAwait(false) ?? 0;
+        var articlesSortis = await lignes.SumAsync(l => (int?)l.Quantite, jeton).ConfigureAwait(false) ?? 0;
+
+        // Les articles rendus sont déduits, comme l'est le chiffre d'affaires
+        // juste à côté. Un article vendu puis repris ne doit pas rester compté
+        // parmi les articles vendus du jour.
+        var articlesRendus = await LignesRetourRetenues(periode)
+            .SumAsync(l => (int?)l.Quantite, jeton)
+            .ConfigureAwait(false) ?? 0;
 
         // Coût des marchandises vendues, calculé sur le prix d'achat figé au
         // moment de la vente.
@@ -88,7 +95,7 @@ public class ServiceRapports : IServiceRapports
             ChiffreAffaires = chiffreBrut - montantRetourne,
             BeneficeEstime = chiffreBrut - coutMarchandises - montantRetourne + coutMarchandisesReprises,
             NombreVentes = nombreVentes,
-            ArticlesVendus = articlesVendus,
+            ArticlesVendus = articlesSortis - articlesRendus,
             NombreRetours = nombreRetours,
             TotalAchats = totalAchats
         };
@@ -193,37 +200,20 @@ public class ServiceRapports : IServiceRapports
     {
         _session.ExigerPermission(CodesPermissions.VoirRapports);
 
-        return await LignesVenteRetenues(periode)
-            .GroupBy(l => l.VarianteProduitId)
-            .Select(g => new
-            {
-                VarianteProduitId = g.Key,
-                QuantiteVendue = g.Sum(l => l.Quantite),
-                ChiffreAffaires = g.Sum(l => l.Total),
-                Benefice = g.Sum(l => l.Total - (l.PrixAchatUnitaire * l.Quantite))
-            })
-            .OrderByDescending(g => g.QuantiteVendue)
-            .ThenByDescending(g => g.ChiffreAffaires)
-            .Take(limite)
-            .Join(
-                _uniteDeTravail.Variantes.Requete(),
-                classement => classement.VarianteProduitId,
-                variante => variante.Id,
-                (classement, variante) => new ClassementArticleDto
-                {
-                    VarianteProduitId = variante.Id,
-                    ProduitId = variante.ProduitId,
-                    Designation = variante.Produit.Nom + " — " + variante.Couleur.Nom + " / " + variante.Taille.Nom,
-                    Sku = variante.SKU,
-                    Marque = variante.Produit.Marque != null ? variante.Produit.Marque.Nom : null,
-                    QuantiteVendue = classement.QuantiteVendue,
-                    ChiffreAffaires = classement.ChiffreAffaires,
-                    Benefice = classement.Benefice,
-                    StockActuel = variante.Inventaire != null ? variante.Inventaire.QuantiteDisponible : 0
-                })
+        var classement = await ClassementNetAsync(periode, jeton).ConfigureAwait(false);
+
+        // Un article rendu n'est plus une vente. Sans ce filtre, un article
+        // vendu puis repris le même jour resterait en tête des meilleures
+        // ventes alors qu'il n'a rien rapporté — ce que le chiffre d'affaires
+        // affiché juste au-dessus dément.
+        var retenus = classement
+            .Where(c => c.QuantiteVendue > 0)
             .OrderByDescending(c => c.QuantiteVendue)
-            .ToListAsync(jeton)
-            .ConfigureAwait(false);
+            .ThenByDescending(c => c.ChiffreAffaires)
+            .Take(limite)
+            .ToList();
+
+        return await DecrireAsync(retenus, jeton).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<ClassementArticleDto>> ObtenirMoinsBonnesVentesAsync(
@@ -236,17 +226,8 @@ public class ServiceRapports : IServiceRapports
         // Le classement part du catalogue, et non des ventes : les
         // déclinaisons jamais vendues, qui immobilisent du stock sans rien
         // rapporter, doivent apparaître en tête de cette liste.
-        var ventesParVariante = await LignesVenteRetenues(periode)
-            .GroupBy(l => l.VarianteProduitId)
-            .Select(g => new
-            {
-                VarianteProduitId = g.Key,
-                QuantiteVendue = g.Sum(l => l.Quantite),
-                ChiffreAffaires = g.Sum(l => l.Total),
-                Benefice = g.Sum(l => l.Total - (l.PrixAchatUnitaire * l.Quantite))
-            })
-            .ToDictionaryAsync(g => g.VarianteProduitId, jeton)
-            .ConfigureAwait(false);
+        var ventesParVariante = (await ClassementNetAsync(periode, jeton).ConfigureAwait(false))
+            .ToDictionary(c => c.VarianteProduitId);
 
         var variantes = await _uniteDeTravail.Variantes.Requete()
             .Where(v => v.Actif && v.Produit.Actif)
@@ -285,6 +266,126 @@ public class ServiceRapports : IServiceRapports
             .OrderBy(c => c.QuantiteVendue)
             .ThenByDescending(c => c.StockActuel)
             .Take(limite)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Ventes de la période, déduction faite des retours.
+    ///
+    /// Les retours sont rattachés à la période où ils ont été enregistrés,
+    /// comme le sont le chiffre d'affaires et le bénéfice de la synthèse :
+    /// les classements et les cartes du tableau de bord reposent ainsi sur
+    /// les mêmes chiffres, ce que l'utilisateur vérifie d'un coup d'œil.
+    ///
+    /// Un article rendu peut donc afficher une quantité négative — vendu le
+    /// mois passé, repris ce mois-ci. C'est voulu : l'appelant décide s'il
+    /// écarte ces lignes ou les montre.
+    /// </summary>
+    private async Task<List<ClassementArticleDto>> ClassementNetAsync(
+        Periode periode,
+        CancellationToken jeton)
+    {
+        var ventes = await LignesVenteRetenues(periode)
+            .GroupBy(l => l.VarianteProduitId)
+            .Select(g => new
+            {
+                VarianteProduitId = g.Key,
+                Quantite = g.Sum(l => l.Quantite),
+                ChiffreAffaires = g.Sum(l => l.Total),
+                Benefice = g.Sum(l => l.Total - (l.PrixAchatUnitaire * l.Quantite))
+            })
+            .ToListAsync(jeton)
+            .ConfigureAwait(false);
+
+        var retours = await LignesRetourRetenues(periode)
+            .GroupBy(l => l.VarianteProduitId)
+            .Select(g => new
+            {
+                VarianteProduitId = g.Key,
+                Quantite = g.Sum(l => l.Quantite),
+                Rembourse = g.Sum(l => l.MontantRembourse),
+                // Un article revendable qui revient en stock annule son coût
+                // d'achat ; un article endommagé reste une perte sèche.
+                CoutRepris = g.Sum(l => l.RemisEnStock
+                    ? l.LigneVente.PrixAchatUnitaire * l.Quantite
+                    : 0m)
+            })
+            .ToListAsync(jeton)
+            .ConfigureAwait(false);
+
+        var parVariante = ventes.ToDictionary(
+            v => v.VarianteProduitId,
+            v => new ClassementArticleDto
+            {
+                VarianteProduitId = v.VarianteProduitId,
+                QuantiteVendue = v.Quantite,
+                ChiffreAffaires = v.ChiffreAffaires,
+                Benefice = v.Benefice
+            });
+
+        foreach (var retour in retours)
+        {
+            parVariante.TryGetValue(retour.VarianteProduitId, out var vendu);
+
+            parVariante[retour.VarianteProduitId] = new ClassementArticleDto
+            {
+                VarianteProduitId = retour.VarianteProduitId,
+                QuantiteVendue = (vendu?.QuantiteVendue ?? 0) - retour.Quantite,
+                ChiffreAffaires = (vendu?.ChiffreAffaires ?? 0m) - retour.Rembourse,
+                Benefice = (vendu?.Benefice ?? 0m) - retour.Rembourse + retour.CoutRepris
+            };
+        }
+
+        return parVariante.Values.ToList();
+    }
+
+    /// <summary>
+    /// Complète un classement avec la désignation, la marque et le stock des
+    /// déclinaisons concernées. La description est demandée après le
+    /// classement, et pour les seules lignes retenues.
+    /// </summary>
+    private async Task<IReadOnlyList<ClassementArticleDto>> DecrireAsync(
+        IReadOnlyList<ClassementArticleDto> classement,
+        CancellationToken jeton)
+    {
+        if (classement.Count == 0)
+        {
+            return Array.Empty<ClassementArticleDto>();
+        }
+
+        var identifiants = classement.Select(c => c.VarianteProduitId).ToList();
+
+        var descriptions = await _uniteDeTravail.Variantes.Requete()
+            .Where(v => identifiants.Contains(v.Id))
+            .Select(v => new
+            {
+                v.Id,
+                v.ProduitId,
+                ProduitNom = v.Produit.Nom,
+                Couleur = v.Couleur.Nom,
+                Taille = v.Taille.Nom,
+                v.SKU,
+                Marque = v.Produit.Marque != null ? v.Produit.Marque.Nom : null,
+                Stock = v.Inventaire != null ? v.Inventaire.QuantiteDisponible : 0
+            })
+            .ToDictionaryAsync(v => v.Id, jeton)
+            .ConfigureAwait(false);
+
+        return classement
+            .Where(c => descriptions.ContainsKey(c.VarianteProduitId))
+            .Select(c =>
+            {
+                var description = descriptions[c.VarianteProduitId];
+
+                return c with
+                {
+                    ProduitId = description.ProduitId,
+                    Designation = $"{description.ProduitNom} — {description.Couleur} / {description.Taille}",
+                    Sku = description.SKU,
+                    Marque = description.Marque,
+                    StockActuel = description.Stock
+                };
+            })
             .ToList();
     }
 
@@ -500,8 +601,7 @@ public class ServiceRapports : IServiceRapports
             MeilleuresVentes = await ObtenirMeilleuresVentesAsync(mois, 8, jeton).ConfigureAwait(false),
             DernieresVentes = await _ventes.RechercherAsync(limite: 10, jeton: jeton).ConfigureAwait(false),
             StockFaible = await _stock.ListerStockFaibleAsync(10, jeton).ConfigureAwait(false),
-            Ruptures = await _stock.ListerRupturesAsync(10, jeton).ConfigureAwait(false),
-            RepartitionPaiements = await ObtenirVentesParModePaiementAsync(mois, jeton).ConfigureAwait(false)
+            Ruptures = await _stock.ListerRupturesAsync(10, jeton).ConfigureAwait(false)
         };
     }
 
@@ -524,6 +624,12 @@ public class ServiceRapports : IServiceRapports
             .Where(l => l.Vente.DateVente >= periode.DebutUtc
                         && l.Vente.DateVente < periode.FinUtc
                         && l.Vente.Statut != StatutVente.Annulee);
+
+    private IQueryable<LigneRetour> LignesRetourRetenues(Periode periode) =>
+        _uniteDeTravail.Depot<LigneRetour>().Requete()
+            .Where(l => l.Retour.DateRetour >= periode.DebutUtc
+                        && l.Retour.DateRetour < periode.FinUtc
+                        && l.Retour.Statut == StatutRetour.Valide);
 
     private IQueryable<Retour> RetoursRetenus(Periode periode) =>
         _uniteDeTravail.Depot<Retour>().Requete()

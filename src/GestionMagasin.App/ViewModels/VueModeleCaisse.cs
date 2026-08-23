@@ -116,7 +116,8 @@ public partial class VueModeleCaisse : VueModeleBase
 
     public override string Titre => "Caisse";
 
-    public override string SousTitre => "Scannez un article ou recherchez-le par nom";
+    public override string SousTitre =>
+        "Scannez, recherchez, ou cliquez sur un produit du rayon";
 
     // --- Panier ---
 
@@ -125,16 +126,26 @@ public partial class VueModeleCaisse : VueModeleBase
     public ObservableCollection<VarianteDto> ResultatsRecherche { get; } = [];
 
     /// <summary>
-    /// Articles proposés en permanence, sans recherche ni scan. Le caissier
+    /// Produits proposés en permanence, sans recherche ni scan. Le caissier
     /// qui connaît son rayon les prend directement, ce qui est plus rapide
     /// que de taper un nom, et indispensable pour les articles dont
     /// l'étiquette est arrachée.
+    ///
+    /// Un produit par vignette, et non une déclinaison : quatre couleurs et
+    /// six tailles feraient vingt-quatre vignettes pour un seul pantalon.
     /// </summary>
-    public ObservableCollection<VarianteDto> Catalogue { get; } = [];
+    public ObservableCollection<ArticleRayon> Catalogue { get; } = [];
 
     /// <summary>Vrai tant qu'aucun article n'est disponible à la vente.</summary>
     [ObservableProperty]
     private bool _catalogueVide;
+
+    /// <summary>
+    /// Produit dont on choisit la couleur et la taille. Renseigné au clic sur
+    /// une vignette, il fait apparaître le choix à la place du rayon.
+    /// </summary>
+    [ObservableProperty]
+    private ArticleRayon? _articleChoisi;
 
     public ObservableCollection<ClientDto> Clients { get; } = [];
 
@@ -199,13 +210,17 @@ public partial class VueModeleCaisse : VueModeleBase
             await ChargerCatalogueAsync().ConfigureAwait(true);
         }, contexteJournal: "chargement de la caisse").ConfigureAwait(true);
 
-    /// <summary>Recharge la liste des articles proposés en caisse.</summary>
+    /// <summary>Recharge la liste des produits proposés en caisse.</summary>
     private async Task ChargerCatalogueAsync()
     {
-        var articles = await _produits.ListerVendablesAsync().ConfigureAwait(true);
+        var declinaisons = await _produits.ListerVendablesAsync().ConfigureAwait(true);
+
+        // Le produit ouvert est refermé : ses quantités viennent de changer,
+        // et le caissier ne doit pas cliquer sur un stock périmé.
+        ArticleChoisi = null;
 
         Catalogue.Clear();
-        foreach (var article in articles)
+        foreach (var article in ArticleRayon.Regrouper(declinaisons))
         {
             Catalogue.Add(article);
         }
@@ -301,13 +316,45 @@ public partial class VueModeleCaisse : VueModeleBase
         MessageStatut = null;
     }
 
+    /// <summary>
+    /// Ouvre le choix de la couleur et de la taille pour un produit du rayon.
+    /// Un produit qui n'existe qu'en une seule déclinaison passe directement
+    /// au panier : il n'y a rien à choisir.
+    /// </summary>
+    [RelayCommand]
+    private void ChoisirArticle(ArticleRayon? article)
+    {
+        if (article is null)
+        {
+            return;
+        }
+
+        if (article.SansChoix)
+        {
+            AjouterAuPanier(article.Declinaison);
+            return;
+        }
+
+        ArticleChoisi = article;
+    }
+
+    /// <summary>Referme le choix et réaffiche le rayon.</summary>
+    [RelayCommand]
+    private void FermerChoix() => ArticleChoisi = null;
+
     [RelayCommand]
     private void AjouterArticle(VarianteDto? variante)
     {
-        if (variante is not null)
+        if (variante is null)
         {
-            AjouterAuPanier(variante);
+            return;
         }
+
+        AjouterAuPanier(variante);
+
+        // Le choix se referme après l'ajout : le caissier revient au rayon
+        // pour l'article suivant, sans avoir à fermer lui-même.
+        ArticleChoisi = null;
     }
 
     private void AjouterAuPanier(VarianteDto variante)

@@ -110,14 +110,8 @@
 
             <!-- ============ Graphiques ============ -->
             <Grid Margin="0,0,0,20">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="10" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <!-- Ventes des 30 derniers jours -->
-                <Border Grid.Column="0" Style="{StaticResource Carte}">
+                <!-- Ventes des 30 derniers jours, sur toute la largeur -->
+                <Border Style="{StaticResource Carte}">
                     <StackPanel>
                         <TextBlock Text="Chiffre d'affaires des 30 derniers jours"
                                    Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
@@ -175,50 +169,6 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                    </StackPanel>
-                </Border>
-
-                <!-- Répartition des règlements -->
-                <Border Grid.Column="2" Style="{StaticResource Carte}">
-                    <StackPanel>
-                        <TextBlock Text="Modes de paiement du mois"
-                                   Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
-
-                        <ItemsControl ItemsSource="{Binding RepartitionPaiements}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Margin="0,0,0,12">
-                                        <Grid>
-                                            <TextBlock Text="{Binding ModePaiement}" FontSize="12" />
-                                            <TextBlock Text="{Binding Montant, Converter={StaticResource Montant}}"
-                                                       FontSize="12" FontWeight="SemiBold"
-                                                       HorizontalAlignment="Right" />
-                                        </Grid>
-
-                                        <Border Background="{StaticResource PinceauBordure}"
-                                                Height="7" CornerRadius="4" Margin="0,5,0,0">
-                                            <Border Background="{StaticResource PinceauAccent}"
-                                                    Height="7" CornerRadius="4"
-                                                    HorizontalAlignment="Left"
-                                                    Width="{Binding Pourcentage}" />
-                                        </Border>
-
-                                        <TextBlock Style="{StaticResource TexteAttenue}" Margin="0,3,0,0">
-                                            <Run Text="{Binding Pourcentage, Mode=OneWay, StringFormat={}{0:N1}}" />
-                                            <Run Text="% —" />
-                                            <Run Text="{Binding NombreReglements, Mode=OneWay}" />
-                                            <Run Text="règlement(s)" />
-                                        </TextBlock>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <TextBlock Text="Aucun règlement enregistré ce mois-ci."
-                                   Style="{StaticResource TexteAttenue}"
-                                   Visibility="{Binding RepartitionPaiements.Count,
-                                                Converter={StaticResource NonVideVisibilite},
-                                                ConverterParameter=inverse}" />
                     </StackPanel>
                 </Border>
             </Grid>
