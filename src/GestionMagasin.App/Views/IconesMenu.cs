@@ -62,6 +62,20 @@ internal static class IconesMenu
         "M2.5,20.5 C2.5,16.9 5.5,14.6 9.2,14.6 C12.9,14.6 15.9,16.9 15.9,20.5  " +
         "M16.2,6.2 A2.7,2.7 0 1,1 16.2,11.6  M18,14.9 C20.6,15.7 22,17.9 22,20.5";
 
+    /// <summary>Un badge : le compte connecté.</summary>
+    public const string Compte =
+        "M9,7.5 A3,3 0 1,1 15,7.5 A3,3 0 1,1 9,7.5  " +
+        "M5,20.5 C5,16.6 8.1,14 12,14 C15.9,14 19,16.6 19,20.5";
+
+    /// <summary>Un galon : le rôle du compte connecté.</summary>
+    public const string Role =
+        "M12,3 L14.4,8.2 L20,9 L16,13 L17,18.7 L12,16 L7,18.7 L8,13 L4,9 L9.6,8.2 Z";
+
+    /// <summary>Une porte et une flèche qui sort : la déconnexion.</summary>
+    public const string Deconnexion =
+        "M14,4 H19 A1.5,1.5 0 0,1 20.5,5.5 V18.5 A1.5,1.5 0 0,1 19,20 H14  " +
+        "M10,8 L14,12 L10,16  M14,12 H3.5";
+
     /// <summary>Un réglage : l'axe et ses graduations.</summary>
     public const string Parametres =
         "M12,9 A3,3 0 1,1 12,15 A3,3 0 1,1 12,9  " +

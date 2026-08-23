@@ -63,6 +63,15 @@ public interface IServiceProduits
         int limite = 50,
         CancellationToken jeton = default);
 
+    /// <summary>
+    /// Articles proposés en caisse sans recherche ni scan : le caissier les
+    /// choisit directement dans la liste. Les articles en rupture sont
+    /// écartés, on ne peut pas les vendre.
+    /// </summary>
+    Task<IReadOnlyList<VarianteDto>> ListerVendablesAsync(
+        int limite = 400,
+        CancellationToken jeton = default);
+
     // --- Données de référence ---
 
     Task<IReadOnlyList<ReferenceDto>> ListerMarquesAsync(bool inclureInactifs = false, CancellationToken jeton = default);

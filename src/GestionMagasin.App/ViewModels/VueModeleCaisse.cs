@@ -102,6 +102,18 @@ public partial class VueModeleCaisse : VueModeleBase
 
     public ObservableCollection<VarianteDto> ResultatsRecherche { get; } = [];
 
+    /// <summary>
+    /// Articles proposés en permanence, sans recherche ni scan. Le caissier
+    /// qui connaît son rayon les prend directement, ce qui est plus rapide
+    /// que de taper un nom, et indispensable pour les articles dont
+    /// l'étiquette est arrachée.
+    /// </summary>
+    public ObservableCollection<VarianteDto> Catalogue { get; } = [];
+
+    /// <summary>Vrai tant qu'aucun article n'est disponible à la vente.</summary>
+    [ObservableProperty]
+    private bool _catalogueVide;
+
     public ObservableCollection<ClientDto> Clients { get; } = [];
 
     public IReadOnlyList<ModePaiement> ModesPaiement { get; } = Enum.GetValues<ModePaiement>();
@@ -161,7 +173,23 @@ public partial class VueModeleCaisse : VueModeleBase
             {
                 Clients.Add(client);
             }
+
+            await ChargerCatalogueAsync().ConfigureAwait(true);
         }, contexteJournal: "chargement de la caisse").ConfigureAwait(true);
+
+    /// <summary>Recharge la liste des articles proposés en caisse.</summary>
+    private async Task ChargerCatalogueAsync()
+    {
+        var articles = await _produits.ListerVendablesAsync().ConfigureAwait(true);
+
+        Catalogue.Clear();
+        foreach (var article in articles)
+        {
+            Catalogue.Add(article);
+        }
+
+        CatalogueVide = Catalogue.Count == 0;
+    }
 
     // ==================================================================
     // Ajout d'articles
@@ -288,7 +316,7 @@ public partial class VueModeleCaisse : VueModeleBase
         var ligne = new LignePanier
         {
             VarianteProduitId = variante.Id,
-            Designation = $"{variante.Couleur} / {variante.Taille}",
+            Designation = variante.Designation,
             Sku = variante.Sku,
             CodeBarres = variante.CodeBarres,
             StockDisponible = variante.QuantiteDisponible,
@@ -494,6 +522,9 @@ public partial class VueModeleCaisse : VueModeleBase
         ResultatsRecherche.Clear();
         TermeRecherche = string.Empty;
         RecalculerTotaux();
+
+        // Les quantités affichées dans le catalogue viennent d'être décomptées.
+        await ChargerCatalogueAsync().ConfigureAwait(true);
 
         var message = $"Vente {vente.NumeroVente} enregistrée pour " +
                       $"{FormatageMontant.Formater(vente.Total)}.";

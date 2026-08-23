@@ -75,6 +75,25 @@ public class DepotVariantes : DepotGenerique<VarianteProduit>, IDepotVariantes
             jeton);
     }
 
+    public async Task<IReadOnlyList<VarianteProduit>> ListerVendablesAsync(
+        int limite = 400,
+        CancellationToken jeton = default) =>
+        await Ensemble.AsNoTracking()
+            .Include(v => v.Produit).ThenInclude(p => p!.Marque)
+            .Include(v => v.Taille)
+            .Include(v => v.Couleur)
+            .Include(v => v.Inventaire)
+            .Where(v => v.Actif && v.Produit.Actif)
+            // Un article en rupture ne peut pas être vendu : le proposer
+            // ferait perdre du temps au caissier devant son client.
+            .Where(v => v.Inventaire != null && v.Inventaire.QuantiteDisponible > 0)
+            .OrderBy(v => v.Produit.Nom)
+            .ThenBy(v => v.Couleur.Nom)
+            .ThenBy(v => v.Taille.Ordre)
+            .Take(limite)
+            .ToListAsync(jeton)
+            .ConfigureAwait(false);
+
     public async Task<IReadOnlyList<VarianteProduit>> RechercherAsync(
         string terme,
         int limite = 50,

@@ -246,4 +246,10 @@ public partial class VueModelePrincipale : VueModeleBase
 
         DeconnexionDemandee?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>Logo déposé par le magasin à côté du programme, s'il y en a un.</summary>
+    public System.Windows.Media.Imaging.BitmapImage? Logo => Views.Enseigne.Logo;
+
+    /// <summary>Vrai lorsqu'aucun logo n'a été déposé : le blason dessiné s'affiche.</summary>
+    public bool BlasonDessine => !Views.Enseigne.LogoPresent;
 }

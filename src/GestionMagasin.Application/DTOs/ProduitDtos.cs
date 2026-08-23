@@ -7,6 +7,13 @@ public record VarianteDto
 
     public int ProduitId { get; init; }
 
+    /// <summary>Nom du produit. Sans lui, « Beige / M » ne désigne rien.</summary>
+    public string ProduitNom { get; init; } = string.Empty;
+
+    public string Reference { get; init; } = string.Empty;
+
+    public string? Marque { get; init; }
+
     public int TailleId { get; init; }
 
     public string Taille { get; init; } = string.Empty;
@@ -52,6 +59,11 @@ public record VarianteDto
 
     /// <summary>Marge unitaire dégagée par cette déclinaison.</summary>
     public decimal Marge => PrixVente - PrixAchat;
+
+    /// <summary>Libellé complet, tel qu'il doit apparaître sur un ticket.</summary>
+    public string Designation => string.IsNullOrEmpty(ProduitNom)
+        ? $"{Couleur} / {Taille}"
+        : $"{ProduitNom} — {Couleur} / {Taille}";
 }
 
 /// <summary>Fiche produit complète, avec toutes ses déclinaisons.</summary>

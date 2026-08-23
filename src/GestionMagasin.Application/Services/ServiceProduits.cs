@@ -541,6 +541,19 @@ public class ServiceProduits : IServiceProduits
         return variantes.Select(v => ProjeterVariante(v)).ToList();
     }
 
+    public async Task<IReadOnlyList<VarianteDto>> ListerVendablesAsync(
+        int limite = 400,
+        CancellationToken jeton = default)
+    {
+        _session.ExigerPermission(CodesPermissions.VoirProduits);
+
+        var variantes = await _uniteDeTravail.Variantes
+            .ListerVendablesAsync(limite, jeton)
+            .ConfigureAwait(false);
+
+        return variantes.Select(v => ProjeterVariante(v)).ToList();
+    }
+
     // ==================================================================
     // Données de référence
     // ==================================================================
@@ -1046,6 +1059,9 @@ public class ServiceProduits : IServiceProduits
         {
             Id = variante.Id,
             ProduitId = variante.ProduitId,
+            ProduitNom = reference?.Nom ?? string.Empty,
+            Reference = reference?.Reference ?? string.Empty,
+            Marque = reference?.Marque?.Nom,
             TailleId = variante.TailleId,
             Taille = variante.Taille?.Nom ?? string.Empty,
             OrdreTaille = variante.Taille?.Ordre ?? 0,

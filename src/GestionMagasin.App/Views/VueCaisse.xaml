@@ -13,8 +13,8 @@
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="290" />
             </Grid.RowDefinitions>
 
             <!-- Scan -->
@@ -44,10 +44,35 @@
                 </Grid>
             </Border>
 
-            <!-- Recherche par nom -->
-            <Border Grid.Row="1" Style="{StaticResource BarreOutils}" Margin="0,0,0,12">
-                <StackPanel>
-                    <Grid>
+            <!-- Catalogue : le caissier choisit à la souris, sans rien saisir -->
+            <Border Grid.Row="1" Style="{StaticResource Carte}" Padding="12" Margin="0,0,0,12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="4,0,4,10">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="3" Height="16"
+                                    Background="{StaticResource PinceauOr}"
+                                    CornerRadius="2"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Text="Articles en rayon"
+                                       Style="{StaticResource TexteSousTitre}"
+                                       Margin="8,0,0,0"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <TextBlock Text="Cliquez sur un article pour l'ajouter au panier"
+                                   Style="{StaticResource TexteAttenue}"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+
+                    <!-- Filtre facultatif, pour un catalogue volumineux -->
+                    <Grid Grid.Row="1" Margin="4,0,4,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -57,47 +82,42 @@
                                  Style="{StaticResource ChampTexte}"
                                  Text="{Binding TermeRecherche, UpdateSourceTrigger=PropertyChanged}"
                                  KeyDown="SurToucheRecherche"
-                                 ToolTip="Rechercher par nom de produit, référence ou code article" />
+                                 ToolTip="Facultatif : filtrer par nom, référence ou code article" />
 
                         <Button Grid.Column="1"
                                 Content="Rechercher"
                                 Style="{StaticResource BoutonSecondaire}"
                                 Command="{Binding RechercherCommand}"
-                                Width="120"
+                                Width="110"
                                 Margin="10,0,0,0" />
                     </Grid>
 
-                    <DataGrid ItemsSource="{Binding ResultatsRecherche}"
-                              Style="{StaticResource Tableau}"
-                              MaxHeight="180"
-                              Margin="0,10,0,0"
-                              MouseDoubleClick="SurDoubleClicResultat"
-                              Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Code article" Binding="{Binding Sku}" Width="150" />
-                            <DataGridTextColumn Header="Couleur" Binding="{Binding Couleur}" Width="110" />
-                            <DataGridTextColumn Header="Taille" Binding="{Binding Taille}" Width="80" />
-                            <DataGridTextColumn Header="Prix"
-                                                Binding="{Binding PrixVente, Converter={StaticResource Montant}}"
-                                                Width="120" />
-                            <DataGridTextColumn Header="Stock" Binding="{Binding QuantiteDisponible}" Width="70" />
-                            <DataGridTemplateColumn Header="Action" Width="110">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="Ajouter"
-                                                Style="{StaticResource BoutonSecondaire}"
-                                                Padding="8,3"
-                                                MinHeight="26"
-                                                FontSize="11"
-                                                Command="{Binding DataContext.AjouterArticleCommand,
-                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </StackPanel>
+                    <!-- Résultats d'une recherche, quand il y en a une -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                                  Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}}">
+                        <ItemsControl ItemsSource="{Binding ResultatsRecherche}"
+                                      ItemTemplate="{StaticResource CarteArticle}"
+                                      ItemsPanel="{StaticResource GrilleArticles}" />
+                    </ScrollViewer>
+
+                    <!-- Catalogue complet, affiché par défaut -->
+                    <Grid Grid.Row="2"
+                          Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}, ConverterParameter=inverse}">
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Catalogue}"
+                                          ItemTemplate="{StaticResource CarteArticle}"
+                                          ItemsPanel="{StaticResource GrilleArticles}" />
+                        </ScrollViewer>
+
+                        <TextBlock Text="Aucun article en stock. Ajoutez des quantités depuis l'écran Stock."
+                                   Style="{StaticResource TexteAttenue}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding CatalogueVide, Converter={StaticResource BooleenVisibilite}}" />
+                    </Grid>
+                </Grid>
             </Border>
 
             <!-- Panier -->

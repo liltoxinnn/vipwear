@@ -11,6 +11,13 @@ public interface IDepotVariantes : IDepotGenerique<VarianteProduit>
     /// </summary>
     Task<VarianteProduit?> ObtenirParCodeBarresAsync(string codeBarres, CancellationToken jeton = default);
 
+    /// <summary>
+    /// Articles vendables en caisse : actifs, appartenant à un produit actif,
+    /// et effectivement disponibles en rayon. Classés par produit, couleur
+    /// puis taille, dans l'ordre où le caissier les cherche des yeux.
+    /// </summary>
+    Task<IReadOnlyList<VarianteProduit>> ListerVendablesAsync(int limite = 400, CancellationToken jeton = default);
+
     /// <summary>Recherche une variante par son code article.</summary>
     Task<VarianteProduit?> ObtenirParSkuAsync(string sku, CancellationToken jeton = default);
 

@@ -115,10 +115,14 @@
     </Style>
 
     <!-- Bouton de caisse : grande cible, lisible et rapide à viser -->
-    <Style x:Key="BoutonCaisse" TargetType="Button" BasedOn="{StaticResource BoutonPrincipal}">
+    <!-- Bouton de caisse : grande cible, or de l'enseigne, texte noir lisible -->
+    <Style x:Key="BoutonCaisse" TargetType="Button" BasedOn="{StaticResource BoutonBase}">
         <Setter Property="FontSize" Value="16" />
         <Setter Property="MinHeight" Value="52" />
         <Setter Property="Padding" Value="20,12" />
+        <Setter Property="Background" Value="{StaticResource PinceauOr}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauOrFonce}" />
+        <Setter Property="Foreground" Value="{StaticResource PinceauPrincipalFonce}" />
     </Style>
 
     <!-- ============================================================
@@ -262,7 +266,7 @@
             <Setter.Value>
                 <Style TargetType="DataGridColumnHeader">
                     <Setter Property="Background" Value="{StaticResource PinceauPrincipal}" />
-                    <Setter Property="Foreground" Value="White" />
+                    <Setter Property="Foreground" Value="{StaticResource PinceauOrClair}" />
                     <Setter Property="FontWeight" Value="SemiBold" />
                     <Setter Property="FontSize" Value="{StaticResource TaillePetite}" />
                     <Setter Property="Padding" Value="10,9" />
@@ -280,11 +284,11 @@
                             <Setter Property="Background" Value="{StaticResource PinceauSurfaceAlterne}" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{StaticResource PinceauFondInfo}" />
+                            <Setter Property="Background" Value="{StaticResource PinceauFondOr}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{StaticResource PinceauAccent}" />
-                            <Setter Property="Foreground" Value="White" />
+                            <Setter Property="Background" Value="{StaticResource PinceauOr}" />
+                            <Setter Property="Foreground" Value="{StaticResource PinceauPrincipalFonce}" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>
@@ -310,6 +314,112 @@
         </Setter>
         <Setter Property="AlternationCount" Value="2" />
     </Style>
+
+    <!-- ============================================================
+         Catalogue de la caisse
+         ============================================================ -->
+
+    <!--
+        Une vignette par article, disposée en grille. Le caissier vise une
+        cible large plutôt que de taper un code : c'est plus rapide, et cela
+        reste possible quand l'étiquette d'un vêtement est arrachée.
+    -->
+    <ItemsPanelTemplate x:Key="GrilleArticles">
+        <WrapPanel Orientation="Horizontal" />
+    </ItemsPanelTemplate>
+
+    <DataTemplate x:Key="CarteArticle">
+        <Button Command="{Binding DataContext.AjouterArticleCommand,
+                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                CommandParameter="{Binding}"
+                Cursor="Hand"
+                Margin="0,0,10,10"
+                Padding="0"
+                BorderThickness="0"
+                ToolTip="{Binding Sku}">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Vignette"
+                            Width="186"
+                            Background="{StaticResource PinceauSurface}"
+                            BorderBrush="{StaticResource PinceauBordure}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="12,11"
+                            SnapsToDevicePixels="True">
+                        <StackPanel>
+                            <!-- Pastille de couleur : le repère le plus rapide en rayon -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,7">
+                                <Border Width="14" Height="14"
+                                        CornerRadius="7"
+                                        BorderBrush="{StaticResource PinceauBordureForte}"
+                                        BorderThickness="1"
+                                        Background="{Binding CodeCouleur, Converter={StaticResource CodeCouleur}}"
+                                        VerticalAlignment="Center" />
+
+                                <TextBlock Text="{Binding Couleur}"
+                                           Style="{StaticResource TexteSecondaire}"
+                                           FontSize="11.5"
+                                           Margin="6,0,0,0"
+                                           VerticalAlignment="Center" />
+
+                                <Border Background="{StaticResource PinceauPrincipal}"
+                                        CornerRadius="4"
+                                        Padding="6,2"
+                                        Margin="7,0,0,0"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Taille}"
+                                               Foreground="{StaticResource PinceauOrClair}"
+                                               FontSize="10.5"
+                                               FontWeight="Bold" />
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding ProduitNom}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource PinceauTexte}"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxHeight="34"
+                                       TextWrapping="Wrap" />
+
+                            <Grid Margin="0,9,0,0">
+                                <TextBlock Text="{Binding PrixVente, Converter={StaticResource Montant}}"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource PinceauOrFonce}"
+                                           VerticalAlignment="Center" />
+
+                                <Border HorizontalAlignment="Right"
+                                        Background="{StaticResource PinceauSurfaceAlterne}"
+                                        BorderBrush="{StaticResource PinceauBordure}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Padding="6,2">
+                                    <TextBlock Style="{StaticResource TexteAttenue}" FontSize="10.5">
+                                        <Run Text="{Binding QuantiteDisponible, Mode=OneWay}" />
+                                        <Run Text="en stock" />
+                                    </TextBlock>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Vignette" Property="BorderBrush" Value="{StaticResource PinceauOr}" />
+                            <Setter TargetName="Vignette" Property="BorderThickness" Value="2" />
+                            <Setter TargetName="Vignette" Property="Padding" Value="11,10" />
+                            <Setter TargetName="Vignette" Property="Background" Value="{StaticResource PinceauFondOr}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Vignette" Property="Background" Value="{StaticResource PinceauOrClair}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+    </DataTemplate>
 
     <!-- ============================================================
          Pastilles d'état

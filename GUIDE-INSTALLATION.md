@@ -38,6 +38,10 @@ Il n'y a **rien d'autre à installer**.
 > ⚠️ **Ne déplacez pas et ne renommez pas le dossier `pgsql`** qui se trouve
 > à côté du programme : c'est la base de données du magasin.
 
+**Votre logo.** Déposez votre logo à côté de `GestionMagasin.exe`, nommé
+`logo.png`, et il remplacera le blason par défaut sur l'écran de connexion
+et dans le menu. Une image carrée donne le meilleur résultat.
+
 Le premier démarrage prend une dizaine de secondes, le temps que le logiciel
 prépare sa base de données. Les suivants sont immédiats.
 
