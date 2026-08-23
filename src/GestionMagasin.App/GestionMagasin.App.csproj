@@ -24,6 +24,7 @@
     <ProjectReference Include="..\GestionMagasin.Domain\GestionMagasin.Domain.csproj" />
     <ProjectReference Include="..\GestionMagasin.Application\GestionMagasin.Application.csproj" />
     <ProjectReference Include="..\GestionMagasin.Infrastructure\GestionMagasin.Infrastructure.csproj" />
+    <ProjectReference Include="..\GestionMagasin.ServeurEmbarque\GestionMagasin.ServeurEmbarque.csproj" />
   </ItemGroup>
 
   <ItemGroup>

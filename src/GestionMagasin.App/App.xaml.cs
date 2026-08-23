@@ -14,6 +14,7 @@ using GestionMagasin.Application.Services.Abstractions;
 using GestionMagasin.Infrastructure;
 using GestionMagasin.Infrastructure.Data;
 using GestionMagasin.Infrastructure.Services;
+using GestionMagasin.ServeurEmbarque;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -31,6 +32,13 @@ public partial class App : System.Windows.Application
 {
     private IHost? _hote;
 
+    /// <summary>
+    /// Serveur de base de données démarré par le logiciel lui-même, lorsque
+    /// les fichiers de PostgreSQL sont livrés à côté de l'exécutable. Le
+    /// magasin n'installe alors rien et ne saisit aucun mot de passe.
+    /// </summary>
+    private ServeurPostgresEmbarque? _serveur;
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -46,7 +54,15 @@ public partial class App : System.Windows.Application
                 return;
             }
 
-            _hote = ConstruireHote();
+            // Le serveur embarqué, s'il y en a un, est démarré avant la
+            // construction de l'hôte : la chaîne de connexion en dépend.
+            if (!await DemarrerServeurEmbarqueAsync().ConfigureAwait(true))
+            {
+                Shutdown(1);
+                return;
+            }
+
+            _hote = ConstruireHote(_serveur);
             await _hote.StartAsync().ConfigureAwait(true);
 
             if (!await PreparerBaseDeDonneesAsync().ConfigureAwait(true))
@@ -87,6 +103,20 @@ public partial class App : System.Windows.Application
             _hote.Dispose();
         }
 
+        // Le serveur est arrêté après l'hôte : les connexions du logiciel
+        // doivent être refermées avant lui.
+        if (_serveur is not null)
+        {
+            try
+            {
+                await _serveur.ArreterAsync().ConfigureAwait(false);
+            }
+            catch (Exception erreur)
+            {
+                Log.Error(erreur, "Arrêt du serveur embarqué impossible.");
+            }
+        }
+
         await Log.CloseAndFlushAsync().ConfigureAwait(false);
 
         base.OnExit(e);
@@ -101,6 +131,12 @@ public partial class App : System.Windows.Application
     /// <returns>Faux si l'utilisateur renonce et quitte le logiciel.</returns>
     private static async Task<bool> GarantirConnexionAsync()
     {
+        // Rien à demander : le logiciel héberge sa propre base de données.
+        if (LocalisateurOutils.ServeurEmbarquePresent())
+        {
+            return true;
+        }
+
         var chaine = LireChaineConnexion();
 
         if (!string.IsNullOrWhiteSpace(chaine))
@@ -118,6 +154,49 @@ public partial class App : System.Windows.Application
         var fenetre = new FenetreConfigurationBaseDonnees(chaine);
 
         return fenetre.ShowDialog() == true;
+    }
+
+    /// <summary>
+    /// Démarre le serveur livré avec le logiciel, s'il y en a un. La chaîne de
+    /// connexion obtenue est publiée dans l'environnement du processus, d'où
+    /// la configuration la relira : le reste du logiciel ignore ainsi
+    /// complètement d'où vient sa base de données.
+    /// </summary>
+    /// <returns>Faux si le serveur n'a pas pu démarrer.</returns>
+    private async Task<bool> DemarrerServeurEmbarqueAsync()
+    {
+        if (!LocalisateurOutils.ServeurEmbarquePresent())
+        {
+            return true;
+        }
+
+        try
+        {
+            _serveur = new ServeurPostgresEmbarque(
+                journaliser: message => Log.Information("Serveur embarqué : {Message}", message));
+
+            var chaine = await _serveur.DemarrerAsync().ConfigureAwait(true);
+
+            Environment.SetEnvironmentVariable("GESTIONMAGASIN_ConnectionStrings__BaseDonnees", chaine);
+
+            return true;
+        }
+        catch (Exception erreur)
+        {
+            Log.Fatal(erreur, "Le serveur de base de données livré n'a pas pu démarrer.");
+
+            MessageBox.Show(
+                "La base de données du magasin n'a pas pu démarrer." +
+                Environment.NewLine + Environment.NewLine +
+                erreur.Message + Environment.NewLine + Environment.NewLine +
+                "Redémarrez l'ordinateur puis relancez le logiciel. Si le problème " +
+                "persiste, transmettez le journal à votre prestataire.",
+                "Base de données indisponible",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            return false;
+        }
     }
 
     /// <summary>Relit la chaîne de connexion effective des fichiers de configuration.</summary>
@@ -139,7 +218,7 @@ public partial class App : System.Windows.Application
         "GestionMagasin",
         "journaux");
 
-    private static IHost ConstruireHote()
+    private static IHost ConstruireHote(ServeurPostgresEmbarque? serveur)
     {
         var dossierApplication = AppContext.BaseDirectory;
 
@@ -181,6 +260,15 @@ public partial class App : System.Windows.Application
             .ConfigureServices(services =>
             {
                 services.AjouterGestionMagasin(chaineConnexion);
+
+                // La sauvegarde n'est proposée que lorsque le logiciel héberge
+                // sa propre base : c'est alors le seul moyen pour le magasin de
+                // protéger ses données, pgAdmin n'étant pas installé.
+                if (serveur is not null)
+                {
+                    services.AddSingleton(serveur);
+                    services.AddSingleton<ServiceSauvegarde>();
+                }
 
                 // --- Services propres à l'interface ---
                 services.AddSingleton<IServiceDialogue, ServiceDialogue>();

@@ -5,6 +5,7 @@ using GestionMagasin.App.Converters;
 using GestionMagasin.App.Services;
 using GestionMagasin.Application.DTOs;
 using GestionMagasin.Application.Services.Abstractions;
+using GestionMagasin.ServeurEmbarque;
 using GestionMagasin.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -19,16 +20,29 @@ public partial class VueModeleParametres : VueModeleBase
     private readonly IServiceParametres _parametres;
     private readonly IServiceProduits _produits;
 
+    /// <summary>
+    /// Absent lorsque le magasin utilise un PostgreSQL installé sur la
+    /// machine : pgAdmin est alors disponible pour les sauvegardes. Présent
+    /// dès que le logiciel héberge sa propre base, cas où ces boutons sont la
+    /// seule protection des données du magasin.
+    /// </summary>
+    private readonly ServiceSauvegarde? _sauvegarde;
+
     public VueModeleParametres(
         IServiceParametres parametres,
         IServiceProduits produits,
         IServiceDialogue dialogue,
-        ILogger<VueModeleParametres> journal)
+        ILogger<VueModeleParametres> journal,
+        ServiceSauvegarde? sauvegarde = null)
         : base(dialogue, journal)
     {
         _parametres = parametres;
         _produits = produits;
+        _sauvegarde = sauvegarde;
     }
+
+    /// <summary>Vrai lorsque la sauvegarde est assurée par le logiciel lui-même.</summary>
+    public bool SauvegardeDisponible => _sauvegarde is not null;
 
     public override string Titre => "Paramètres";
 
@@ -338,5 +352,111 @@ public partial class VueModeleParametres : VueModeleBase
         {
             destination.Add(element);
         }
+    }
+
+    // ==================================================================
+    // Sauvegarde des données du magasin
+    // ==================================================================
+
+    [ObservableProperty]
+    private string _messageSauvegarde = string.Empty;
+
+    /// <summary>
+    /// Écrit une copie complète des données du magasin dans un fichier.
+    /// </summary>
+    [RelayCommand]
+    private async Task SauvegarderAsync()
+    {
+        if (_sauvegarde is null)
+        {
+            return;
+        }
+
+        var chemin = Dialogue.DemanderCheminEnregistrement(
+            ServiceSauvegarde.NomFichierPropose(),
+            "Sauvegarde du magasin (*.sauvegarde)|*.sauvegarde");
+
+        if (chemin is null)
+        {
+            return;
+        }
+
+        await ExecuterAsync(async () =>
+        {
+            var resultat = await _sauvegarde.SauvegarderAsync(chemin).ConfigureAwait(true);
+
+            if (!resultat.Reussie)
+            {
+                throw new Domain.Exceptions.ExceptionMetier(resultat.Message);
+            }
+
+            MessageSauvegarde =
+                $"Sauvegarde du {DateTime.Now:dd/MM/yyyy à HH:mm} enregistrée dans « {chemin} ».";
+
+            Dialogue.Succes(
+                resultat.Message + Environment.NewLine + Environment.NewLine +
+                "Conservez ce fichier ailleurs que sur cet ordinateur : clé USB, " +
+                "disque externe ou espace en ligne.");
+        }, contexteJournal: "sauvegarde des données").ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Remplace les données actuelles par celles d'une sauvegarde. Opération
+    /// irréversible, doublement confirmée.
+    /// </summary>
+    [RelayCommand]
+    private async Task RestaurerAsync()
+    {
+        if (_sauvegarde is null)
+        {
+            return;
+        }
+
+        var chemin = Dialogue.DemanderCheminOuverture(
+            "Sauvegarde du magasin (*.sauvegarde)|*.sauvegarde|Tous les fichiers (*.*)|*.*");
+
+        if (chemin is null)
+        {
+            return;
+        }
+
+        if (!Dialogue.Confirmer(
+                "Restaurer cette sauvegarde remplacera TOUTES les données actuelles du magasin." +
+                Environment.NewLine + Environment.NewLine +
+                "Les ventes, produits et clients enregistrés depuis cette sauvegarde " +
+                "seront définitivement perdus." + Environment.NewLine + Environment.NewLine +
+                "Voulez-vous continuer ?",
+                "Restaurer une sauvegarde"))
+        {
+            return;
+        }
+
+        // Seconde confirmation : l'opération est irréversible et efface le
+        // travail réalisé depuis la sauvegarde.
+        if (!Dialogue.Confirmer(
+                "Dernière vérification : les données actuelles vont être écrasées." +
+                Environment.NewLine + Environment.NewLine +
+                $"Fichier : {chemin}",
+                "Confirmer la restauration"))
+        {
+            return;
+        }
+
+        await ExecuterAsync(async () =>
+        {
+            var resultat = await _sauvegarde.RestaurerAsync(chemin).ConfigureAwait(true);
+
+            if (!resultat.Reussie)
+            {
+                throw new Domain.Exceptions.ExceptionMetier(resultat.Message);
+            }
+
+            MessageSauvegarde = $"Données restaurées depuis « {chemin} ».";
+
+            Dialogue.Succes(
+                "Données restaurées." + Environment.NewLine + Environment.NewLine +
+                "Fermez puis rouvrez le logiciel pour que tous les écrans " +
+                "affichent les données restaurées.");
+        }, contexteJournal: "restauration d'une sauvegarde").ConfigureAwait(true);
     }
 }

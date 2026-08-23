@@ -50,3 +50,7 @@ desktop.ini
 
 # Dossier de livraison : paquet autonome de 176 Mo, reconstruit par publier.ps1
 livraison/
+
+# Fichiers PostgreSQL livres avec le logiciel : environ 130 Mo,
+# recuperes par outils/telecharger-postgres.ps1
+pgsql/

@@ -1,51 +1,24 @@
 # Gestion Magasin — Guide d'installation
 
 Ce guide s'adresse à la personne qui installe le logiciel dans le magasin.
-Aucune connaissance technique particulière n'est nécessaire.
+Aucune connaissance technique n'est nécessaire.
 
-**Durée d'installation : environ 15 minutes.**
+**Durée : environ 2 minutes.**
 
 ---
 
 ## Ce dont vous avez besoin
 
 - Un ordinateur sous **Windows 10 ou Windows 11**
-- Une connexion Internet, uniquement pour l'installation
-- Environ **500 Mo** d'espace disque
+- Environ **1 Go** d'espace disque
+- Aucune connexion Internet
+
+Le logiciel contient tout ce qu'il lui faut, y compris sa base de données.
+Il n'y a **rien d'autre à installer**.
 
 ---
 
-## Étape 1 — Installer PostgreSQL
-
-PostgreSQL est le programme qui conserve les données de votre magasin
-(produits, stock, ventes). Il s'installe une seule fois.
-
-1. Rendez-vous sur **https://www.postgresql.org/download/windows/**
-2. Cliquez sur **Download the installer**
-3. Choisissez la dernière version pour **Windows x86-64**
-4. Lancez le fichier téléchargé
-
-Pendant l'installation :
-
-| Écran | Que faire |
-|---|---|
-| Installation Directory | Laissez la valeur proposée |
-| Select Components | Laissez tout coché |
-| Data Directory | Laissez la valeur proposée |
-| **Password** | **Choisissez un mot de passe et notez-le.** Vous en aurez besoin à l'étape 3 |
-| Port | Laissez **5432** |
-| Locale | Laissez **Default locale** |
-
-À la fin, si l'installateur propose **Stack Builder**, décochez la case : ce
-n'est pas nécessaire.
-
-> ⚠️ **Le mot de passe de l'étape « Password » est indispensable.**
-> Notez-le dans un endroit sûr. Sans lui, le logiciel ne pourra pas
-> enregistrer vos données.
-
----
-
-## Étape 2 — Installer Gestion Magasin
+## Étape 1 — Installer le logiciel
 
 1. Décompressez l'archive **GestionMagasin-1.0.0.zip** que vous avez reçue
 2. Placez le dossier obtenu à un endroit stable, par exemple :
@@ -59,37 +32,18 @@ n'est pas nécessaire.
 > **Exécuter quand même**. Cet avertissement apparaît pour tout logiciel qui
 > n'a pas été acheté sur le Microsoft Store.
 
-**Astuce :** faites un clic droit sur `GestionMagasin.exe` →
-**Envoyer vers** → **Bureau (créer un raccourci)** pour l'avoir sous la main.
+**Astuce :** clic droit sur `GestionMagasin.exe` → **Envoyer vers** →
+**Bureau (créer un raccourci)**.
+
+> ⚠️ **Ne déplacez pas et ne renommez pas le dossier `pgsql`** qui se trouve
+> à côté du programme : c'est la base de données du magasin.
+
+Le premier démarrage prend une dizaine de secondes, le temps que le logiciel
+prépare sa base de données. Les suivants sont immédiats.
 
 ---
 
-## Étape 3 — Connecter le logiciel à la base de données
-
-Au tout premier démarrage, le logiciel affiche la fenêtre
-**« Configuration de la base de données »**.
-
-Remplissez-la ainsi :
-
-| Champ | Valeur |
-|---|---|
-| Serveur | `localhost` |
-| Port | `5432` |
-| Nom de la base de données | `gestionmagasin` |
-| Utilisateur du serveur | `postgres` |
-| Mot de passe du serveur | **celui noté à l'étape 1** |
-
-Cliquez sur **Tester la connexion**.
-
-- ✅ Message vert → cliquez sur **Enregistrer et démarrer le logiciel**
-- ❌ Message rouge → voir la section *En cas de problème* en bas de ce guide
-
-Le logiciel crée alors automatiquement la base et ses tables. Cette
-opération dure quelques secondes et n'a lieu qu'une fois.
-
----
-
-## Étape 4 — Première connexion
+## Étape 2 — Première connexion
 
 La fenêtre de connexion apparaît. Utilisez le compte livré avec le logiciel :
 
@@ -106,7 +60,7 @@ passe. C'est obligatoire.
 
 ---
 
-## Étape 5 — Configurer votre magasin
+## Étape 3 — Configurer votre magasin
 
 Allez dans **Paramètres** (menu de gauche, ou touche **F12**) et renseignez :
 
@@ -121,7 +75,7 @@ Cliquez sur **Enregistrer les paramètres**.
 
 ---
 
-## Étape 6 — Créer les comptes de vos employés
+## Étape 4 — Créer les comptes de vos employés
 
 Allez dans **Utilisateurs** (**F11**) → **Nouveau compte**.
 
@@ -133,94 +87,114 @@ Trois profils sont disponibles :
 | **Responsable** | Tout cela, plus : gérer les produits, les prix, le stock, les achats et consulter les rapports |
 | **Administrateur** | Tout, y compris créer des comptes et modifier les paramètres |
 
+Le mot de passe doit contenir **au moins 8 caractères, dont une lettre et un
+chiffre**.
+
 > 💡 Créez un compte **nominatif par employé**, jamais un compte partagé.
 > Chaque vente est rattachée à son auteur : c'est ce qui permet le rapport
 > « Ventes par employé » et le suivi en cas de litige.
 
 ---
 
-## Étape 7 — Saisir votre catalogue
+## Étape 5 — Saisir votre catalogue
 
 1. **Paramètres** (F12) → onglet **Marques, tailles et couleurs** →
-   ajoutez vos marques, et complétez les tailles et couleurs si besoin
-   (les tailles XS à XXXL et dix couleurs sont déjà présentes)
+   ajoutez vos marques (les tailles XS à XXXL et dix couleurs sont déjà là)
 
-2. **Produits** (F3) → **Nouveau produit** → renseignez la référence, le nom
-   et les prix
+2. **Produits** (F3) → **Nouveau produit** → référence, nom et prix
 
 3. Une fois le produit créé, cliquez sur **Générer les déclinaisons** :
    cochez les tailles et les couleurs, et le logiciel crée toutes les
    combinaisons d'un coup
 
+   > Le stock se compte par **déclinaison** — « T-shirt / Noir / M » — et non
+   > par produit. Un produit sans déclinaison n'apparaît donc pas en Stock.
+
 4. Pour chaque déclinaison, saisissez le **code-barres** de l'étiquette
    (*Modifier la déclinaison*) — c'est ce qui permettra de scanner en caisse
 
-5. **Stock** (F4) → sélectionnez un article → **Nouveau mouvement** pour
+5. **Stock** (F4) → sélectionnez un article → **Ajuster le stock** pour
    saisir les quantités présentes en rayon
 
 ---
 
 ## Sauvegarder vos données
 
-**C'est important.** Vos données vivent dans PostgreSQL, pas dans le dossier
-du logiciel.
+**C'est la partie la plus importante de ce guide.**
 
-Pour créer une sauvegarde, ouvrez **pgAdmin** (installé avec PostgreSQL) :
+Toutes vos données vivent sur cet ordinateur. Un disque dur qui lâche, un
+vol, un dégât des eaux — et l'historique du magasin disparaît. La sauvegarde
+est votre seule protection.
 
-1. Dépliez **Servers** → **PostgreSQL** → **Databases**
-2. Clic droit sur **gestionmagasin** → **Backup...**
-3. Choisissez un nom de fichier, par exemple
-   `sauvegarde-2026-08-17.backup`
-4. Cliquez sur **Backup**
+### Faire une sauvegarde
 
-> 📅 **Faites-le au moins une fois par semaine**, et conservez le fichier
-> ailleurs que sur l'ordinateur du magasin : clé USB, disque externe ou
-> espace en ligne. Un ordinateur peut tomber en panne ; une sauvegarde
-> vous fait reprendre le travail en quelques minutes.
+1. **Paramètres** (F12)
+2. Descendez jusqu'à **Sauvegarde des données**
+3. Cliquez sur **Sauvegarder maintenant**
+4. Choisissez où enregistrer le fichier
+
+> 📅 **Une fois par semaine au minimum**, et conservez le fichier **ailleurs
+> que sur l'ordinateur du magasin** : clé USB, disque externe ou espace en
+> ligne. Une sauvegarde restée sur la machine disparaît avec elle.
+
+### Restaurer une sauvegarde
+
+**Paramètres** (F12) → **Restaurer une sauvegarde** → choisissez le fichier.
+
+> ⚠️ La restauration **remplace toutes les données actuelles**. Tout ce qui
+> a été saisi depuis cette sauvegarde sera perdu. Le logiciel demande deux
+> confirmations avant de continuer.
+
+Fermez puis rouvrez le logiciel après une restauration.
 
 ---
 
 ## En cas de problème
 
-### « Le serveur ne répond pas »
+### « La base de données du magasin n'a pas pu démarrer »
 
-PostgreSQL n'est pas démarré.
+1. Fermez complètement le logiciel
+2. Redémarrez l'ordinateur
+3. Relancez le logiciel
 
-1. Touche **Windows** + **R**
-2. Tapez `services.msc` puis Entrée
-3. Cherchez la ligne **postgresql-x64-…**
-4. Clic droit → **Démarrer**
-
-Pour qu'il démarre tout seul à l'avenir : clic droit → **Propriétés** →
-*Type de démarrage* → **Automatique**.
-
-### « Le nom d'utilisateur ou le mot de passe est incorrect »
-
-Le mot de passe saisi n'est pas celui choisi à l'étape 1. Si vous l'avez
-perdu, PostgreSQL doit être réinstallé — vos données du magasin ne sont pas
-perdues pour autant, mais faites appel à votre prestataire.
-
-### « La base n'existe pas et n'a pas pu être créée »
-
-Le compte utilisé n'a pas les droits suffisants. Utilisez le compte
-`postgres`, qui les possède toujours.
+Si le message revient, vérifiez que le dossier **`pgsql`** est toujours
+présent à côté de `GestionMagasin.exe`, et que l'antivirus ne bloque pas le
+logiciel.
 
 ### Le logiciel affiche une erreur inattendue
 
-La fenêtre d'erreur indique elle-même la cause, à la ligne **« Détail : »**.
-Notez-la, ou prenez une photo de l'écran.
+La fenêtre indique la cause à la ligne **« Détail : »**. Notez-la ou
+photographiez l'écran.
 
-Un journal technique complet est également enregistré. Pour le retrouver :
+Un journal technique complet est enregistré. Pour le retrouver :
 
 1. Touche **Windows** + **R**
 2. Tapez `%LOCALAPPDATA%\GestionMagasin\journaux` puis Entrée
 
-Transmettez le fichier du jour à votre prestataire : il contient le détail
-nécessaire au diagnostic.
+Transmettez le fichier du jour à votre prestataire.
 
-> Le logiciel ne se ferme pas et vos données restent intactes. Fermez la
-> fenêtre d'erreur et poursuivez votre travail ; si l'écran concerné reste
-> inutilisable, redémarrez le logiciel.
+> Le logiciel ne se ferme pas et vos données restent intactes.
+
+### Le logiciel est lent à démarrer
+
+Seul le **tout premier** démarrage prend une dizaine de secondes. Si tous
+les démarrages sont lents, l'antivirus analyse probablement la base de
+données à chaque lancement : demandez à votre prestataire d'ajouter une
+exception sur le dossier du logiciel.
+
+---
+
+## Où sont mes données ?
+
+Dans votre dossier personnel Windows :
+
+```
+%LOCALAPPDATA%\GestionMagasin\donnees
+```
+
+Ce dossier ne se sauvegarde pas en le copiant : utilisez le bouton
+**Sauvegarder maintenant** des Paramètres, qui produit un fichier cohérent
+même pendant que le logiciel travaille.
 
 ---
 

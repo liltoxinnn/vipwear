@@ -99,6 +99,58 @@
                                     Style="{StaticResource BoutonPrincipal}"
                                     Command="{Binding EnregistrerCommand}"
                                     HorizontalAlignment="Right" />
+
+                            <!--
+                                Sauvegarde des données. Cette section n'apparaît
+                                que lorsque le logiciel héberge lui-même sa base :
+                                elle est alors la seule protection du magasin.
+                            -->
+                            <StackPanel Margin="0,26,0,0"
+                                        Visibility="{Binding SauvegardeDisponible,
+                                                     Converter={StaticResource BooleenVisibilite}}">
+
+                                <Separator Margin="0,0,0,18" />
+
+                                <TextBlock Text="Sauvegarde des données"
+                                           Style="{StaticResource TexteSousTitre}"
+                                           Margin="0,0,0,6" />
+
+                                <TextBlock Style="{StaticResource TexteSecondaire}" Margin="0,0,0,14">
+                                    Toutes les données de votre magasin — ventes, stock, clients —
+                                    vivent sur cet ordinateur. Une sauvegarde régulière est votre
+                                    seule protection en cas de panne ou de vol.
+                                </TextBlock>
+
+                                <Border Background="{StaticResource PinceauFondAvertissement}"
+                                        CornerRadius="6" Padding="14" Margin="0,0,0,16">
+                                    <TextBlock TextWrapping="Wrap"
+                                               FontSize="12.5"
+                                               Foreground="{StaticResource PinceauAvertissement}">
+                                        Faites une sauvegarde au moins une fois par semaine, et
+                                        conservez le fichier ailleurs que sur cet ordinateur :
+                                        clé USB, disque externe ou espace en ligne.
+                                    </TextBlock>
+                                </Border>
+
+                                <TextBlock Text="{Binding MessageSauvegarde}"
+                                           Style="{StaticResource TexteAttenue}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,12"
+                                           Visibility="{Binding MessageSauvegarde,
+                                                        Converter={StaticResource NonVideVisibilite}}" />
+
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="Restaurer une sauvegarde"
+                                            Style="{StaticResource BoutonSecondaire}"
+                                            Command="{Binding RestaurerCommand}"
+                                            Margin="0,0,10,0"
+                                            ToolTip="Remplace toutes les données actuelles par celles du fichier choisi" />
+
+                                    <Button Content="Sauvegarder maintenant"
+                                            Style="{StaticResource BoutonPrincipal}"
+                                            Command="{Binding SauvegarderCommand}" />
+                                </StackPanel>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </Grid>

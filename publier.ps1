@@ -16,7 +16,11 @@ param(
     # Version allégée : le poste du magasin doit alors avoir le
     # « .NET 10 Desktop Runtime » installé, mais l'archive passe
     # d'environ 70 Mo à moins de 15 Mo.
-    [switch]$Allegee
+    [switch]$Allegee,
+
+    # Livre sans PostgreSQL. Le magasin devra alors l'installer lui-même et
+    # saisir ses identifiants au premier démarrage.
+    [switch]$SansBaseDeDonnees
 )
 
 $ErrorActionPreference = "Stop"
@@ -86,6 +90,33 @@ $configLivree = Join-Path $cheminSortie "appsettings.json"
 
 Write-Host "Configuration livree sans identifiants : le magasin saisira les siens au premier demarrage." -ForegroundColor Gray
 
+# --- PostgreSQL livré avec le logiciel ---
+#
+# Sans ce dossier, le magasin devrait installer PostgreSQL lui-même. Sa
+# presence est donc verifiee avant de constituer l'archive : un paquet
+# incomplet ne se decouvrirait que chez le client.
+if (-not $SansBaseDeDonnees) {
+    if (-not (Test-Path "pgsql\bin\pg_ctl.exe")) {
+        Write-Host ""
+        Write-Host "Le dossier « pgsql » est introuvable." -ForegroundColor Red
+        Write-Host ""
+        Write-Host "Recuperez-le une seule fois avec :" -ForegroundColor Yellow
+        Write-Host "    .\outils\telecharger-postgres.ps1"
+        Write-Host ""
+        Write-Host "Ou publiez sans base de donnees (le magasin devra alors"
+        Write-Host "installer PostgreSQL lui-meme) :"
+        Write-Host "    .\publier.ps1 -SansBaseDeDonnees"
+        Write-Host ""
+        exit 1
+    }
+
+    Write-Host "Integration de PostgreSQL dans la livraison..." -ForegroundColor Gray
+    Copy-Item "pgsql" (Join-Path $cheminSortie "pgsql") -Recurse
+}
+else {
+    Write-Host "Livraison SANS base de donnees : le magasin devra installer PostgreSQL." -ForegroundColor Yellow
+}
+
 # Guide d'installation destiné au magasin.
 $guide = "GUIDE-INSTALLATION.md"
 if (Test-Path $guide) {
@@ -112,11 +143,22 @@ Write-Host "À transmettre au client :" -ForegroundColor Cyan
 Write-Host "  1. L'archive ci-dessus"
 Write-Host "  2. Le guide GUIDE-INSTALLATION.md (déjà inclus dans l'archive)"
 Write-Host ""
-if ($autonome) {
-    Write-Host "Le poste du magasin n'a besoin que de PostgreSQL." -ForegroundColor Yellow
-} else {
-    Write-Host "Le poste du magasin a besoin de PostgreSQL ET du .NET 10 Desktop Runtime." -ForegroundColor Yellow
+if ($SansBaseDeDonnees) {
+    if ($autonome) {
+        Write-Host "Le poste du magasin doit installer PostgreSQL." -ForegroundColor Yellow
+    } else {
+        Write-Host "Le poste du magasin doit installer PostgreSQL ET le .NET 10 Desktop Runtime." -ForegroundColor Yellow
+    }
+
+    Write-Host "Le logiciel demandera les informations de connexion au premier demarrage."
+}
+elseif ($autonome) {
+    Write-Host "Le poste du magasin n'a RIEN a installer." -ForegroundColor Green
+    Write-Host "Decompresser, double-cliquer : le logiciel demarre sa propre base de donnees."
+}
+else {
+    Write-Host "Le poste du magasin a besoin du .NET 10 Desktop Runtime." -ForegroundColor Yellow
+    Write-Host "La base de donnees, elle, est livree avec le logiciel."
 }
 
-Write-Host "Le logiciel demandera lui-meme les informations de connexion au premier demarrage."
 Write-Host ""

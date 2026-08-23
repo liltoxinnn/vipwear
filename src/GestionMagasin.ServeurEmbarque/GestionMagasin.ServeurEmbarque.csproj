@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Serveur PostgreSQL démarré par l'application elle-même, à partir de
+    fichiers livrés dans son dossier : le magasin n'installe rien.
+
+    Ce code est mis au point et éprouvé dans un dépôt distinct
+    (gestionmagasin-serveur-embarque), où douze tests le font tourner sur un
+    vrai serveur. Toute correction doit y être portée d'abord.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+  </ItemGroup>
+
+</Project>

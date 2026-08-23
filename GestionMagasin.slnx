@@ -4,6 +4,7 @@
     <Project Path="src/GestionMagasin.Application/GestionMagasin.Application.csproj" />
     <Project Path="src/GestionMagasin.Domain/GestionMagasin.Domain.csproj" />
     <Project Path="src/GestionMagasin.Infrastructure/GestionMagasin.Infrastructure.csproj" />
+    <Project Path="src/GestionMagasin.ServeurEmbarque/GestionMagasin.ServeurEmbarque.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GestionMagasin.Tests/GestionMagasin.Tests.csproj" />

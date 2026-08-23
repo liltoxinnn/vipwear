@@ -129,42 +129,44 @@ fiche magasin).
 
 ## Livrer le logiciel à un magasin
 
-Un script prépare le dossier de livraison complet :
+Le poste du magasin n'installe **rien** : PostgreSQL est livré avec le
+logiciel, qui démarre sa propre base de données.
 
 ```powershell
+.\outils\telecharger-postgres.ps1   # une seule fois, environ 350 Mo
 .\publier.ps1
 ```
 
-Il produit `livraison/GestionMagasin-1.0.0.zip`, prêt à être transmis, avec le
-guide d'installation à l'intérieur.
+L'archive obtenue dans `livraison\` est prête à être envoyée. Le magasin la
+décompresse, double-clique, et travaille.
 
-| Mode | Commande | Taille | Prérequis sur le poste du magasin |
-|---|---|---|---|
-| Autonome (défaut) | `.\publier.ps1` | ~70 Mo | PostgreSQL seulement |
-| Allégé | `.\publier.ps1 -Allegee` | ~15 Mo | PostgreSQL + .NET 10 Desktop Runtime |
+| | |
+|---|---|
+| Archive | environ 150 à 200 Mo |
+| À installer sur le poste | rien |
+| Durée d'installation | environ 2 minutes |
+| Mot de passe de base de données | aucun, il est tiré au hasard |
 
-Le mode autonome embarque le moteur .NET : le magasin décompresse et
-double-clique, sans rien installer d'autre que PostgreSQL.
+La base écoute uniquement sur `127.0.0.1`, sur un port distinct du 5432 :
+elle n'est joignable depuis aucune autre machine, et cohabite avec un
+PostgreSQL déjà installé.
 
-### Configuration chez le client
+**Sauvegarde.** pgAdmin n'étant pas présent sur le poste, elle passe par
+**Paramètres (F12) → Sauvegarder maintenant**. C'est la seule protection des
+données du magasin, et le guide d'installation insiste dessus.
 
-Le magasin ne modifie **jamais** de fichier de configuration. Au premier
-démarrage, si la base n'est pas joignable, le logiciel affiche une fenêtre
-**« Configuration de la base de données »** où l'on saisit serveur, port,
-nom de base, utilisateur et mot de passe.
+Pour livrer sans base de données — le magasin installe alors PostgreSQL
+lui-même et saisit ses identifiants au premier démarrage :
 
-Le bouton *Tester la connexion* vérifie l'accès, **crée la base si elle
-n'existe pas**, et n'autorise le démarrage qu'en cas de succès. Les
-informations sont enregistrées dans `appsettings.Local.json`, à côté de
-l'exécutable — une mise à jour du logiciel ne les efface pas.
+```powershell
+.\publier.ps1 -SansBaseDeDonnees
+```
 
-Le document [GUIDE-INSTALLATION.md](GUIDE-INSTALLATION.md) accompagne la
-livraison : il est rédigé pour le personnel du magasin, sans jargon
-technique, et couvre l'installation de PostgreSQL, la première connexion,
-la configuration du magasin, la création des comptes employés et la
-sauvegarde des données.
+Le composant qui héberge la base est mis au point et éprouvé dans un dépôt
+distinct, `gestionmagasin-serveur-embarque`, où douze tests le font tourner
+sur un vrai serveur. Toute correction doit y être portée d'abord, puis
+recopiée dans `src/GestionMagasin.ServeurEmbarque`.
 
----
 
 ## Première connexion
 
