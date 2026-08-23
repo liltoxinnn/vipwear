@@ -48,12 +48,34 @@ public partial class LignePanier : ObservableObject
 
     partial void OnRemiseChanged(decimal value) => Notifier();
 
+    /// <summary>
+    /// Vrai pendant la notification, pour couper court à un aller-retour
+    /// entre la ligne et le panier. Une récursion sans fin sature la pile
+    /// d'appels, ce que Windows sanctionne en arrêtant le programme
+    /// instantanément, sans erreur ni trace.
+    /// </summary>
+    private bool _notificationEnCours;
+
     private void Notifier()
     {
-        OnPropertyChanged(nameof(Total));
-        OnPropertyChanged(nameof(DepasseStock));
+        if (_notificationEnCours)
+        {
+            return;
+        }
 
-        LigneModifiee?.Invoke(this, EventArgs.Empty);
+        _notificationEnCours = true;
+
+        try
+        {
+            OnPropertyChanged(nameof(Total));
+            OnPropertyChanged(nameof(DepasseStock));
+
+            LigneModifiee?.Invoke(this, EventArgs.Empty);
+        }
+        finally
+        {
+            _notificationEnCours = false;
+        }
     }
 
     /// <summary>Déclenché à chaque modification qui change le total du panier.</summary>
@@ -429,7 +451,37 @@ public partial class VueModeleCaisse : VueModeleBase
         RecalculerTotaux();
     }
 
+    /// <summary>
+    /// Vrai pendant un recalcul. Le recalcul modifie des propriétés qui, à
+    /// leur tour, demandent un recalcul : sans ce verrou, une remise ou une
+    /// quantité particulière peut enclencher un enchaînement sans fin.
+    /// </summary>
+    private bool _recalculEnCours;
+
     private void RecalculerTotaux()
+    {
+        if (_recalculEnCours)
+        {
+            Journal.LogWarning(
+                "Recalcul des totaux réentrant : l'enchaînement a été interrompu. " +
+                "Remise {Remise}, sous-total {SousTotal}.", RemiseGlobale, SousTotal);
+
+            return;
+        }
+
+        _recalculEnCours = true;
+
+        try
+        {
+            RecalculerTotauxInterne();
+        }
+        finally
+        {
+            _recalculEnCours = false;
+        }
+    }
+
+    private void RecalculerTotauxInterne()
     {
         SousTotal = Panier.Sum(l => l.Total);
         NombreArticles = Panier.Sum(l => l.Quantite);

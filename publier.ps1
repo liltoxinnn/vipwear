@@ -103,22 +103,27 @@ if (Test-Path $configLocale) {
 # par hasard le même.
 $configLivree = Join-Path $cheminSortie "appsettings.json"
 
-@'
+# Le niveau de detail suit le mode demande : en diagnostic, tout est
+# journalise. Sans cela, le paquet livre museler les traces posees pour
+# retrouver un incident.
+$niveau = if ($Diagnostic) { "Debug" } else { "Information" }
+
+@"
 {
-  "ConnectionStrings": {
-    "BaseDonnees": ""
+  ""ConnectionStrings"": {
+    ""BaseDonnees"": """"
   },
-  "Serilog": {
-    "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-        "Microsoft": "Warning",
-        "Microsoft.EntityFrameworkCore.Database.Command": "Warning"
+  ""Serilog"": {
+    ""MinimumLevel"": {
+      ""Default"": ""$niveau"",
+      ""Override"": {
+        ""Microsoft"": ""Warning"",
+        ""Microsoft.EntityFrameworkCore.Database.Command"": ""Warning""
       }
     }
   }
 }
-'@ | Set-Content -Path $configLivree -Encoding UTF8
+"@ | Set-Content -Path $configLivree -Encoding UTF8
 
 Write-Host "Configuration livree sans identifiants : le magasin saisira les siens au premier demarrage." -ForegroundColor Gray
 
