@@ -67,25 +67,25 @@ public abstract partial class VueModeleBase : ObservableObject
         // Les opérations ne sont pas abandonnées mais mises à la suite : une
         // fiche demandée pendant le rechargement d'une liste doit finir par
         // s'afficher, pas disparaître silencieusement.
-        Journal.LogInformation("[{Etape}] attente du tour.", etape);
+        Journal.LogDebug("[{Etape}] attente du tour.", etape);
 
         await _acces.WaitAsync().ConfigureAwait(true);
 
-        Journal.LogInformation("[{Etape}] passage en attente à l'écran.", etape);
+        Journal.LogDebug("[{Etape}] passage en attente à l'écran.", etape);
 
         EstOccupe = true;
 
-        Journal.LogInformation("[{Etape}] effacement du message d'état.", etape);
+        Journal.LogDebug("[{Etape}] effacement du message d'état.", etape);
 
         MessageStatut = null;
 
-        Journal.LogInformation("[{Etape}] appel de l'opération.", etape);
+        Journal.LogDebug("[{Etape}] appel de l'opération.", etape);
 
         try
         {
             await operation().ConfigureAwait(true);
 
-            Journal.LogInformation("[{Etape}] opération terminée.", etape);
+            Journal.LogDebug("[{Etape}] opération terminée.", etape);
 
             if (messageSucces is not null)
             {
@@ -132,11 +132,27 @@ public abstract partial class VueModeleBase : ObservableObject
             EstOccupe = false;
             _acces.Release();
 
-            Journal.LogInformation("[{Etape}] écran rendu à l'utilisateur.", etape);
+            Journal.LogDebug("[{Etape}] écran rendu à l'utilisateur.", etape);
         }
     }
 
-    /// <summary>Variante retournant une valeur.</summary>
+    /// <summary>
+    /// Variante retournant une valeur.
+    /// </summary>
+    /// <remarks>
+    /// Le corps de la lambda est un BLOC, et cette forme n'est pas
+    /// cosmétique.
+    ///
+    /// Écrite en expression — « async () => resultat = await operation() » —
+    /// l'affectation produit une valeur de type T. La lambda satisfait alors
+    /// aussi bien Func&lt;Task&gt; que Func&lt;Task&lt;T&gt;&gt;, et le
+    /// compilateur retient la seconde : cette méthode s'appelait elle-même,
+    /// indéfiniment, jusqu'à saturer la pile d'appels. Windows arrêtait le
+    /// logiciel sur-le-champ, sans exception ni trace, à chaque encaissement.
+    ///
+    /// Le bloc ne produit aucune valeur : seule Func&lt;Task&gt; convient, et
+    /// la surcharge qui travaille est bien celle qui est appelée.
+    /// </remarks>
     protected async Task<T?> ExecuterAsync<T>(
         Func<Task<T>> operation,
         string? messageSucces = null,
@@ -145,7 +161,7 @@ public abstract partial class VueModeleBase : ObservableObject
         T? resultat = default;
 
         await ExecuterAsync(
-            async () => resultat = await operation().ConfigureAwait(true),
+            async () => { resultat = await operation().ConfigureAwait(true); },
             messageSucces,
             contexteJournal).ConfigureAwait(true);
 
