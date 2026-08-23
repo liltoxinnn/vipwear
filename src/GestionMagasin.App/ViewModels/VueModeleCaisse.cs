@@ -465,8 +465,39 @@ public partial class VueModeleCaisse : VueModeleBase
 
     private bool PeutValiderVente() => Panier.Count > 0 && !EstOccupe;
 
+    /// <summary>
+    /// Encaisse le panier.
+    ///
+    /// Tout est enveloppé : une erreur imprévue doit se voir dans un message,
+    /// jamais fermer la caisse en pleine vente. Le geste le plus critique du
+    /// logiciel ne peut pas être le moins protégé.
+    /// </summary>
     [RelayCommand(CanExecute = nameof(PeutValiderVente))]
     private async Task ValiderVenteAsync()
+    {
+        try
+        {
+            await EncaisserAsync().ConfigureAwait(true);
+        }
+        catch (Domain.Exceptions.ExceptionMetier erreur)
+        {
+            Journal.LogWarning(erreur, "Vente refusée : {Message}", erreur.Message);
+            Dialogue.Erreur(erreur.Message, "Vente impossible");
+        }
+        catch (Exception erreur)
+        {
+            Journal.LogError(erreur, "Vente : erreur imprévue en caisse.");
+
+            Dialogue.Erreur(
+                "L'encaissement s'est interrompu." + Environment.NewLine + Environment.NewLine +
+                "Détail : " + erreur.Message + Environment.NewLine + Environment.NewLine +
+                "Vérifiez dans l'écran Ventes si l'opération a été enregistrée avant " +
+                "de la refaire, afin de ne pas la compter deux fois.",
+                "Encaissement interrompu");
+        }
+    }
+
+    private async Task EncaisserAsync()
     {
         if (Panier.Count == 0)
         {
@@ -511,29 +542,49 @@ public partial class VueModeleCaisse : VueModeleBase
                 : []
         };
 
+        // Chaque étape est tracée. Une vente qui échoue en caisse doit pouvoir
+        // être diagnostiquée sur le poste du magasin, où l'on ne dispose que
+        // du journal.
+        Journal.LogInformation("Vente : enregistrement de {Lignes} ligne(s) pour {Total}.",
+            demande.Lignes.Count, Total);
+
         var vente = await ExecuterAsync(
             () => _ventes.EnregistrerVenteAsync(demande),
             contexteJournal: "validation d'une vente").ConfigureAwait(true);
 
         if (vente is null)
         {
+            Journal.LogWarning("Vente : enregistrement abandonné, rien n'a été écrit.");
             return;
         }
 
+        Journal.LogInformation("Vente {Numero} enregistrée. Stock décompté.", vente.NumeroVente);
+
         var monnaie = MonnaieARendre;
 
-        // Le panier est vidé immédiatement : la caisse est prête pour le
-        // client suivant.
-        Panier.Clear();
-        RemiseGlobale = 0m;
-        MontantRecu = 0m;
-        ClientSelectionne = null;
-        ResultatsRecherche.Clear();
-        TermeRecherche = string.Empty;
-        RecalculerTotaux();
+        // À partir d'ici la vente EST enregistrée et le stock décompté. Plus
+        // rien ne doit pouvoir faire échouer l'opération : ce qui suit ne
+        // concerne que l'affichage et l'impression.
+        try
+        {
+            // Le panier est vidé immédiatement : la caisse est prête pour le
+            // client suivant.
+            Panier.Clear();
+            RemiseGlobale = 0m;
+            MontantRecu = 0m;
+            ClientSelectionne = null;
+            ResultatsRecherche.Clear();
+            TermeRecherche = string.Empty;
+            RecalculerTotaux();
 
-        // Les quantités affichées dans le catalogue viennent d'être décomptées.
-        await ChargerCatalogueAsync().ConfigureAwait(true);
+            // Les quantités affichées dans le catalogue viennent d'être décomptées.
+            await ChargerCatalogueAsync().ConfigureAwait(true);
+        }
+        catch (Exception erreur)
+        {
+            Journal.LogError(erreur, "Vente {Numero} : remise à zéro de la caisse en échec.",
+                vente.NumeroVente);
+        }
 
         var message = $"Vente {vente.NumeroVente} enregistrée pour " +
                       $"{FormatageMontant.Formater(vente.Total)}.";
@@ -551,26 +602,72 @@ public partial class VueModeleCaisse : VueModeleBase
         {
             await ImprimerTicketAsync(vente).ConfigureAwait(true);
         }
+
+        Journal.LogInformation("Vente {Numero} : caisse prête pour le client suivant.",
+            vente.NumeroVente);
     }
 
-    private async Task ImprimerTicketAsync(VenteDto vente) =>
-        await ExecuterAsync(async () =>
+    /// <summary>
+    /// Produit le ticket de la vente.
+    ///
+    /// La vente est déjà enregistrée à ce stade : un ticket qui échoue ne doit
+    /// jamais la remettre en cause. Les étapes sont tracées séparément car la
+    /// mise en page du PDF s'appuie sur une bibliothèque native, dont un
+    /// incident ne laisse aucune exception derrière lui.
+    /// </summary>
+    private async Task ImprimerTicketAsync(VenteDto vente)
+    {
+        var chemin = Dialogue.DemanderCheminEnregistrement(
+            $"Ticket-{vente.NumeroVente}.pdf",
+            "Document PDF (*.pdf)|*.pdf");
+
+        if (chemin is null)
         {
-            var contenu = await _documents.GenererTicketAsync(vente).ConfigureAwait(true);
+            return;
+        }
 
-            var chemin = Dialogue.DemanderCheminEnregistrement(
-                $"Ticket-{vente.NumeroVente}.pdf",
-                "Document PDF (*.pdf)|*.pdf");
+        byte[] contenu;
 
-            if (chemin is null)
-            {
-                return;
-            }
+        try
+        {
+            Journal.LogInformation("Ticket {Numero} : mise en page du document…", vente.NumeroVente);
 
+            contenu = await _documents.GenererTicketAsync(vente).ConfigureAwait(true);
+
+            Journal.LogInformation("Ticket {Numero} : document produit ({Taille} octets).",
+                vente.NumeroVente, contenu.Length);
+        }
+        catch (Exception erreur)
+        {
+            Journal.LogError(erreur, "Ticket {Numero} : mise en page impossible.", vente.NumeroVente);
+
+            Dialogue.Erreur(
+                $"La vente {vente.NumeroVente} est bien enregistrée, mais le ticket " +
+                "n'a pas pu être produit." + Environment.NewLine + Environment.NewLine +
+                "Vous pouvez le réimprimer depuis l'écran Ventes.",
+                "Ticket non imprimé");
+
+            return;
+        }
+
+        try
+        {
             await File.WriteAllBytesAsync(chemin, contenu).ConfigureAwait(true);
 
             OuvrirDocument(chemin);
-        }, contexteJournal: "impression du ticket").ConfigureAwait(true);
+        }
+        catch (Exception erreur)
+        {
+            Journal.LogError(erreur, "Ticket {Numero} : enregistrement ou ouverture impossible.",
+                vente.NumeroVente);
+
+            Dialogue.Avertir(
+                $"La vente {vente.NumeroVente} est enregistrée et le ticket a été créé, " +
+                "mais il n'a pas pu être ouvert." + Environment.NewLine + Environment.NewLine +
+                $"Le fichier se trouve ici : {chemin}",
+                "Ticket non ouvert");
+        }
+    }
 
     /// <summary>Ouvre le document avec le lecteur PDF installé sur le poste.</summary>
     internal static void OuvrirDocument(string chemin)

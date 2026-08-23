@@ -246,6 +246,10 @@ public partial class App : System.Windows.Application
                 Path.Combine(dossierJournaux, "gestionmagasin-.log"),
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
+                // Écriture immédiate : si le logiciel s'arrête brutalement, les
+                // dernières lignes sont précisément celles qui expliquent
+                // pourquoi. Mises en attente, elles seraient perdues.
+                flushToDiskInterval: TimeSpan.FromMilliseconds(500),
                 outputTemplate:
                 "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
