@@ -159,6 +159,69 @@ public class TestsInterface
     }
 
     /// <summary>
+    /// Une liaison écrite sur le même élément qu'un « DataContext » est
+    /// résolue dans le NOUVEAU contexte, pas dans celui du parent.
+    ///
+    /// Écrire à la fois DataContext="{Binding ArticleChoisi}" et
+    /// Visibility="{Binding ArticleChoisi, ...}" cherche donc
+    /// « ArticleChoisi » sur l'article lui-même. La liaison échoue sans
+    /// bruit — ni exception, ni trace — et la propriété garde sa valeur par
+    /// défaut. Le panneau de choix de la caisse restait ainsi affiché en
+    /// permanence par-dessus le rayon.
+    ///
+    /// Le remède tient en un conteneur : la visibilité dehors, le contexte
+    /// dedans.
+    /// </summary>
+    [Fact]
+    public void Aucun_element_ne_se_lie_a_la_propriete_dont_il_change_le_contexte()
+    {
+        var fautes = new List<string>();
+
+        foreach (var fichier in FichiersXaml())
+        {
+            var contenu = File.ReadAllText(fichier);
+
+            // Un élément va de « < » au « > » qui le referme.
+            foreach (Match element in Regex.Matches(contenu, @"<[A-Za-z][^<>]*?/?>", RegexOptions.Singleline))
+            {
+                var contexte = Regex.Match(
+                    element.Value, @"DataContext\s*=\s*""\{Binding\s+([A-Za-z_][A-Za-z0-9_]*)");
+
+                if (!contexte.Success)
+                {
+                    continue;
+                }
+
+                var propriete = contexte.Groups[1].Value;
+
+                foreach (Match liaison in Regex.Matches(
+                             element.Value, @"(\w+)\s*=\s*""\{Binding\s+([A-Za-z_][A-Za-z0-9_.]*)"))
+                {
+                    if (liaison.Groups[1].Value == "DataContext")
+                    {
+                        continue;
+                    }
+
+                    var chemin = liaison.Groups[2].Value;
+
+                    if (chemin == propriete || chemin.StartsWith(propriete + ".", StringComparison.Ordinal))
+                    {
+                        var ligne = contenu.Take(element.Index).Count(c => c == '\n') + 1;
+
+                        fautes.Add($"{Path.GetFileName(fichier)}:{ligne} — " +
+                                   $"{liaison.Groups[1].Value} se lie à « {chemin} » sur l'élément " +
+                                   $"qui prend « {propriete} » pour contexte");
+                    }
+                }
+            }
+        }
+
+        Assert.True(fautes.Count == 0,
+            "Liaisons résolues dans le mauvais contexte :" + Environment.NewLine +
+            string.Join(Environment.NewLine, fautes));
+    }
+
+    /// <summary>
     /// Une zone défilante dont la barre apparaît « au besoin » change de
     /// largeur selon son contenu. Si ce contenu se répartit d'après la largeur
     /// — c'est le cas d'une grille de vignettes — chaque mesure en modifie une

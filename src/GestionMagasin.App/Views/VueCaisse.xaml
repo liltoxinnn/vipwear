@@ -190,8 +190,20 @@
                             taille en rupture reste affichée, barrée — elle
                             existe, et c'est une information.
                         -->
-                        <Grid Visibility="{Binding ArticleChoisi, Converter={StaticResource NonVideVisibilite}}"
-                              DataContext="{Binding ArticleChoisi}">
+                        <!--
+                            La visibilité est portée par ce conteneur, et le
+                            contexte de données par la grille qu'il enferme.
+
+                            Les deux sur le même élément ne fonctionneraient
+                            pas : une liaison écrite à côté d'un
+                            « DataContext » est résolue dans le NOUVEAU
+                            contexte. « ArticleChoisi » y serait cherché sur
+                            l'article lui-même, la liaison échouerait sans
+                            bruit, et le choix resterait affiché en
+                            permanence par-dessus le rayon.
+                        -->
+                        <Grid Visibility="{Binding ArticleChoisi, Converter={StaticResource NonVideVisibilite}}">
+                          <Grid DataContext="{Binding ArticleChoisi}">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
@@ -270,6 +282,7 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                             </ScrollViewer>
+                          </Grid>
                         </Grid>
                     </Grid>
                 </Grid>
