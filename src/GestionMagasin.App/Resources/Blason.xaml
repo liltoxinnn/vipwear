@@ -39,16 +39,16 @@
     <ControlTemplate x:Key="BlasonComplet" TargetType="ContentControl">
         <Grid>
             <!-- Logo déposé par le magasin : il prend toute la place. -->
-            <Ellipse Visibility="{Binding Source={x:Static views:Enseigne.LogoPresent},
+            <Ellipse Visibility="{Binding LogoPresent, Source={x:Static views:Enseigne.Courante},
                                   Converter={StaticResource BooleenVisibilite}}">
                 <Ellipse.Fill>
-                    <ImageBrush ImageSource="{x:Static views:Enseigne.Logo}" Stretch="UniformToFill" />
+                    <ImageBrush ImageSource="{Binding Logo, Source={x:Static views:Enseigne.Courante}}" Stretch="UniformToFill" />
                 </Ellipse.Fill>
             </Ellipse>
 
             <!-- Blason dessiné, employé à défaut de fichier. -->
             <Viewbox Stretch="Uniform"
-                     Visibility="{Binding Source={x:Static views:Enseigne.LogoPresent},
+                     Visibility="{Binding LogoPresent, Source={x:Static views:Enseigne.Courante},
                                   Converter={StaticResource BooleenVisibilite},
                                   ConverterParameter=inverse}">
                 <Canvas Width="200" Height="200">
@@ -81,14 +81,14 @@
          ============================================================ -->
     <ControlTemplate x:Key="BlasonCompact" TargetType="ContentControl">
         <Grid>
-            <Ellipse Visibility="{Binding Source={x:Static views:Enseigne.LogoPresent},
+            <Ellipse Visibility="{Binding LogoPresent, Source={x:Static views:Enseigne.Courante},
                                   Converter={StaticResource BooleenVisibilite}}">
                 <Ellipse.Fill>
-                    <ImageBrush ImageSource="{x:Static views:Enseigne.Logo}" Stretch="UniformToFill" />
+                    <ImageBrush ImageSource="{Binding Logo, Source={x:Static views:Enseigne.Courante}}" Stretch="UniformToFill" />
                 </Ellipse.Fill>
             </Ellipse>
 
-            <Grid Visibility="{Binding Source={x:Static views:Enseigne.LogoPresent},
+            <Grid Visibility="{Binding LogoPresent, Source={x:Static views:Enseigne.Courante},
                                Converter={StaticResource BooleenVisibilite},
                                ConverterParameter=inverse}">
                 <Ellipse Fill="#0A0A0A" />

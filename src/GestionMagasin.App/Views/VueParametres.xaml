@@ -101,6 +101,64 @@
                                     HorizontalAlignment="Right" />
 
                             <!--
+                                Logo du magasin. L'aperçu est le gabarit employé
+                                par l'écran de connexion : ce qui s'affiche ici
+                                est exactement ce que verra l'utilisateur.
+                            -->
+                            <StackPanel Margin="0,26,0,0">
+
+                                <Separator Margin="0,0,0,18" />
+
+                                <TextBlock Text="Logo du magasin"
+                                           Style="{StaticResource TexteSousTitre}"
+                                           Margin="0,0,0,6" />
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <ContentControl Grid.Column="0"
+                                                    Width="104" Height="104"
+                                                    VerticalAlignment="Top"
+                                                    Template="{StaticResource BlasonComplet}" />
+
+                                    <StackPanel Grid.Column="1" Margin="18,0,0,0">
+                                        <TextBlock Style="{StaticResource TexteSecondaire}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,0,0,10">
+                                            L'emblème ci-contre est dessiné dans le logiciel : il
+                                            s'affiche sur l'écran de connexion et dans le menu sans
+                                            qu'aucun fichier soit nécessaire.
+                                        </TextBlock>
+
+                                        <TextBlock Style="{StaticResource TexteSecondaire}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,0,0,14">
+                                            Pour afficher votre propre logo à la place, choisissez
+                                            l'image ci-dessous. Une image carrée donne le meilleur
+                                            résultat. Le changement est immédiat.
+                                        </TextBlock>
+
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="Choisir une image…"
+                                                    Style="{StaticResource BoutonPrincipal}"
+                                                    Command="{Binding ChoisirLogoCommand}"
+                                                    Margin="0,0,10,0" />
+
+                                            <Button Content="Retirer le logo"
+                                                    Style="{StaticResource BoutonSecondaire}"
+                                                    Command="{Binding RetirerLogoCommand}"
+                                                    ToolTip="Revenir à l'emblème dessiné dans le logiciel"
+                                                    Visibility="{Binding Enseigne.LogoInstalle,
+                                                                 Converter={StaticResource BooleenVisibilite}}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+
+                            <!--
                                 Sauvegarde des données. Cette section n'apparaît
                                 que lorsque le logiciel héberge lui-même sa base :
                                 elle est alors la seule protection du magasin.

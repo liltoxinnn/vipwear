@@ -43,9 +43,8 @@ Il n'y a **rien d'autre à installer**.
 connexion et dans le menu sans qu'aucun fichier soit nécessaire, et il reste
 net à toutes les tailles.
 
-Pour afficher la photographie exacte du logo à la place, déposez-la à côté de
-`GestionMagasin.exe` sous le nom `logo.png`. Une image **carrée** donne le
-meilleur résultat. Retirez le fichier pour revenir à l'emblème dessiné.
+Pour afficher **votre image exacte** à la place, voir l'étape 3 ci-dessous :
+tout se fait depuis le logiciel, sans manipuler de fichier.
 
 Le premier démarrage prend une dizaine de secondes, le temps que le logiciel
 prépare sa base de données. Les suivants sont immédiats.
@@ -81,6 +80,21 @@ Allez dans **Paramètres** (menu de gauche, ou touche **F12**) et renseignez :
 - Le **délai de retour** accepté (30 jours par défaut)
 
 Cliquez sur **Enregistrer les paramètres**.
+
+### Installer votre logo
+
+Toujours dans **Paramètres**, descendez jusqu'à **Logo du magasin** :
+
+1. Cliquez sur **Choisir une image…**
+2. Sélectionnez votre logo (PNG ou JPEG)
+
+Il remplace aussitôt l'emblème dessiné, sur l'écran de connexion comme dans
+le menu — sans redémarrer le logiciel.
+
+> Une image **carrée** donne le meilleur résultat : elle est affichée dans un
+> cercle, et une image large serait rognée sur les côtés.
+
+**Retirer le logo** revient à l'emblème dessiné.
 
 ---
 

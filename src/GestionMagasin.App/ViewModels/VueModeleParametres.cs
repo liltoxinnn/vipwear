@@ -355,6 +355,91 @@ public partial class VueModeleParametres : VueModeleBase
     }
 
     // ==================================================================
+    // Logo du magasin
+    // ==================================================================
+
+    /// <summary>
+    /// Enseigne affichée sur l'écran de connexion et dans le menu. L'écran
+    /// s'y lie directement : changer le logo met les deux à jour aussitôt,
+    /// sans redémarrer le logiciel.
+    /// </summary>
+    public Views.Enseigne Enseigne => Views.Enseigne.Courante;
+
+    /// <summary>
+    /// Installe l'image choisie comme logo du magasin.
+    ///
+    /// Le fichier est recopié dans le dossier de données du poste, et non à
+    /// côté du programme : ce dernier est parfois protégé en écriture par
+    /// Windows, et le magasin ne pourrait alors plus changer son logo.
+    /// </summary>
+    [RelayCommand]
+    private void ChoisirLogo()
+    {
+        var chemin = Dialogue.DemanderCheminOuverture(
+            "Images (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|Tous les fichiers (*.*)|*.*");
+
+        if (chemin is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!Enseigne.Installer(chemin))
+            {
+                Dialogue.Erreur(
+                    "Cette image n'a pas pu être lue. Choisissez un fichier PNG ou JPEG.",
+                    "Logo non installé");
+
+                return;
+            }
+        }
+        catch (Exception erreur)
+        {
+            Journal.LogError(erreur, "Installation du logo depuis {Chemin}", chemin);
+
+            Dialogue.Erreur(
+                "Le logo n'a pas pu être enregistré. Vérifiez que le fichier " +
+                "n'est pas ouvert dans un autre programme.",
+                "Logo non installé");
+
+            return;
+        }
+
+        Dialogue.Succes(
+            "Logo installé. Il apparaît dès maintenant dans le menu et sur " +
+            "l'écran de connexion.");
+    }
+
+    /// <summary>Revient à l'emblème dessiné dans le logiciel.</summary>
+    [RelayCommand]
+    private void RetirerLogo()
+    {
+        if (!Dialogue.Confirmer(
+                "Retirer le logo du magasin ? L'emblème dessiné dans le logiciel " +
+                "sera affiché à la place.",
+                "Retirer le logo"))
+        {
+            return;
+        }
+
+        try
+        {
+            Enseigne.Retirer();
+        }
+        catch (Exception erreur)
+        {
+            Journal.LogError(erreur, "Retrait du logo");
+
+            Dialogue.Erreur("Le logo n'a pas pu être retiré.", "Opération impossible");
+
+            return;
+        }
+
+        Dialogue.Succes("Logo retiré.");
+    }
+
+    // ==================================================================
     // Sauvegarde des données du magasin
     // ==================================================================
 
