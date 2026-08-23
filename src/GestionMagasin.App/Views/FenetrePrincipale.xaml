@@ -249,6 +249,21 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Background="{StaticResource PinceauFondOr}"
+                                BorderBrush="{StaticResource PinceauOr}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="10,4"
+                                Margin="0,0,14,0"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding PageCourante.EstOccupe,
+                                             Converter={StaticResource BooleenVisibilite}}">
+                            <TextBlock Text="Traitement en cours…"
+                                       Foreground="{StaticResource PinceauOrFonce}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold" />
+                        </Border>
+
                         <TextBlock Text="{Binding DateDuJour}"
                                    Style="{StaticResource TexteSecondaire}"
                                    VerticalAlignment="Center"
@@ -262,30 +277,15 @@
                 </Grid>
             </Border>
 
-            <!-- Page affichée -->
+            <!--
+                Page affichée. L'attente est signalée dans le bandeau supérieur
+                et non par un voile recouvrant la page : un voile fait
+                remesurer tout l'écran à chaque changement d'état, ce qui est
+                coûteux et expose la mise en page à des enchaînements
+                instables au pire moment — pendant un encaissement.
+            -->
             <Grid Grid.Row="1">
                 <ContentControl Content="{Binding PageCourante}" />
-
-                <!-- Voile d'attente -->
-                <Border Background="#66FFFFFF"
-                        Visibility="{Binding PageCourante.EstOccupe,
-                                     Converter={StaticResource BooleenVisibilite}}">
-                    <Border Style="{StaticResource Carte}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Padding="26,20">
-                        <StackPanel>
-                            <TextBlock Text="Traitement en cours…"
-                                       Style="{StaticResource TexteSousTitre}"
-                                       HorizontalAlignment="Center" />
-                            <ProgressBar IsIndeterminate="True"
-                                         Height="4"
-                                         Width="190"
-                                         Margin="0,12,0,0"
-                                         Foreground="{StaticResource PinceauAccent}" />
-                        </StackPanel>
-                    </Border>
-                </Border>
             </Grid>
         </Grid>
     </Grid>
