@@ -123,15 +123,15 @@
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter TargetName="Fond" Property="Background" Value="#1F1F1F" />
-                                                    <Setter TargetName="Dessin" Property="Stroke" Value="{StaticResource CouleurOrClair}" />
-                                                    <Setter TargetName="Libelle" Property="Foreground" Value="{StaticResource CouleurOrClair}" />
+                                                    <Setter TargetName="Dessin" Property="Stroke" Value="{StaticResource PinceauOrClair}" />
+                                                    <Setter TargetName="Libelle" Property="Foreground" Value="{StaticResource PinceauOrClair}" />
                                                 </Trigger>
                                                 <DataTrigger Binding="{Binding EstActive}" Value="True">
                                                     <Setter TargetName="Fond" Property="Background" Value="#1C1A14" />
                                                     <Setter TargetName="Fond" Property="BorderBrush" Value="{StaticResource PinceauOr}" />
-                                                    <Setter TargetName="Dessin" Property="Stroke" Value="{StaticResource CouleurOrClair}" />
+                                                    <Setter TargetName="Dessin" Property="Stroke" Value="{StaticResource PinceauOrClair}" />
                                                     <Setter TargetName="Dessin" Property="StrokeThickness" Value="1.8" />
-                                                    <Setter TargetName="Libelle" Property="Foreground" Value="{StaticResource CouleurOrClair}" />
+                                                    <Setter TargetName="Libelle" Property="Foreground" Value="{StaticResource PinceauOrClair}" />
                                                     <Setter TargetName="Libelle" Property="FontWeight" Value="SemiBold" />
                                                 </DataTrigger>
                                             </ControlTemplate.Triggers>
