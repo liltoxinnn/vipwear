@@ -151,6 +151,38 @@ Fermez puis rouvrez le logiciel après une restauration.
 
 ## En cas de problème
 
+### « La base de données n'a pas pu être préparée »
+
+Ce message n'apparaît qu'au tout premier démarrage. Il indique lui-même les
+causes possibles ; voici quoi faire, dans l'ordre.
+
+**1. Ne lancez pas le logiciel en tant qu'administrateur.**
+
+C'est la cause la plus fréquente. Fermez tout, puis rouvrez le logiciel par
+un **simple double-clic** sur `GestionMagasin.exe`. N'utilisez pas
+« Exécuter en tant qu'administrateur ».
+
+Si vous avez créé un raccourci : clic droit dessus → **Propriétés** →
+**Avancé** → décochez **Exécuter en tant qu'administrateur**.
+
+**2. Déplacez le dossier du logiciel.**
+
+Certains emplacements sont protégés par Windows. Placez le dossier dans un
+endroit simple :
+
+```
+C:\GestionMagasin
+```
+
+Évitez `Program Files`, les dossiers synchronisés (OneDrive, Google Drive),
+les clés USB et les lecteurs réseau.
+
+**3. Ajoutez une exception dans l'antivirus.**
+
+Sur le dossier complet du logiciel, `pgsql` compris.
+
+---
+
 ### « La base de données du magasin n'a pas pu démarrer »
 
 1. Fermez complètement le logiciel

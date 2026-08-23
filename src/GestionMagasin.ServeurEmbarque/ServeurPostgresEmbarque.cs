@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using Npgsql;
 
@@ -10,6 +12,15 @@ public sealed class ServeurEmbarqueException : Exception
 {
     public ServeurEmbarqueException(string message, Exception? interne = null)
         : base(message, interne) { }
+
+    /// <summary>
+    /// Sortie brute des programmes PostgreSQL, en anglais.
+    ///
+    /// Elle est destinée au journal technique, jamais à l'utilisateur du
+    /// magasin : le message, lui, est rédigé en français et indique quoi
+    /// faire.
+    /// </summary>
+    public string? DetailTechnique { get; init; }
 }
 
 /// <summary>
@@ -244,8 +255,10 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
 
             if (resultat.CodeSortie != 0)
             {
-                throw new ServeurEmbarqueException(
-                    "La base de données n'a pas pu être préparée." + Environment.NewLine + resultat.Sortie);
+                throw new ServeurEmbarqueException(DiagnostiquerPreparation(resultat.Sortie))
+                {
+                    DetailTechnique = resultat.Sortie
+                };
             }
         }
         finally
@@ -254,6 +267,86 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
         }
 
         await RestreindreAcces(jeton).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Traduit un échec de préparation en message utile.
+    ///
+    /// La sortie de PostgreSQL est en anglais et parle de « bootstrap script »
+    /// et de « restricted token » : elle n'apprend rien à un commerçant. Ce
+    /// message nomme les causes réelles et ce qu'il y a à faire.
+    /// </summary>
+    internal string DiagnostiquerPreparation(string sortie)
+    {
+        var message = "La base de données n'a pas pu être préparée." + Environment.NewLine;
+
+        var accesRefuse = sortie.Contains("Access is denied", StringComparison.OrdinalIgnoreCase)
+                          || sortie.Contains("Permission denied", StringComparison.OrdinalIgnoreCase);
+
+        if (!accesRefuse)
+        {
+            return message + Environment.NewLine +
+                   "Le détail technique a été enregistré dans le journal." + Environment.NewLine +
+                   $"Dossier concerné : « {_options.DossierDonnees} ».";
+        }
+
+        message += Environment.NewLine + "Windows a refusé l'accès. Trois causes possibles :" +
+                   Environment.NewLine + Environment.NewLine;
+
+        if (EstProcessusEleve())
+        {
+            // Cause la plus fréquente, et la seule que l'on puisse constater.
+            message += "1. LE LOGICIEL A ÉTÉ LANCÉ EN TANT QU'ADMINISTRATEUR." + Environment.NewLine +
+                       "   C'est le cas ici. PostgreSQL refuse de préparer ses données dans" + Environment.NewLine +
+                       "   ces conditions. Fermez le logiciel, puis rouvrez-le par un simple" + Environment.NewLine +
+                       "   double-clic, sans « Exécuter en tant qu'administrateur »." + Environment.NewLine;
+        }
+        else
+        {
+            message += "1. Le logiciel a peut-être été lancé en tant qu'administrateur." + Environment.NewLine +
+                       "   Rouvrez-le par un simple double-clic." + Environment.NewLine;
+        }
+
+        message += Environment.NewLine +
+                   "2. L'antivirus bloque le logiciel." + Environment.NewLine +
+                   "   Ajoutez une exception sur le dossier du logiciel." + Environment.NewLine +
+                   Environment.NewLine +
+                   "3. Le logiciel est installé à un emplacement protégé." + Environment.NewLine +
+                   $"   Emplacement actuel : « {AppContext.BaseDirectory} »." + Environment.NewLine +
+                   "   Déplacez le dossier dans « Documents », par exemple" + Environment.NewLine +
+                   "   C:\\GestionMagasin, puis relancez.";
+
+        return message;
+    }
+
+    /// <summary>
+    /// Vrai lorsque le programme tourne avec les droits d'administrateur.
+    /// PostgreSQL abandonne alors ses privilèges pour préparer ses données, et
+    /// perd du même coup l'accès à ses propres fichiers.
+    /// </summary>
+    private static bool EstProcessusEleve()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return false;
+        }
+
+        return EstAdministrateurWindows();
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static bool EstAdministrateurWindows()
+    {
+        try
+        {
+            using var identite = WindowsIdentity.GetCurrent();
+
+            return new WindowsPrincipal(identite).IsInRole(WindowsBuiltInRole.Administrator);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -292,7 +385,14 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
         {
             throw new ServeurEmbarqueException(
                 "Le serveur de base de données n'a pas pu démarrer." + Environment.NewLine +
-                $"Le détail figure dans « {journal} »." + Environment.NewLine + resultat.Sortie);
+                Environment.NewLine +
+                "Redémarrez l'ordinateur puis relancez le logiciel. Si le message" + Environment.NewLine +
+                "revient, vérifiez que l'antivirus ne bloque pas le logiciel." + Environment.NewLine +
+                Environment.NewLine +
+                $"Journal du serveur : « {journal} ».")
+            {
+                DetailTechnique = resultat.Sortie
+            };
         }
     }
 

@@ -185,12 +185,18 @@ public partial class App : System.Windows.Application
         {
             Log.Fatal(erreur, "Le serveur de base de données livré n'a pas pu démarrer.");
 
+            // La sortie des programmes PostgreSQL est en anglais : elle part
+            // dans le journal, à l'intention du prestataire, et n'est jamais
+            // montrée au magasin.
+            if (erreur is ServeurEmbarqueException { DetailTechnique: { } detail })
+            {
+                Log.Fatal("Sortie de PostgreSQL :{NouvelleLigne}{Detail}", Environment.NewLine, detail);
+            }
+
             MessageBox.Show(
-                "La base de données du magasin n'a pas pu démarrer." +
-                Environment.NewLine + Environment.NewLine +
                 erreur.Message + Environment.NewLine + Environment.NewLine +
-                "Redémarrez l'ordinateur puis relancez le logiciel. Si le problème " +
-                "persiste, transmettez le journal à votre prestataire.",
+                "Si le problème persiste, transmettez le journal à votre prestataire :" +
+                Environment.NewLine + DossierJournaux,
                 "Base de données indisponible",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
