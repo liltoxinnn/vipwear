@@ -59,17 +59,33 @@ public abstract partial class VueModeleBase : ObservableObject
         string? messageSucces = null,
         string? contexteJournal = null)
     {
+        // Chaque étape est tracée séparément. Un arrêt brutal — pile d'appels
+        // saturée — ne laisse ni exception ni trace : seule la dernière ligne
+        // écrite avant l'arrêt désigne alors l'instruction fautive.
+        var etape = contexteJournal ?? "opération";
+
         // Les opérations ne sont pas abandonnées mais mises à la suite : une
         // fiche demandée pendant le rechargement d'une liste doit finir par
         // s'afficher, pas disparaître silencieusement.
+        Journal.LogInformation("[{Etape}] attente du tour.", etape);
+
         await _acces.WaitAsync().ConfigureAwait(true);
 
+        Journal.LogInformation("[{Etape}] passage en attente à l'écran.", etape);
+
         EstOccupe = true;
+
+        Journal.LogInformation("[{Etape}] effacement du message d'état.", etape);
+
         MessageStatut = null;
+
+        Journal.LogInformation("[{Etape}] appel de l'opération.", etape);
 
         try
         {
             await operation().ConfigureAwait(true);
+
+            Journal.LogInformation("[{Etape}] opération terminée.", etape);
 
             if (messageSucces is not null)
             {
@@ -115,6 +131,8 @@ public abstract partial class VueModeleBase : ObservableObject
         {
             EstOccupe = false;
             _acces.Release();
+
+            Journal.LogInformation("[{Etape}] écran rendu à l'utilisateur.", etape);
         }
     }
 
