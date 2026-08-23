@@ -20,7 +20,12 @@ param(
 
     # Livre sans PostgreSQL. Le magasin devra alors l'installer lui-même et
     # saisir ses identifiants au premier démarrage.
-    [switch]$SansBaseDeDonnees
+    [switch]$SansBaseDeDonnees,
+
+    # Active le mode diagnostic : toutes les exceptions sont journalisées.
+    # À n'employer que pour retrouver un incident précis, jamais en
+    # exploitation courante.
+    [switch]$Diagnostic
 )
 
 $ErrorActionPreference = "Stop"
@@ -142,6 +147,14 @@ if (-not $SansBaseDeDonnees) {
 }
 else {
     Write-Host "Livraison SANS base de donnees : le magasin devra installer PostgreSQL." -ForegroundColor Yellow
+}
+
+if ($Diagnostic) {
+    Set-Content -Path (Join-Path $cheminSortie "diagnostic.txt") `
+        -Value "Mode diagnostic. Supprimez ce fichier pour revenir au fonctionnement normal." `
+        -Encoding UTF8
+
+    Write-Host "MODE DIAGNOSTIC : toutes les exceptions seront journalisees." -ForegroundColor Yellow
 }
 
 # Guide d'installation destiné au magasin.

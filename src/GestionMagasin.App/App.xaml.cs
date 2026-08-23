@@ -566,5 +566,42 @@ public partial class App : System.Windows.Application
         // trace.
         AppDomain.CurrentDomain.UnhandledException += SurErreurFatale;
         TaskScheduler.UnobservedTaskException += SurTacheNonObservee;
+
+        ActiverDiagnosticApprofondi();
+    }
+
+    /// <summary>
+    /// Journalise toute exception dès qu'elle est levée, avant même qu'un
+    /// bloc de traitement ne la reçoive.
+    ///
+    /// Ce mode sert à retrouver un incident qui échappe aux filets habituels :
+    /// une erreur avalée quelque part, ou un arrêt si brutal qu'aucun
+    /// gestionnaire n'a le temps de s'exécuter. Il est bruyant et reste donc
+    /// éteint, sauf si un fichier « diagnostic.txt » est déposé à côté du
+    /// programme.
+    /// </summary>
+    private static void ActiverDiagnosticApprofondi()
+    {
+        var temoin = Path.Combine(AppContext.BaseDirectory, "diagnostic.txt");
+
+        if (!File.Exists(temoin))
+        {
+            return;
+        }
+
+        AppDomain.CurrentDomain.FirstChanceException += (_, e) =>
+        {
+            try
+            {
+                Log.Debug("Exception levée : {Type} — {Message}",
+                    e.Exception.GetType().FullName, e.Exception.Message);
+            }
+            catch (Exception)
+            {
+                // Le diagnostic ne doit jamais aggraver la situation.
+            }
+        };
+
+        Log.Warning("Mode diagnostic actif : toutes les exceptions sont journalisées.");
     }
 }
