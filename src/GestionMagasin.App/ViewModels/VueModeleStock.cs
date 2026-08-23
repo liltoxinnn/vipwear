@@ -45,7 +45,22 @@ public partial class VueModeleStock : VueModeleBase
 
     public override string SousTitre => "Quantités disponibles, alertes et historique des mouvements";
 
+    /// <summary>
+    /// Déclinaisons répondant aux filtres. Elles alimentent le regroupement
+    /// par produit, et ne sont affichées telles quelles qu'une fois un
+    /// produit ouvert.
+    /// </summary>
     public ObservableCollection<LigneStockDto> Lignes { get; } = [];
+
+    /// <summary>
+    /// Produits, avec leur stock cumulé. C'est la liste affichée par défaut :
+    /// un catalogue de deux cents produits en quatre couleurs et six tailles
+    /// ferait cinq mille lignes, où personne ne lirait rien.
+    /// </summary>
+    public ObservableCollection<LigneStockProduit> Produits { get; } = [];
+
+    /// <summary>Déclinaisons du produit ouvert, dans l'ordre des tailles.</summary>
+    public ObservableCollection<LigneStockDto> Declinaisons { get; } = [];
 
     public ObservableCollection<MouvementStockDto> Historique { get; } = [];
 
@@ -54,6 +69,16 @@ public partial class VueModeleStock : VueModeleBase
 
     [ObservableProperty]
     private LigneStockDto? _ligneSelectionnee;
+
+    /// <summary>
+    /// Produit dont on consulte le détail. Tant qu'il est vide, l'écran
+    /// montre la liste des produits.
+    /// </summary>
+    [ObservableProperty]
+    private LigneStockProduit? _produitOuvert;
+
+    [ObservableProperty]
+    private LigneStockProduit? _produitSelectionne;
 
     [ObservableProperty]
     private string _recherche = string.Empty;
@@ -95,6 +120,7 @@ public partial class VueModeleStock : VueModeleBase
             InclureInactifs).ConfigureAwait(true);
 
         var idPrecedent = LigneSelectionnee?.VarianteProduitId;
+        var produitPrecedent = ProduitOuvert?.ProduitId;
 
         Lignes.Clear();
         foreach (var ligne in resultats)
@@ -102,9 +128,73 @@ public partial class VueModeleStock : VueModeleBase
             Lignes.Add(ligne);
         }
 
-        LigneSelectionnee = idPrecedent is null
-            ? Lignes.FirstOrDefault()
-            : Lignes.FirstOrDefault(l => l.VarianteProduitId == idPrecedent) ?? Lignes.FirstOrDefault();
+        Produits.Clear();
+        foreach (var produit in LigneStockProduit.Regrouper(resultats))
+        {
+            Produits.Add(produit);
+        }
+
+        // Le produit ouvert le reste après un rechargement — sauf s'il sort
+        // du filtre, auquel cas le laisser ouvert sur une liste vide n'aurait
+        // aucun sens.
+        ProduitOuvert = produitPrecedent is null
+            ? null
+            : Produits.FirstOrDefault(p => p.ProduitId == produitPrecedent);
+
+        RemplirDeclinaisons(idPrecedent);
+    }
+
+    /// <summary>
+    /// Recharge le détail du produit ouvert et rétablit la sélection, pour
+    /// que l'historique affiché à droite ne saute pas d'un article à l'autre
+    /// après une correction de stock.
+    /// </summary>
+    private void RemplirDeclinaisons(int? varianteARetrouver)
+    {
+        Declinaisons.Clear();
+
+        if (ProduitOuvert is not null)
+        {
+            var detail = Lignes
+                .Where(l => l.ProduitId == ProduitOuvert.ProduitId)
+                .OrderBy(l => l.Couleur)
+                .ThenBy(l => l.OrdreTaille)
+                .ThenBy(l => l.Taille);
+
+            foreach (var ligne in detail)
+            {
+                Declinaisons.Add(ligne);
+            }
+        }
+
+        LigneSelectionnee = varianteARetrouver is null
+            ? Declinaisons.FirstOrDefault()
+            : Declinaisons.FirstOrDefault(l => l.VarianteProduitId == varianteARetrouver)
+              ?? Declinaisons.FirstOrDefault();
+    }
+
+    /// <summary>Ouvre le détail d'un produit : ses couleurs et ses tailles.</summary>
+    [RelayCommand]
+    private void OuvrirProduit(LigneStockProduit? produit)
+    {
+        if (produit is null)
+        {
+            return;
+        }
+
+        ProduitOuvert = produit;
+
+        RemplirDeclinaisons(null);
+    }
+
+    /// <summary>Referme le détail et réaffiche la liste des produits.</summary>
+    [RelayCommand]
+    private void FermerProduit()
+    {
+        ProduitOuvert = null;
+        ProduitSelectionne = null;
+
+        RemplirDeclinaisons(null);
     }
 
     partial void OnLigneSelectionneeChanged(LigneStockDto? value)
@@ -192,7 +282,12 @@ public partial class VueModeleStock : VueModeleBase
     {
         if (LigneSelectionnee is null)
         {
-            Dialogue.Avertir("Sélectionnez d'abord un article dans la liste.", "Aucune sélection");
+            Dialogue.Avertir(
+                ProduitOuvert is null
+                    ? "Ouvrez d'abord un produit, puis choisissez la taille et la couleur à corriger."
+                    : "Sélectionnez d'abord une taille dans la liste.",
+                "Aucune sélection");
+
             return false;
         }
 

@@ -136,8 +136,13 @@ chiffre**.
 4. Pour chaque déclinaison, saisissez le **code-barres** de l'étiquette
    (*Modifier la déclinaison*) — c'est ce qui permettra de scanner en caisse
 
-5. **Stock** (F4) → sélectionnez un article → **Ajuster le stock** pour
-   saisir les quantités présentes en rayon
+5. **Stock** (F4) → cliquez sur le produit pour ouvrir ses tailles et ses
+   couleurs → sélectionnez une déclinaison → **Ajuster le stock** pour saisir
+   la quantité présente en rayon
+
+   > La liste s'ouvre sur les **produits**, avec leur stock cumulé et ce qui
+   > leur manque (« 3 ruptures »). Le détail des tailles s'ouvre au clic, et
+   > **Retour à la liste** ramène à la vue d'ensemble.
 
 ---
 
