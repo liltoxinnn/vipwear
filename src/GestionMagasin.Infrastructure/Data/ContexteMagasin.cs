@@ -21,6 +21,8 @@ public class ContexteMagasin : DbContext
 
     // --- Catalogue ---
     public DbSet<Marque> Marques => Set<Marque>();
+    public DbSet<SystemeTaille> SystemesTailles => Set<SystemeTaille>();
+    public DbSet<Categorie> Categories => Set<Categorie>();
     public DbSet<Taille> Tailles => Set<Taille>();
     public DbSet<Couleur> Couleurs => Set<Couleur>();
     public DbSet<Produit> Produits => Set<Produit>();

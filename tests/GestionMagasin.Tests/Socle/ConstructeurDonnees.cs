@@ -19,25 +19,36 @@ public static class ConstructeurDonnees
         decimal prixVente = 2500m,
         int quantiteInitiale = 10,
         int seuilMinimum = 3,
-        string? codeBarres = null)
+        string? codeBarres = null,
+        string categorie = "T-shirts et polos",
+        string taille = "M")
     {
         var suffixe = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+
+        var familles = await produits.ListerCategoriesAsync().ConfigureAwait(false);
+        var famille = familles.First(c => c.Nom == categorie);
 
         var produit = await produits.CreerProduitAsync(new DemandeProduit
         {
             Reference = reference ?? $"REF-{suffixe}",
             Sku = $"SKU-{suffixe}",
             Nom = nom,
+            CategorieId = famille.Id,
             PrixAchat = prixAchat,
             PrixVente = prixVente
         }).ConfigureAwait(false);
 
-        var tailles = await produits.ListerTaillesAsync().ConfigureAwait(false);
+        // Les tailles proposées sont celles du système de la famille : une
+        // chaussure ne se décline pas en XXL.
+        var tailles = await produits
+            .ListerTaillesAsync(systemeTailleId: famille.SystemeTailleId)
+            .ConfigureAwait(false);
+
         var couleurs = await produits.ListerCouleursAsync().ConfigureAwait(false);
 
         var variante = await produits.AjouterVarianteAsync(produit.Id, new DemandeVariante
         {
-            TailleId = tailles.First(t => t.Nom == "M").Id,
+            TailleId = tailles.First(t => t.Nom == taille).Id,
             CouleurId = couleurs.First(c => c.Nom == "Noir").Id,
             CodeBarres = codeBarres ?? $"600{suffixe}",
             SeuilMinimum = seuilMinimum,
@@ -58,7 +69,12 @@ public static class ConstructeurDonnees
         int quantiteInitiale = 5,
         int seuilMinimum = 2)
     {
-        var tailles = await produits.ListerTaillesAsync().ConfigureAwait(false);
+        var fiche = await produits.ObtenirProduitAsync(produitId).ConfigureAwait(false);
+
+        var tailles = await produits
+            .ListerTaillesAsync(systemeTailleId: fiche!.SystemeTailleId)
+            .ConfigureAwait(false);
+
         var couleurs = await produits.ListerCouleursAsync().ConfigureAwait(false);
 
         return await produits.AjouterVarianteAsync(produitId, new DemandeVariante

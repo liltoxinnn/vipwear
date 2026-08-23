@@ -56,6 +56,7 @@ public class ServiceProduits : IServiceProduits
             Nom = demande.Nom.Trim(),
             Description = demande.Description?.Trim(),
             MarqueId = demande.MarqueId,
+            CategorieId = demande.CategorieId,
             Collection = demande.Collection?.Trim(),
             Saison = demande.Saison?.Trim(),
             PrixAchat = demande.PrixAchat,
@@ -115,6 +116,7 @@ public class ServiceProduits : IServiceProduits
         produit.Nom = demande.Nom.Trim();
         produit.Description = demande.Description?.Trim();
         produit.MarqueId = demande.MarqueId;
+        produit.CategorieId = demande.CategorieId;
         produit.Collection = demande.Collection?.Trim();
         produit.Saison = demande.Saison?.Trim();
         produit.PrixAchat = demande.PrixAchat;
@@ -184,6 +186,7 @@ public class ServiceProduits : IServiceProduits
 
         var produit = await _uniteDeTravail.Depot<Produit>().Requete()
             .Include(p => p.Marque)
+            .Include(p => p.Categorie).ThenInclude(c => c.SystemeTaille)
             .Include(p => p.Variantes).ThenInclude(v => v.Taille)
             .Include(p => p.Variantes).ThenInclude(v => v.Couleur)
             .Include(p => p.Variantes).ThenInclude(v => v.Inventaire)
@@ -200,6 +203,7 @@ public class ServiceProduits : IServiceProduits
         string? saison = null,
         bool inclureInactifs = false,
         int limite = 500,
+        int? categorieId = null,
         CancellationToken jeton = default)
     {
         _session.ExigerPermission(CodesPermissions.VoirProduits);
@@ -214,6 +218,11 @@ public class ServiceProduits : IServiceProduits
         if (marqueId.HasValue)
         {
             requete = requete.Where(p => p.MarqueId == marqueId.Value);
+        }
+
+        if (categorieId.HasValue)
+        {
+            requete = requete.Where(p => p.CategorieId == categorieId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(collection))
@@ -248,6 +257,7 @@ public class ServiceProduits : IServiceProduits
                 Sku = p.SKU,
                 Nom = p.Nom,
                 Marque = p.Marque != null ? p.Marque.Nom : null,
+                Categorie = p.Categorie.Nom,
                 Collection = p.Collection,
                 Saison = p.Saison,
                 PrixAchat = p.PrixAchat,
@@ -583,15 +593,84 @@ public class ServiceProduits : IServiceProduits
             .ConfigureAwait(false);
     }
 
-    public async Task<IReadOnlyList<ReferenceDto>> ListerTaillesAsync(
+    /// <summary>
+    /// Familles d'articles, avec le système de tailles de chacune.
+    /// </summary>
+    public async Task<IReadOnlyList<CategorieDto>> ListerCategoriesAsync(
         bool inclureInactifs = false,
         CancellationToken jeton = default)
+    {
+        var requete = _uniteDeTravail.Depot<Categorie>().Requete();
+
+        if (!inclureInactifs)
+        {
+            requete = requete.Where(c => c.Actif);
+        }
+
+        return await requete
+            .OrderBy(c => c.Ordre)
+            .ThenBy(c => c.Nom)
+            .Select(c => new CategorieDto
+            {
+                Id = c.Id,
+                Nom = c.Nom,
+                SystemeTailleId = c.SystemeTailleId,
+                SystemeTaille = c.SystemeTaille.Nom,
+                Ordre = c.Ordre,
+                Actif = c.Actif,
+                NombreProduits = c.Produits.Count
+            })
+            .ToListAsync(jeton)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>Systèmes de tailles disponibles.</summary>
+    public async Task<IReadOnlyList<ReferenceDto>> ListerSystemesTaillesAsync(
+        bool inclureInactifs = false,
+        CancellationToken jeton = default)
+    {
+        var requete = _uniteDeTravail.Depot<SystemeTaille>().Requete();
+
+        if (!inclureInactifs)
+        {
+            requete = requete.Where(s => s.Actif);
+        }
+
+        return await requete
+            .OrderBy(s => s.Ordre)
+            .ThenBy(s => s.Nom)
+            .Select(s => new ReferenceDto
+            {
+                Id = s.Id,
+                Nom = s.Nom,
+                Ordre = s.Ordre,
+                Actif = s.Actif,
+                NombreUtilisations = s.Tailles.Count
+            })
+            .ToListAsync(jeton)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Tailles disponibles. Le système restreint la liste à celles qui ont un
+    /// sens pour la famille de l'article : proposer « XXL » sur une chaussure
+    /// laisserait créer une déclinaison invendable, et le stock la garderait.
+    /// </summary>
+    public async Task<IReadOnlyList<ReferenceDto>> ListerTaillesAsync(
+        bool inclureInactifs = false,
+        CancellationToken jeton = default,
+        int? systemeTailleId = null)
     {
         var requete = _uniteDeTravail.Depot<Taille>().Requete();
 
         if (!inclureInactifs)
         {
             requete = requete.Where(t => t.Actif);
+        }
+
+        if (systemeTailleId.HasValue)
+        {
+            requete = requete.Where(t => t.SystemeTailleId == systemeTailleId.Value);
         }
 
         return await requete
@@ -601,6 +680,7 @@ public class ServiceProduits : IServiceProduits
             {
                 Id = t.Id,
                 Nom = t.Nom,
+                Complement = t.SystemeTaille.Nom,
                 Ordre = t.Ordre,
                 Actif = t.Actif,
                 NombreUtilisations = t.Variantes.Count
@@ -687,11 +767,136 @@ public class ServiceProduits : IServiceProduits
         };
     }
 
+    /// <summary>
+    /// Crée ou renomme une taille.
+    ///
+    /// Une taille appartient toujours à un système : « 42 » ne veut pas dire
+    /// la même chose sur une chaussure et sur un pantalon. Le nom n'est donc
+    /// unique qu'à l'intérieur de son système.
+    /// </summary>
+    /// <summary>
+    /// Crée ou renomme une famille d'articles.
+    ///
+    /// Changer le système de tailles d'une famille qui porte déjà des
+    /// articles est refusé : les déclinaisons existantes deviendraient
+    /// étrangères à leur propre famille, et le stock garderait des tailles
+    /// que plus rien ne proposerait.
+    /// </summary>
+    public async Task<CategorieDto> EnregistrerCategorieAsync(
+        int? id,
+        string nom,
+        int systemeTailleId,
+        int ordre,
+        CancellationToken jeton = default)
+    {
+        _session.ExigerPermission(CodesPermissions.ModifierProduits);
+
+        if (string.IsNullOrWhiteSpace(nom))
+        {
+            throw new ValidationMetierException("Le nom de la famille est obligatoire.");
+        }
+
+        var nomNettoye = nom.Trim();
+
+        if (!await _uniteDeTravail.Depot<SystemeTaille>().Requete()
+                .AnyAsync(t => t.Id == systemeTailleId, jeton).ConfigureAwait(false))
+        {
+            throw new ValidationMetierException("Le système de tailles sélectionné n'existe pas.");
+        }
+
+        var doublon = await _uniteDeTravail.Depot<Categorie>().Requete()
+            .AnyAsync(c => c.Nom.ToLower() == nomNettoye.ToLower() && (id == null || c.Id != id), jeton)
+            .ConfigureAwait(false);
+
+        if (doublon)
+        {
+            throw new ValidationMetierException($"La famille « {nomNettoye} » existe déjà.");
+        }
+
+        Categorie categorie;
+
+        if (id.HasValue)
+        {
+            categorie = await _uniteDeTravail.Depot<Categorie>().RequeteSuivie()
+                .FirstOrDefaultAsync(c => c.Id == id.Value, jeton)
+                .ConfigureAwait(false)
+                ?? throw new EntiteIntrouvableException("Famille", id.Value);
+
+            if (categorie.SystemeTailleId != systemeTailleId
+                && await _uniteDeTravail.Depot<Produit>().Requete()
+                    .AnyAsync(p => p.CategorieId == id.Value, jeton).ConfigureAwait(false))
+            {
+                throw new ValidationMetierException(
+                    $"La famille « {categorie.Nom} » porte déjà des articles : son système de " +
+                    "tailles ne peut plus être changé. Créez une nouvelle famille.");
+            }
+
+            categorie.Nom = nomNettoye;
+            categorie.SystemeTailleId = systemeTailleId;
+            categorie.Ordre = ordre;
+        }
+        else
+        {
+            categorie = new Categorie
+            {
+                Nom = nomNettoye,
+                SystemeTailleId = systemeTailleId,
+                Ordre = ordre,
+                Actif = true
+            };
+
+            await _uniteDeTravail.Depot<Categorie>().AjouterAsync(categorie, jeton).ConfigureAwait(false);
+        }
+
+        await _uniteDeTravail.EnregistrerAsync(jeton).ConfigureAwait(false);
+
+        return new CategorieDto
+        {
+            Id = categorie.Id,
+            Nom = categorie.Nom,
+            SystemeTailleId = categorie.SystemeTailleId,
+            Ordre = categorie.Ordre,
+            Actif = categorie.Actif
+        };
+    }
+
+    /// <summary>
+    /// Active ou désactive une famille. Une famille inactive n'est plus
+    /// proposée à la création d'un article, mais ses articles restent en
+    /// place : rien de l'historique ne disparaît.
+    /// </summary>
+    public async Task<CategorieDto> DefinirEtatCategorieAsync(
+        int categorieId,
+        bool actif,
+        CancellationToken jeton = default)
+    {
+        _session.ExigerPermission(CodesPermissions.ModifierProduits);
+
+        var categorie = await _uniteDeTravail.Depot<Categorie>().RequeteSuivie()
+            .FirstOrDefaultAsync(c => c.Id == categorieId, jeton)
+            .ConfigureAwait(false)
+            ?? throw new EntiteIntrouvableException("Famille", categorieId);
+
+        categorie.Actif = actif;
+
+        await _uniteDeTravail.EnregistrerAsync(jeton).ConfigureAwait(false);
+
+        return new CategorieDto
+        {
+            Id = categorie.Id,
+            Nom = categorie.Nom,
+            SystemeTailleId = categorie.SystemeTailleId,
+            Ordre = categorie.Ordre,
+            Actif = categorie.Actif
+        };
+    }
+
     public async Task<ReferenceDto> EnregistrerTailleAsync(
         int? id,
         string nom,
         int ordre,
-        CancellationToken jeton = default)
+        CancellationToken jeton = default,
+        int? systemeTailleId = null)
     {
         _session.ExigerPermission(CodesPermissions.ModifierProduits);
 
@@ -702,15 +907,6 @@ public class ServiceProduits : IServiceProduits
 
         var nomNettoye = nom.Trim();
 
-        var doublon = await _uniteDeTravail.Depot<Taille>().Requete()
-            .AnyAsync(t => t.Nom.ToLower() == nomNettoye.ToLower() && (id == null || t.Id != id), jeton)
-            .ConfigureAwait(false);
-
-        if (doublon)
-        {
-            throw new ValidationMetierException($"La taille « {nomNettoye} » existe déjà.");
-        }
-
         Taille taille;
 
         if (id.HasValue)
@@ -720,18 +916,62 @@ public class ServiceProduits : IServiceProduits
                 .ConfigureAwait(false)
                 ?? throw new EntiteIntrouvableException("Taille", id.Value);
 
+            // Déplacer une taille d'un système à l'autre changerait le sens
+            // de toutes les déclinaisons qui l'emploient : le système n'est
+            // modifiable que s'il est explicitement fourni.
+            var systemeCible = systemeTailleId ?? taille.SystemeTailleId;
+
+            await ExigerTailleUniqueAsync(systemeCible, nomNettoye, id, jeton).ConfigureAwait(false);
+
             taille.Nom = nomNettoye;
             taille.Ordre = ordre;
+            taille.SystemeTailleId = systemeCible;
         }
         else
         {
-            taille = new Taille { Nom = nomNettoye, Ordre = ordre, Actif = true };
+            if (systemeTailleId is not > 0)
+            {
+                throw new ValidationMetierException(
+                    "Le système de tailles est obligatoire : une taille ne veut rien dire seule.");
+            }
+
+            await ExigerTailleUniqueAsync(systemeTailleId.Value, nomNettoye, null, jeton).ConfigureAwait(false);
+
+            taille = new Taille
+            {
+                Nom = nomNettoye,
+                Ordre = ordre,
+                SystemeTailleId = systemeTailleId.Value,
+                Actif = true
+            };
+
             await _uniteDeTravail.Depot<Taille>().AjouterAsync(taille, jeton).ConfigureAwait(false);
         }
 
         await _uniteDeTravail.EnregistrerAsync(jeton).ConfigureAwait(false);
 
         return new ReferenceDto { Id = taille.Id, Nom = taille.Nom, Ordre = taille.Ordre, Actif = taille.Actif };
+    }
+
+    private async Task ExigerTailleUniqueAsync(
+        int systemeTailleId,
+        string nom,
+        int? idExistant,
+        CancellationToken jeton)
+    {
+        var doublon = await _uniteDeTravail.Depot<Taille>().Requete()
+            .AnyAsync(
+                t => t.SystemeTailleId == systemeTailleId
+                     && t.Nom.ToLower() == nom.ToLower()
+                     && (idExistant == null || t.Id != idExistant),
+                jeton)
+            .ConfigureAwait(false);
+
+        if (doublon)
+        {
+            throw new ValidationMetierException(
+                $"La taille « {nom} » existe déjà dans ce système de tailles.");
+        }
     }
 
     public async Task<ReferenceDto> EnregistrerCouleurAsync(
@@ -873,6 +1113,18 @@ public class ServiceProduits : IServiceProduits
             erreurs.Add("Le prix de vente ne peut pas être négatif.");
         }
 
+        // Sans famille, la génération des déclinaisons ne saurait pas quelles
+        // tailles proposer, et le rayon n'aurait plus de sens.
+        if (demande.CategorieId <= 0)
+        {
+            erreurs.Add("La famille de l'article est obligatoire.");
+        }
+        else if (!await _uniteDeTravail.Depot<Categorie>().Requete()
+                     .AnyAsync(c => c.Id == demande.CategorieId, jeton).ConfigureAwait(false))
+        {
+            erreurs.Add("La famille sélectionnée n'existe pas.");
+        }
+
         if (erreurs.Count > 0)
         {
             throw new ValidationMetierException(erreurs);
@@ -938,10 +1190,31 @@ public class ServiceProduits : IServiceProduits
             erreurs.Add("La quantité initiale ne peut pas être négative.");
         }
 
-        if (!await _uniteDeTravail.Depot<Taille>().Requete()
-                .AnyAsync(t => t.Id == demande.TailleId, jeton).ConfigureAwait(false))
+        // La taille doit appartenir au système de la famille de l'article.
+        // Sans ce contrôle, une chaussure pourrait être créée en XXL par
+        // l'import d'un fichier ou une combinaison d'écrans : la déclinaison
+        // serait invendable, et le stock la garderait indéfiniment.
+        var systemeAttendu = await _uniteDeTravail.Depot<Produit>().Requete()
+            .Where(p => p.Id == produitId)
+            .Select(p => (int?)p.Categorie.SystemeTailleId)
+            .FirstOrDefaultAsync(jeton)
+            .ConfigureAwait(false);
+
+        var taille = await _uniteDeTravail.Depot<Taille>().Requete()
+            .Where(t => t.Id == demande.TailleId)
+            .Select(t => new { t.Nom, t.SystemeTailleId, Systeme = t.SystemeTaille.Nom })
+            .FirstOrDefaultAsync(jeton)
+            .ConfigureAwait(false);
+
+        if (taille is null)
         {
             erreurs.Add("La taille sélectionnée n'existe pas.");
+        }
+        else if (systemeAttendu is not null && taille.SystemeTailleId != systemeAttendu)
+        {
+            erreurs.Add(
+                $"La taille « {taille.Nom} » appartient au système « {taille.Systeme} », " +
+                "qui n'est pas celui de la famille de cet article.");
         }
 
         if (!await _uniteDeTravail.Depot<Couleur>().Requete()
@@ -1036,6 +1309,10 @@ public class ServiceProduits : IServiceProduits
         Description = produit.Description,
         MarqueId = produit.MarqueId,
         Marque = produit.Marque?.Nom,
+        CategorieId = produit.CategorieId,
+        Categorie = produit.Categorie?.Nom ?? string.Empty,
+        SystemeTailleId = produit.Categorie?.SystemeTailleId ?? 0,
+        SystemeTaille = produit.Categorie?.SystemeTaille?.Nom ?? string.Empty,
         Collection = produit.Collection,
         Saison = produit.Saison,
         PrixAchat = produit.PrixAchat,

@@ -24,6 +24,12 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
 
     public override string Titre => IdentifiantEdite.HasValue ? "Modifier le produit" : "Nouveau produit";
 
+    /// <summary>
+    /// Familles d'articles. Chacune impose son système de tailles : c'est ce
+    /// choix qui déterminera les tailles proposées aux déclinaisons.
+    /// </summary>
+    public ObservableCollection<CategorieDto> Familles { get; } = [];
+
     public ObservableCollection<ReferenceDto> Marques { get; } = [];
 
     public ObservableCollection<string> Collections { get; } = [];
@@ -46,6 +52,9 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
     private string _description = string.Empty;
 
     [ObservableProperty]
+    private CategorieDto? _famille;
+
+    [ObservableProperty]
     private ReferenceDto? _marque;
 
     [ObservableProperty]
@@ -59,6 +68,17 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
 
     [ObservableProperty]
     private decimal _prixVente;
+
+    /// <summary>
+    /// Rappel du système de tailles de la famille choisie, affiché sous la
+    /// liste : le vendeur voit tout de suite qu'un pantalon se déclinera en
+    /// 38, 40, 42 et non en S, M, L.
+    /// </summary>
+    public string SystemeTaille => Famille is null
+        ? "Choisissez une famille pour connaître les tailles proposées."
+        : $"Tailles proposées : {Famille.SystemeTaille}";
+
+    partial void OnFamilleChanged(CategorieDto? value) => OnPropertyChanged(nameof(SystemeTaille));
 
     /// <summary>Marge calculée à la volée pour guider la saisie du prix.</summary>
     public decimal Marge => PrixVente - PrixAchat;
@@ -88,6 +108,7 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
     {
         await ExecuterAsync(async () =>
         {
+            Remplir(Familles, await _produits.ListerCategoriesAsync().ConfigureAwait(true));
             Remplir(Marques, await _produits.ListerMarquesAsync().ConfigureAwait(true));
             Remplir(Collections, await _produits.ListerCollectionsAsync().ConfigureAwait(true));
             Remplir(Saisons, await _produits.ListerSaisonsAsync().ConfigureAwait(true));
@@ -99,6 +120,7 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
                 Sku = string.Empty;
                 Nom = string.Empty;
                 Description = string.Empty;
+                Famille = null;
                 Marque = null;
                 Collection = string.Empty;
                 Saison = string.Empty;
@@ -112,6 +134,7 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
                 Sku = produit.Sku;
                 Nom = produit.Nom;
                 Description = produit.Description ?? string.Empty;
+                Famille = Familles.FirstOrDefault(f => f.Id == produit.CategorieId);
                 Marque = Marques.FirstOrDefault(m => m.Id == produit.MarqueId);
                 Collection = produit.Collection ?? string.Empty;
                 Saison = produit.Saison ?? string.Empty;
@@ -126,6 +149,19 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
     [RelayCommand]
     private async Task EnregistrerAsync()
     {
+        // Contrôlé ici plutôt que laissé au service : le message arrive avant
+        // l'aller-retour, et désigne le champ à remplir.
+        if (Famille is null)
+        {
+            Dialogue.Avertir(
+                "Choisissez la famille de l'article. C'est elle qui détermine " +
+                "les tailles proposées : lettres pour une chemise, pointures " +
+                "pour une chaussure.",
+                "Famille manquante");
+
+            return;
+        }
+
         var demande = new DemandeProduit
         {
             Reference = Reference,
@@ -133,6 +169,7 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
             Nom = Nom,
             Description = Description,
             MarqueId = Marque?.Id,
+            CategorieId = Famille.Id,
             Collection = Collection,
             Saison = Saison,
             PrixAchat = PrixAchat,

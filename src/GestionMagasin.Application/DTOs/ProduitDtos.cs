@@ -83,6 +83,15 @@ public record ProduitDto
 
     public string? Marque { get; init; }
 
+    /// <summary>Famille de l'article : elle commande le système de tailles.</summary>
+    public int CategorieId { get; init; }
+
+    public string Categorie { get; init; } = string.Empty;
+
+    public int SystemeTailleId { get; init; }
+
+    public string SystemeTaille { get; init; } = string.Empty;
+
     public string? Collection { get; init; }
 
     public string? Saison { get; init; }
@@ -125,6 +134,8 @@ public record ResumeProduitDto
 
     public string? Marque { get; init; }
 
+    public string Categorie { get; init; } = string.Empty;
+
     public string? Collection { get; init; }
 
     public string? Saison { get; init; }
@@ -154,6 +165,12 @@ public record DemandeProduit
     public string? Description { get; init; }
 
     public int? MarqueId { get; init; }
+
+    /// <summary>
+    /// Famille de l'article. Obligatoire : sans elle, la génération des
+    /// déclinaisons ne saurait pas quelles tailles proposer.
+    /// </summary>
+    public int CategorieId { get; init; }
 
     public string? Collection { get; init; }
 
@@ -203,4 +220,25 @@ public record ReferenceDto
 
     /// <summary>Nombre d'éléments rattachés, pour prévenir avant désactivation.</summary>
     public int NombreUtilisations { get; init; }
+}
+
+/// <summary>
+/// Famille d'articles, avec le système de tailles qu'elle impose.
+/// </summary>
+public record CategorieDto
+{
+    public int Id { get; init; }
+
+    public string Nom { get; init; } = string.Empty;
+
+    public int SystemeTailleId { get; init; }
+
+    public string SystemeTaille { get; init; } = string.Empty;
+
+    public int Ordre { get; init; }
+
+    public bool Actif { get; init; }
+
+    /// <summary>Nombre d'articles rattachés, pour prévenir avant désactivation.</summary>
+    public int NombreProduits { get; init; }
 }

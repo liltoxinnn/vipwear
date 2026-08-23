@@ -26,6 +26,7 @@ public interface IServiceProduits
         string? saison = null,
         bool inclureInactifs = false,
         int limite = 500,
+        int? categorieId = null,
         CancellationToken jeton = default);
 
     // --- Déclinaisons ---
@@ -76,13 +77,50 @@ public interface IServiceProduits
 
     Task<IReadOnlyList<ReferenceDto>> ListerMarquesAsync(bool inclureInactifs = false, CancellationToken jeton = default);
 
-    Task<IReadOnlyList<ReferenceDto>> ListerTaillesAsync(bool inclureInactifs = false, CancellationToken jeton = default);
+    /// <summary>Familles d'articles, avec le système de tailles de chacune.</summary>
+    Task<IReadOnlyList<CategorieDto>> ListerCategoriesAsync(
+        bool inclureInactifs = false,
+        CancellationToken jeton = default);
+
+    /// <summary>Systèmes de tailles disponibles.</summary>
+    Task<IReadOnlyList<ReferenceDto>> ListerSystemesTaillesAsync(
+        bool inclureInactifs = false,
+        CancellationToken jeton = default);
+
+    /// <summary>
+    /// Tailles disponibles. Renseigner le système restreint la liste à celles
+    /// qui ont un sens pour la famille de l'article : une chaussure ne se
+    /// décline pas en XXL.
+    /// </summary>
+    Task<IReadOnlyList<ReferenceDto>> ListerTaillesAsync(
+        bool inclureInactifs = false,
+        CancellationToken jeton = default,
+        int? systemeTailleId = null);
 
     Task<IReadOnlyList<ReferenceDto>> ListerCouleursAsync(bool inclureInactifs = false, CancellationToken jeton = default);
 
     Task<ReferenceDto> EnregistrerMarqueAsync(int? id, string nom, string? description, CancellationToken jeton = default);
 
-    Task<ReferenceDto> EnregistrerTailleAsync(int? id, string nom, int ordre, CancellationToken jeton = default);
+    /// <summary>Crée ou renomme une famille d'articles.</summary>
+    Task<CategorieDto> EnregistrerCategorieAsync(
+        int? id,
+        string nom,
+        int systemeTailleId,
+        int ordre,
+        CancellationToken jeton = default);
+
+    /// <summary>Active ou désactive une famille sans toucher à ses articles.</summary>
+    Task<CategorieDto> DefinirEtatCategorieAsync(
+        int categorieId,
+        bool actif,
+        CancellationToken jeton = default);
+
+    Task<ReferenceDto> EnregistrerTailleAsync(
+        int? id,
+        string nom,
+        int ordre,
+        CancellationToken jeton = default,
+        int? systemeTailleId = null);
 
     Task<ReferenceDto> EnregistrerCouleurAsync(int? id, string nom, string? codeCouleur, CancellationToken jeton = default);
 

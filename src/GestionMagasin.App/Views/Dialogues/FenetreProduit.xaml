@@ -34,6 +34,23 @@
                 <TextBlock Text="Nom du produit *" Style="{StaticResource TexteEtiquette}" />
                 <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Nom}" Margin="0,0,0,12" />
 
+                <!--
+                    La famille commande le système de tailles : elle est
+                    placée haut dans le formulaire, avant les prix, car tout
+                    le reste en découle.
+                -->
+                <TextBlock Text="Famille de l'article *" Style="{StaticResource TexteEtiquette}" />
+                <ComboBox Style="{StaticResource ChampListe}"
+                          ItemsSource="{Binding Familles}"
+                          SelectedItem="{Binding Famille}"
+                          DisplayMemberPath="Nom"
+                          ToolTip="Chemise, pantalon, chaussure… Ce choix détermine les tailles proposées" />
+
+                <TextBlock Text="{Binding SystemeTaille}"
+                           Style="{StaticResource TexteAttenue}"
+                           FontSize="11.5"
+                           Margin="2,4,0,12" />
+
                 <TextBlock Text="Description" Style="{StaticResource TexteEtiquette}" />
                 <TextBox Style="{StaticResource ChampTexte}" Text="{Binding Description}"
                          AcceptsReturn="True" Height="70" TextWrapping="Wrap" Margin="0,0,0,12" />

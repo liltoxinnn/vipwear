@@ -121,14 +121,35 @@ chiffre**.
 
 ## Étape 5 — Saisir votre catalogue
 
-1. **Paramètres** (F12) → onglet **Marques, tailles et couleurs** →
-   ajoutez vos marques (les tailles XS à XXXL et dix couleurs sont déjà là)
+1. **Paramètres** (F12) → onglet **Familles, marques, tailles et couleurs** →
+   ajoutez vos marques. Les familles, les tailles et dix couleurs sont
+   déjà là.
 
-2. **Produits** (F3) → **Nouveau produit** → référence, nom et prix
+   > **Chaque famille a son système de tailles.** Une chemise se vend en
+   > S, M, L ; un pantalon en 38, 40, 42 ; une chaussure en pointures.
+   >
+   > | Famille | Tailles proposées |
+   > |---|---|
+   > | T-shirts, chemises, pulls, vestes, costumes | XS à XXXL |
+   > | Pantalons, jeans, shorts | 28 à 46 |
+   > | Chaussures | 35 à 47 |
+   > | Accessoires | Taille unique |
+   >
+   > C'est ce qui empêche de créer une chaussure en XXL. Vous pouvez
+   > ajouter vos propres familles avec le bouton **Ajouter**.
+
+2. **Produits** (F3) → **Nouveau produit** → **famille**, référence, nom
+   et prix
+
+   > La famille est obligatoire : c'est elle qui déterminera les tailles
+   > proposées à l'étape suivante.
 
 3. Une fois le produit créé, cliquez sur **Générer les déclinaisons** :
    cochez les tailles et les couleurs, et le logiciel crée toutes les
    combinaisons d'un coup
+
+   > Seules les tailles de la famille sont proposées. Pour un pantalon,
+   > vous verrez 28, 30, 32… et non S, M, L.
 
    > Le stock se compte par **déclinaison** — « T-shirt / Noir / M » — et non
    > par produit. Un produit sans déclinaison n'apparaît donc pas en Stock.

@@ -72,7 +72,12 @@ public partial class VueModeleFormulaireVariante : VueModeleBase
     {
         await ExecuterAsync(async () =>
         {
-            Remplir(Tailles, await _produits.ListerTaillesAsync().ConfigureAwait(true));
+            // Seules les tailles du système de la famille : proposer « XXL »
+            // sur une chaussure laisserait créer une déclinaison invendable,
+            // que le stock garderait ensuite indéfiniment.
+            Remplir(Tailles, await _produits
+                .ListerTaillesAsync(systemeTailleId: produit.SystemeTailleId)
+                .ConfigureAwait(true));
             Remplir(Couleurs, await _produits.ListerCouleursAsync().ConfigureAwait(true));
 
             ProduitId = produit.Id;

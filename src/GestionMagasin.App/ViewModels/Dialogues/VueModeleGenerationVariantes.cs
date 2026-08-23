@@ -62,7 +62,11 @@ public partial class VueModeleGenerationVariantes : VueModeleBase
 
         await ExecuterAsync(async () =>
         {
-            var tailles = await _produits.ListerTaillesAsync().ConfigureAwait(true);
+            // Seules les tailles du système de la famille du produit : un
+            // pantalon se génère en 38, 40, 42 et non en S, M, L.
+            var tailles = await _produits
+                .ListerTaillesAsync(systemeTailleId: produit.SystemeTailleId)
+                .ConfigureAwait(true);
             var couleurs = await _produits.ListerCouleursAsync().ConfigureAwait(true);
 
             Tailles.Clear();

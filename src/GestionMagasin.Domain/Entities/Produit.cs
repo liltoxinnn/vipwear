@@ -25,6 +25,14 @@ public class Produit : EntiteBase
 
     public Marque? Marque { get; set; }
 
+    /// <summary>
+    /// Famille de l'article. Elle commande le système de tailles proposé à la
+    /// génération des déclinaisons : un pantalon ne se décline pas en XXL.
+    /// </summary>
+    public int CategorieId { get; set; }
+
+    public Categorie Categorie { get; set; } = null!;
+
     /// <summary>Collection commerciale (« Printemps 2026 », « Basique »...).</summary>
     public string? Collection { get; set; }
 

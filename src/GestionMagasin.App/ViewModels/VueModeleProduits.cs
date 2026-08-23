@@ -41,6 +41,9 @@ public partial class VueModeleProduits : VueModeleBase
 
     public ObservableCollection<ResumeProduitDto> Produits { get; } = [];
 
+    /// <summary>Familles d'articles, employées comme filtre du catalogue.</summary>
+    public ObservableCollection<CategorieDto> Familles { get; } = [];
+
     public ObservableCollection<ReferenceDto> Marques { get; } = [];
 
     public ObservableCollection<ReferenceDto> Tailles { get; } = [];
@@ -65,6 +68,9 @@ public partial class VueModeleProduits : VueModeleBase
     [ObservableProperty]
     private ReferenceDto? _marqueFiltre;
 
+    [ObservableProperty]
+    private CategorieDto? _familleFiltre;
+
     public bool PeutModifier => _session.Possede(CodesPermissions.ModifierProduits);
 
     public bool PeutDesactiver => _session.Possede(CodesPermissions.SupprimerProduits);
@@ -78,6 +84,7 @@ public partial class VueModeleProduits : VueModeleBase
 
     private async Task ChargerReferencesAsync()
     {
+        Remplir(Familles, await _produits.ListerCategoriesAsync(true).ConfigureAwait(true));
         Remplir(Marques, await _produits.ListerMarquesAsync(true).ConfigureAwait(true));
         Remplir(Tailles, await _produits.ListerTaillesAsync(true).ConfigureAwait(true));
         Remplir(Couleurs, await _produits.ListerCouleursAsync(true).ConfigureAwait(true));
@@ -88,7 +95,8 @@ public partial class VueModeleProduits : VueModeleBase
         var resultats = await _produits.RechercherProduitsAsync(
             Recherche,
             MarqueFiltre?.Id,
-            inclureInactifs: InclureInactifs).ConfigureAwait(true);
+            inclureInactifs: InclureInactifs,
+            categorieId: FamilleFiltre?.Id).ConfigureAwait(true);
 
         var idPrecedent = ProduitSelectionne?.Id;
 
@@ -125,6 +133,7 @@ public partial class VueModeleProduits : VueModeleBase
     {
         Recherche = string.Empty;
         MarqueFiltre = null;
+        FamilleFiltre = null;
         InclureInactifs = false;
 
         await ExecuterAsync(ChargerListeAsync, contexteJournal: "réinitialisation des filtres")

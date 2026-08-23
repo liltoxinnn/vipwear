@@ -24,7 +24,14 @@
                              ToolTip="Nom, référence, code article ou code-barres" />
 
                     <ComboBox Style="{StaticResource ChampListe}"
-                              Width="180" Margin="8,0,0,0"
+                              Width="170" Margin="8,0,0,0"
+                              ItemsSource="{Binding Familles}"
+                              SelectedItem="{Binding FamilleFiltre}"
+                              DisplayMemberPath="Nom"
+                              ToolTip="Filtrer par famille : chemises, pantalons, chaussures…" />
+
+                    <ComboBox Style="{StaticResource ChampListe}"
+                              Width="150" Margin="8,0,0,0"
                               ItemsSource="{Binding Marques}"
                               SelectedItem="{Binding MarqueFiltre}"
                               DisplayMemberPath="Nom"
@@ -88,6 +95,7 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Référence" Binding="{Binding Reference}" Width="120" />
                             <DataGridTextColumn Header="Nom" Binding="{Binding Nom}" Width="*" />
+                            <DataGridTextColumn Header="Famille" Binding="{Binding Categorie}" Width="140" />
                             <DataGridTextColumn Header="Marque" Binding="{Binding Marque}" Width="110" />
                             <DataGridTextColumn Header="Prix de vente"
                                                 Binding="{Binding PrixVente, Converter={StaticResource Montant}}"

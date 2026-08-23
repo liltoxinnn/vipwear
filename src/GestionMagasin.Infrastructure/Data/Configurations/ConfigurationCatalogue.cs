@@ -20,6 +20,46 @@ public class ConfigurationMarque : IEntityTypeConfiguration<Marque>
     }
 }
 
+public class ConfigurationSystemeTaille : IEntityTypeConfiguration<SystemeTaille>
+{
+    public void Configure(EntityTypeBuilder<SystemeTaille> constructeur)
+    {
+        constructeur.ToTable("systemes_tailles");
+
+        constructeur.HasKey(s => s.Id);
+
+        constructeur.Property(s => s.Nom).IsRequired().HasMaxLength(80);
+        constructeur.Property(s => s.Actif).HasDefaultValue(true);
+
+        constructeur.HasIndex(s => s.Nom).IsUnique();
+        constructeur.HasIndex(s => s.Ordre);
+    }
+}
+
+public class ConfigurationCategorie : IEntityTypeConfiguration<Categorie>
+{
+    public void Configure(EntityTypeBuilder<Categorie> constructeur)
+    {
+        constructeur.ToTable("categories");
+
+        constructeur.HasKey(c => c.Id);
+
+        constructeur.Property(c => c.Nom).IsRequired().HasMaxLength(80);
+        constructeur.Property(c => c.Actif).HasDefaultValue(true);
+
+        constructeur.HasIndex(c => c.Nom).IsUnique();
+        constructeur.HasIndex(c => c.Ordre);
+
+        // Une catégorie sans système de tailles ne saurait plus quoi proposer
+        // à la création d'une déclinaison : le lien est obligatoire, et le
+        // système ne peut pas être supprimé tant qu'une famille s'en sert.
+        constructeur.HasOne(c => c.SystemeTaille)
+            .WithMany(s => s.Categories)
+            .HasForeignKey(c => c.SystemeTailleId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 public class ConfigurationTaille : IEntityTypeConfiguration<Taille>
 {
     public void Configure(EntityTypeBuilder<Taille> constructeur)
@@ -31,8 +71,15 @@ public class ConfigurationTaille : IEntityTypeConfiguration<Taille>
         constructeur.Property(t => t.Nom).IsRequired().HasMaxLength(20);
         constructeur.Property(t => t.Actif).HasDefaultValue(true);
 
-        constructeur.HasIndex(t => t.Nom).IsUnique();
+        // « 42 » existe en pointure et en taille de pantalon : le nom n'est
+        // unique qu'à l'intérieur de son système.
+        constructeur.HasIndex(t => new { t.SystemeTailleId, t.Nom }).IsUnique();
         constructeur.HasIndex(t => t.Ordre);
+
+        constructeur.HasOne(t => t.SystemeTaille)
+            .WithMany(s => s.Tailles)
+            .HasForeignKey(t => t.SystemeTailleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -77,10 +124,20 @@ public class ConfigurationProduit : IEntityTypeConfiguration<Produit>
         constructeur.HasIndex(p => p.Nom);
         constructeur.HasIndex(p => p.Actif);
 
+        constructeur.HasIndex(p => p.CategorieId);
+
         constructeur.HasOne(p => p.Marque)
             .WithMany(m => m.Produits)
             .HasForeignKey(p => p.MarqueId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // La famille commande le système de tailles : un produit sans famille
+        // ne saurait pas quelles tailles proposer. Elle est donc obligatoire,
+        // et ne peut pas être supprimée tant qu'elle porte des articles.
+        constructeur.HasOne(p => p.Categorie)
+            .WithMany(c => c.Produits)
+            .HasForeignKey(p => p.CategorieId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Aucun prix ne peut être négatif, quelle que soit la voie d'écriture.
         constructeur.ToTable(t =>

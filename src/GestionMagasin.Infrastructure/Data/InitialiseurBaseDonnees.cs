@@ -74,7 +74,8 @@ public class InitialiseurBaseDonnees
     {
         await AmorcerPermissionsAsync(jeton).ConfigureAwait(false);
         await AmorcerRolesAsync(jeton).ConfigureAwait(false);
-        await AmorcerTaillesAsync(jeton).ConfigureAwait(false);
+        await AmorcerSystemesTaillesAsync(jeton).ConfigureAwait(false);
+        await AmorcerCategoriesAsync(jeton).ConfigureAwait(false);
         await AmorcerCouleursAsync(jeton).ConfigureAwait(false);
         await AmorcerParametresAsync(jeton).ConfigureAwait(false);
         await AmorcerAdministrateurAsync(jeton).ConfigureAwait(false);
@@ -170,24 +171,156 @@ public class InitialiseurBaseDonnees
         }
     }
 
-    private async Task AmorcerTaillesAsync(CancellationToken jeton)
+    /// <summary>
+    /// Crée les systèmes de tailles et leurs tailles.
+    ///
+    /// Une chemise se vend en S, M, L ; un pantalon en 38, 40, 42 ; une
+    /// chaussure en pointures. Mélanger les trois séries à la création d'un
+    /// article laisserait créer une chaussure en XXL — une déclinaison que
+    /// personne ne vendra et qui restera dans le stock.
+    ///
+    /// Chaque système manquant est ajouté, puis ses tailles manquantes : un
+    /// magasin qui a renommé ou supprimé une taille ne la voit pas revenir,
+    /// et une mise à jour du logiciel peut enrichir la liste.
+    /// </summary>
+    private async Task AmorcerSystemesTaillesAsync(CancellationToken jeton)
     {
-        if (await _contexte.Tailles.AnyAsync(jeton).ConfigureAwait(false))
+        (string Systeme, int Ordre, string[] Tailles)[] catalogue =
+        [
+            ("Tailles vêtements (XS à XXXL)", 10,
+                ["XS", "S", "M", "L", "XL", "XXL", "XXXL"]),
+
+            ("Tailles pantalons (28 à 46)", 20,
+                ["28", "30", "32", "34", "36", "38", "40", "42", "44", "46"]),
+
+            ("Pointures (35 à 47)", 30,
+                ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47"]),
+
+            ("Taille unique", 40, ["Unique"])
+        ];
+
+        var systemesExistants = await _contexte.SystemesTailles
+            .ToDictionaryAsync(s => s.Nom, jeton)
+            .ConfigureAwait(false);
+
+        var ajoutes = 0;
+
+        foreach (var (nom, ordre, _) in catalogue)
+        {
+            if (systemesExistants.ContainsKey(nom))
+            {
+                continue;
+            }
+
+            var systeme = new SystemeTaille { Nom = nom, Ordre = ordre, Actif = true };
+
+            _contexte.SystemesTailles.Add(systeme);
+            systemesExistants[nom] = systeme;
+            ajoutes++;
+        }
+
+        if (ajoutes > 0)
+        {
+            await _contexte.SaveChangesAsync(jeton).ConfigureAwait(false);
+            _journal.LogInformation("{Nombre} système(s) de tailles créé(s).", ajoutes);
+        }
+
+        var taillesExistantes = await _contexte.Tailles
+            .Select(t => new { t.SystemeTailleId, t.Nom })
+            .ToListAsync(jeton)
+            .ConfigureAwait(false);
+
+        var connues = taillesExistantes
+            .Select(t => (t.SystemeTailleId, t.Nom))
+            .ToHashSet();
+
+        var nouvelles = new List<Taille>();
+
+        foreach (var (nom, _, tailles) in catalogue)
+        {
+            var systeme = systemesExistants[nom];
+
+            for (var i = 0; i < tailles.Length; i++)
+            {
+                if (connues.Contains((systeme.Id, tailles[i])))
+                {
+                    continue;
+                }
+
+                nouvelles.Add(new Taille
+                {
+                    Nom = tailles[i],
+                    SystemeTailleId = systeme.Id,
+                    // Le pas de dix laisse la place d'intercaler une taille.
+                    Ordre = (i + 1) * 10,
+                    Actif = true
+                });
+            }
+        }
+
+        if (nouvelles.Count > 0)
+        {
+            _contexte.Tailles.AddRange(nouvelles);
+            await _contexte.SaveChangesAsync(jeton).ConfigureAwait(false);
+            _journal.LogInformation("{Nombre} taille(s) créée(s).", nouvelles.Count);
+        }
+    }
+
+    /// <summary>
+    /// Crée les familles d'articles d'un magasin de vêtements. Chacune
+    /// désigne le système de tailles que la création d'une déclinaison
+    /// proposera.
+    /// </summary>
+    private async Task AmorcerCategoriesAsync(CancellationToken jeton)
+    {
+        const string Vetements = "Tailles vêtements (XS à XXXL)";
+        const string Pantalons = "Tailles pantalons (28 à 46)";
+        const string Pointures = "Pointures (35 à 47)";
+        const string Unique = "Taille unique";
+
+        (string Nom, string Systeme, int Ordre)[] familles =
+        [
+            ("T-shirts et polos", Vetements, 10),
+            ("Chemises", Vetements, 20),
+            ("Pulls et sweats", Vetements, 30),
+            ("Vestes et manteaux", Vetements, 40),
+            ("Pantalons", Pantalons, 50),
+            ("Jeans", Pantalons, 60),
+            ("Shorts", Pantalons, 70),
+            ("Costumes", Vetements, 80),
+            ("Chaussures", Pointures, 90),
+            ("Accessoires", Unique, 100)
+        ];
+
+        var systemes = await _contexte.SystemesTailles
+            .ToDictionaryAsync(s => s.Nom, s => s.Id, jeton)
+            .ConfigureAwait(false);
+
+        var existantes = await _contexte.Categories
+            .Select(c => c.Nom)
+            .ToListAsync(jeton)
+            .ConfigureAwait(false);
+
+        var manquantes = familles
+            .Where(f => !existantes.Contains(f.Nom) && systemes.ContainsKey(f.Systeme))
+            .Select(f => new Categorie
+            {
+                Nom = f.Nom,
+                SystemeTailleId = systemes[f.Systeme],
+                Ordre = f.Ordre,
+                Actif = true
+            })
+            .ToList();
+
+        if (manquantes.Count == 0)
         {
             return;
         }
 
-        string[] tailles = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
-
-        _contexte.Tailles.AddRange(tailles.Select((nom, index) => new Taille
-        {
-            Nom = nom,
-            Ordre = (index + 1) * 10,
-            Actif = true
-        }));
-
+        _contexte.Categories.AddRange(manquantes);
         await _contexte.SaveChangesAsync(jeton).ConfigureAwait(false);
-        _journal.LogInformation("Tailles standard créées.");
+
+        _journal.LogInformation("{Nombre} famille(s) d'articles créée(s).", manquantes.Count);
     }
 
     private async Task AmorcerCouleursAsync(CancellationToken jeton)

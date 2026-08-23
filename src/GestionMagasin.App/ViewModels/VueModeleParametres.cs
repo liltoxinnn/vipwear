@@ -90,6 +90,12 @@ public partial class VueModeleParametres : VueModeleBase
 
     public ObservableCollection<ReferenceDto> Marques { get; } = [];
 
+    /// <summary>Familles d'articles, avec le système de tailles de chacune.</summary>
+    public ObservableCollection<CategorieDto> Familles { get; } = [];
+
+    /// <summary>Systèmes de tailles : lettres, tailles de pantalon, pointures.</summary>
+    public ObservableCollection<ReferenceDto> SystemesTailles { get; } = [];
+
     public ObservableCollection<ReferenceDto> Tailles { get; } = [];
 
     public ObservableCollection<ReferenceDto> Couleurs { get; } = [];
@@ -127,7 +133,16 @@ public partial class VueModeleParametres : VueModeleBase
     private async Task ChargerReferencesAsync()
     {
         Remplir(Marques, await _produits.ListerMarquesAsync(true).ConfigureAwait(true));
-        Remplir(Tailles, await _produits.ListerTaillesAsync(true).ConfigureAwait(true));
+        Remplir(Familles, await _produits.ListerCategoriesAsync(true).ConfigureAwait(true));
+        Remplir(SystemesTailles, await _produits.ListerSystemesTaillesAsync(true).ConfigureAwait(true));
+
+        // La liste des tailles est cloisonnée par système : mélangées, les
+        // lettres, les tailles de pantalon et les pointures formeraient une
+        // liste de trente entrées où « 42 » apparaîtrait deux fois sans qu'on
+        // sache laquelle est laquelle.
+        SystemeTailleChoisi ??= SystemesTailles.FirstOrDefault();
+
+        await ChargerTaillesAsync().ConfigureAwait(true);
         Remplir(Couleurs, await _produits.ListerCouleursAsync(true).ConfigureAwait(true));
     }
 
@@ -238,6 +253,108 @@ public partial class VueModeleParametres : VueModeleBase
             "changement d'état d'une marque").ConfigureAwait(true);
     }
 
+    private async Task ChargerTaillesAsync() =>
+        Remplir(Tailles, await _produits
+            .ListerTaillesAsync(true, systemeTailleId: SystemeTailleChoisi?.Id)
+            .ConfigureAwait(true));
+
+    /// <summary>Système dont les tailles sont affichées.</summary>
+    [ObservableProperty]
+    private ReferenceDto? _systemeTailleChoisi;
+
+    partial void OnSystemeTailleChoisiChanged(ReferenceDto? value) =>
+        _ = ExecuterAsync(ChargerTaillesAsync, contexteJournal: "changement de système de tailles");
+
+    // ==================================================================
+    // Familles d'articles
+    // ==================================================================
+
+    [ObservableProperty]
+    private CategorieDto? _familleSelectionnee;
+
+    [RelayCommand]
+    private async Task NouvelleFamilleAsync()
+    {
+        if (SystemesTailles.Count == 0)
+        {
+            return;
+        }
+
+        var nom = Dialogue.DemanderTexte(
+            "Nom de la famille (Casquettes, Ceintures…) :",
+            "Nouvelle famille d'articles");
+
+        if (string.IsNullOrWhiteSpace(nom))
+        {
+            return;
+        }
+
+        // Le système est demandé séparément : c'est le choix qui engage, car
+        // il fixe les tailles que les articles de cette famille pourront
+        // prendre, et il ne se change plus une fois des articles créés.
+        var systemes = string.Join(
+            Environment.NewLine,
+            SystemesTailles.Select((s, i) => $"{i + 1}. {s.Nom}"));
+
+        var choix = Dialogue.DemanderTexte(
+            "Quel système de tailles cette famille emploie-t-elle ?" +
+            Environment.NewLine + Environment.NewLine + systemes +
+            Environment.NewLine + Environment.NewLine + "Numéro :",
+            "Système de tailles",
+            "1");
+
+        if (!int.TryParse(choix, out var rang) || rang < 1 || rang > SystemesTailles.Count)
+        {
+            Dialogue.Avertir(
+                "Aucun système de tailles valide n'a été choisi : la famille n'a pas été créée.",
+                "Famille non créée");
+
+            return;
+        }
+
+        await ExecuterAsync(
+            async () =>
+            {
+                await _produits.EnregistrerCategorieAsync(
+                    null, nom, SystemesTailles[rang - 1].Id, (Familles.Count + 1) * 10)
+                    .ConfigureAwait(true);
+
+                await ChargerReferencesAsync().ConfigureAwait(true);
+            },
+            "Famille ajoutée avec succès.",
+            "création d'une famille").ConfigureAwait(true);
+    }
+
+    [RelayCommand]
+    private async Task BasculerEtatFamilleAsync()
+    {
+        if (FamilleSelectionnee is null)
+        {
+            Dialogue.Avertir("Sélectionnez d'abord une famille.", "Aucune sélection");
+            return;
+        }
+
+        var famille = FamilleSelectionnee;
+
+        if (famille.Actif && famille.NombreProduits > 0 && !Dialogue.Confirmer(
+                $"La famille « {famille.Nom} » porte {famille.NombreProduits} article(s). " +
+                "Elle ne sera plus proposée à la création d'un produit, mais les " +
+                "articles existants restent intacts. Continuer ?",
+                "Désactiver la famille"))
+        {
+            return;
+        }
+
+        await ExecuterAsync(
+            async () =>
+            {
+                await _produits.DefinirEtatCategorieAsync(famille.Id, !famille.Actif).ConfigureAwait(true);
+                await ChargerReferencesAsync().ConfigureAwait(true);
+            },
+            famille.Actif ? "Famille désactivée." : "Famille réactivée.",
+            "changement d'état d'une famille").ConfigureAwait(true);
+    }
+
     // ==================================================================
     // Tailles
     // ==================================================================
@@ -245,8 +362,17 @@ public partial class VueModeleParametres : VueModeleBase
     [RelayCommand]
     private async Task NouvelleTailleAsync()
     {
+        if (SystemeTailleChoisi is null)
+        {
+            Dialogue.Avertir(
+                "Choisissez d'abord le système de tailles auquel la nouvelle taille appartient.",
+                "Système de tailles");
+
+            return;
+        }
+
         var nom = Dialogue.DemanderTexte(
-            "Nom de la taille (XS, S, M, 38, 40…) :",
+            $"Nom de la taille, dans « {SystemeTailleChoisi.Nom} » :",
             "Nouvelle taille");
 
         if (string.IsNullOrWhiteSpace(nom))
@@ -264,7 +390,9 @@ public partial class VueModeleParametres : VueModeleBase
         await ExecuterAsync(
             async () =>
             {
-                await _produits.EnregistrerTailleAsync(null, nom, ordre).ConfigureAwait(true);
+                await _produits
+                    .EnregistrerTailleAsync(null, nom, ordre, systemeTailleId: SystemeTailleChoisi.Id)
+                    .ConfigureAwait(true);
                 await ChargerReferencesAsync().ConfigureAwait(true);
             },
             "Taille ajoutée avec succès.",

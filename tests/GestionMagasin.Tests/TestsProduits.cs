@@ -42,6 +42,7 @@ public class TestsProduits : BaseDeTest
             Reference = produit.Reference,
             Sku = produit.Sku,
             Nom = "T-shirt Nike Sport",
+            CategorieId = produit.CategorieId,
             Description = "Coton biologique",
             Collection = "Été 2026",
             Saison = "Été",
@@ -164,6 +165,7 @@ public class TestsProduits : BaseDeTest
                 Reference = produit.Reference,
                 Sku = "SKU-DIFFERENT",
                 Nom = "Autre produit",
+                CategorieId = produit.CategorieId,
                 PrixAchat = 100m,
                 PrixVente = 200m
             }));
@@ -174,16 +176,97 @@ public class TestsProduits : BaseDeTest
     [Fact]
     public async Task Un_prix_negatif_est_refuse()
     {
+        var familles = await Produits.ListerCategoriesAsync();
+
         var erreur = await Assert.ThrowsAsync<ValidationMetierException>(() =>
             Produits.CreerProduitAsync(new DemandeProduit
             {
                 Reference = "REF-NEG",
                 Sku = "SKU-NEG",
                 Nom = "Produit invalide",
+                CategorieId = familles[0].Id,
                 PrixAchat = -10m,
                 PrixVente = 200m
             }));
 
         Assert.Contains("négatif", erreur.Message);
+    }
+
+    /// <summary>
+    /// Un article sans famille ne saurait pas quelles tailles proposer, et
+    /// n'aurait pas de rayon.
+    /// </summary>
+    [Fact]
+    public async Task Un_produit_sans_famille_est_refuse()
+    {
+        var erreur = await Assert.ThrowsAsync<ValidationMetierException>(() =>
+            Produits.CreerProduitAsync(new DemandeProduit
+            {
+                Reference = "REF-SANS-FAMILLE",
+                Sku = "SKU-SANS-FAMILLE",
+                Nom = "Produit sans famille",
+                PrixAchat = 100m,
+                PrixVente = 200m
+            }));
+
+        Assert.Contains("famille", erreur.Message);
+    }
+
+    /// <summary>
+    /// Chaque famille impose son système de tailles : chemises en lettres,
+    /// pantalons en tailles, chaussures en pointures.
+    /// </summary>
+    [Fact]
+    public async Task Chaque_famille_propose_les_tailles_de_son_systeme()
+    {
+        var familles = await Produits.ListerCategoriesAsync();
+
+        var chemises = familles.First(c => c.Nom == "Chemises");
+        var chaussures = familles.First(c => c.Nom == "Chaussures");
+        var pantalons = familles.First(c => c.Nom == "Pantalons");
+
+        var lettres = await Produits.ListerTaillesAsync(systemeTailleId: chemises.SystemeTailleId);
+        var pointures = await Produits.ListerTaillesAsync(systemeTailleId: chaussures.SystemeTailleId);
+        var tailles = await Produits.ListerTaillesAsync(systemeTailleId: pantalons.SystemeTailleId);
+
+        Assert.Contains(lettres, t => t.Nom == "M");
+        Assert.DoesNotContain(lettres, t => t.Nom == "42");
+
+        Assert.Contains(pointures, t => t.Nom == "42");
+        Assert.DoesNotContain(pointures, t => t.Nom == "M");
+
+        Assert.Contains(tailles, t => t.Nom == "38");
+        Assert.DoesNotContain(tailles, t => t.Nom == "XXL");
+
+        // « 42 » existe des deux côtés sans être la même chose.
+        Assert.NotEqual(
+            pointures.First(t => t.Nom == "42").Id,
+            tailles.First(t => t.Nom == "42").Id);
+    }
+
+    /// <summary>
+    /// Une chaussure en XXL est invendable, et le stock la garderait. Le
+    /// contrôle vit dans le service, pas seulement dans l'écran : un import
+    /// ou un enchaînement d'écrans le contournerait autrement.
+    /// </summary>
+    [Fact]
+    public async Task Une_taille_etrangere_a_la_famille_est_refusee()
+    {
+        var (chaussure, _) = await ConstructeurDonnees.CreerArticleAsync(
+            Produits, nom: "Mocassin cuir", categorie: "Chaussures", taille: "42");
+
+        var lettres = await Produits.ListerTaillesAsync();
+        var xxl = lettres.First(t => t.Nom == "XXL");
+        var couleurs = await Produits.ListerCouleursAsync();
+
+        var erreur = await Assert.ThrowsAsync<ValidationMetierException>(() =>
+            Produits.AjouterVarianteAsync(chaussure.Id, new DemandeVariante
+            {
+                TailleId = xxl.Id,
+                CouleurId = couleurs[0].Id,
+                QuantiteInitiale = 1
+            }));
+
+        Assert.Contains("système", erreur.Message);
     }
 }
