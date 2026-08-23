@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:GestionMagasin.App.Views"
-        Title="Gestion Magasin"
+        Title="VIP MEN’S STORE"
         Height="820" Width="1400"
         MinHeight="680" MinWidth="1120"
         WindowStartupLocation="CenterScreen"
@@ -31,25 +31,11 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Même blason que sur l'écran de connexion -->
-                    <Grid Grid.Column="0" Width="42" Height="42" VerticalAlignment="Top">
-                        <Ellipse Visibility="{Binding BlasonDessine, Converter={StaticResource BooleenVisibilite}, ConverterParameter=inverse}">
-                            <Ellipse.Fill>
-                                <ImageBrush ImageSource="{Binding Logo}" Stretch="UniformToFill" />
-                            </Ellipse.Fill>
-                        </Ellipse>
-
-                        <Grid Visibility="{Binding BlasonDessine, Converter={StaticResource BooleenVisibilite}}">
-                            <Ellipse Fill="#0A0A0A" />
-                            <Ellipse Stroke="{StaticResource PinceauOrPoli}" StrokeThickness="1.6" Margin="1" />
-                            <Path Data="{Binding Source={x:Static views:Enseigne.Couronne}, Converter={StaticResource Icone}}"
-                                  Fill="{StaticResource PinceauOrPoli}"
-                                  Width="21" Height="21"
-                                  Stretch="Uniform"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center" />
-                        </Grid>
-                    </Grid>
+                    <!-- Même emblème que sur l'écran de connexion, en réduit -->
+                    <ContentControl Grid.Column="0"
+                                    Width="44" Height="44"
+                                    VerticalAlignment="Top"
+                                    Template="{StaticResource BlasonCompact}" />
 
                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="{Binding NomMagasin}"
@@ -143,78 +129,104 @@
                     </ItemsControl>
                 </ScrollViewer>
 
-                <!-- Utilisateur connecté -->
+                <!--
+                    Compte connecté. La déconnexion n'occupe plus une ligne
+                    entière : elle tient dans son icône, à droite du nom, ce
+                    qui laisse la place au rôle — l'information qu'un employé
+                    doit pouvoir vérifier d'un coup d'œil avant de vendre.
+                -->
                 <Border Grid.Row="2"
                         Background="{StaticResource PinceauPrincipalFonce}"
-                        Padding="16,14">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,11">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        BorderBrush="#2A2A2A"
+                        BorderThickness="0,1,0,0"
+                        Padding="14,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0"
-                                    Background="{StaticResource PinceauOrFonce}"
-                                    CornerRadius="16"
-                                    Width="32" Height="32">
-                                <TextBlock Text="{Binding InitialesUtilisateur}"
-                                           Foreground="White"
-                                           FontSize="12"
-                                           FontWeight="Bold"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
-                            </Border>
-
-                            <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding NomUtilisateur}"
-                                           Foreground="White"
-                                           FontWeight="SemiBold"
-                                           FontSize="12.5"
-                                           TextTrimming="CharacterEllipsis" />
-
-                                <StackPanel Orientation="Horizontal" Margin="0,1,0,0">
-                                    <Path Data="{Binding Source={x:Static views:IconesMenu.Role}, Converter={StaticResource Icone}}"
-                                          Fill="{StaticResource PinceauOr}"
-                                          Width="10" Height="10"
-                                          Stretch="Uniform"
-                                          VerticalAlignment="Center" />
-
-                                    <TextBlock Text="{Binding RoleUtilisateur}"
-                                               Foreground="{StaticResource PinceauOrClair}"
-                                               FontSize="10.5"
-                                               Margin="4,0,0,0"
-                                               VerticalAlignment="Center" />
-                                </StackPanel>
-                            </StackPanel>
+                        <!-- Pastille aux initiales, cerclée d'or -->
+                        <Grid Grid.Column="0" Width="36" Height="36">
+                            <Ellipse Fill="#1C1A14" />
+                            <Ellipse Stroke="{StaticResource PinceauOrPoli}" StrokeThickness="1.4" />
+                            <TextBlock Text="{Binding InitialesUtilisateur}"
+                                       Foreground="{StaticResource PinceauOrClair}"
+                                       FontSize="12.5"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
                         </Grid>
 
-                        <Button Command="{Binding SeDeconnecterCommand}"
-                                Cursor="Hand"
-                                Foreground="{StaticResource PinceauOrClair}"
-                                Background="#1F1D17"
-                                BorderBrush="{StaticResource PinceauOrFonce}"
-                                BorderThickness="1"
-                                FontSize="12"
-                                Padding="10,7">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Path Data="{Binding Source={x:Static views:IconesMenu.Deconnexion}, Converter={StaticResource Icone}}"
-                                      Stroke="{StaticResource PinceauOrClair}"
-                                      StrokeThickness="1.5"
-                                      StrokeLineJoin="Round"
-                                      StrokeStartLineCap="Round"
-                                      StrokeEndLineCap="Round"
-                                      Fill="Transparent"
-                                      Width="14" Height="14"
+                        <StackPanel Grid.Column="1" Margin="10,0,6,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding NomUtilisateur}"
+                                       Foreground="White"
+                                       FontWeight="SemiBold"
+                                       FontSize="12.5"
+                                       TextTrimming="CharacterEllipsis" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                <Path Data="{Binding Source={x:Static views:IconesMenu.Role},
+                                             Converter={StaticResource Icone}}"
+                                      Fill="{StaticResource PinceauOr}"
+                                      Width="10" Height="10"
                                       Stretch="Uniform"
                                       VerticalAlignment="Center" />
 
-                                <TextBlock Text="Se déconnecter"
-                                           Margin="7,0,0,0"
+                                <TextBlock Text="{Binding RoleUtilisateur}"
+                                           Foreground="{StaticResource PinceauOrClair}"
+                                           FontSize="10.5"
+                                           Margin="4,0,0,0"
+                                           TextTrimming="CharacterEllipsis"
                                            VerticalAlignment="Center" />
                             </StackPanel>
+                        </StackPanel>
+
+                        <!-- Déconnexion : l'icône seule, et son infobulle -->
+                        <Button Grid.Column="2"
+                                Command="{Binding SeDeconnecterCommand}"
+                                Cursor="Hand"
+                                Width="34" Height="34"
+                                ToolTip="Se déconnecter"
+                                AutomationProperties.Name="Se déconnecter">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Fond"
+                                            Background="Transparent"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="1"
+                                            CornerRadius="6">
+                                        <Path x:Name="Dessin"
+                                              Data="{Binding Source={x:Static views:IconesMenu.Deconnexion},
+                                                     Converter={StaticResource Icone}}"
+                                              Stroke="#9C968A"
+                                              StrokeThickness="1.6"
+                                              StrokeLineJoin="Round"
+                                              StrokeStartLineCap="Round"
+                                              StrokeEndLineCap="Round"
+                                              Fill="Transparent"
+                                              Width="17" Height="17"
+                                              Stretch="Uniform"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Fond" Property="Background" Value="#241F12" />
+                                            <Setter TargetName="Fond" Property="BorderBrush"
+                                                    Value="{StaticResource PinceauOrFonce}" />
+                                            <Setter TargetName="Dessin" Property="Stroke"
+                                                    Value="{StaticResource PinceauOrClair}" />
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="Fond" Property="Background" Value="#332B18" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
                         </Button>
-                    </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
         </Border>

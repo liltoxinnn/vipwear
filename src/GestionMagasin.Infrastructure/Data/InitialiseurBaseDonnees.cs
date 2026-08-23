@@ -232,7 +232,7 @@ public class InitialiseurBaseDonnees
         _contexte.ParametresMagasin.Add(new ParametresMagasin
         {
             Id = 1,
-            NomMagasin = "VIP MEN'S STORE",
+            NomMagasin = "VIP MEN’S STORE",
             Devise = "DZD",
             SymboleDevise = "DA",
             InformationsTicket = "Merci de votre visite et à bientôt !",

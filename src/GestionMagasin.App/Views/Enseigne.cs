@@ -4,12 +4,12 @@ using System.Windows.Media.Imaging;
 namespace GestionMagasin.App.Views;
 
 /// <summary>
-/// Emblème du magasin.
+/// Logo déposé par le magasin.
 ///
-/// Le blason dessiné plus bas s'affiche toujours, sans dépendre d'aucun
-/// fichier. Si le magasin dépose son propre logo à côté du programme, c'est
-/// lui qui est repris : chaque enseigne garde ainsi son identité sans qu'il
-/// faille recompiler le logiciel.
+/// Le blason dessiné par <see cref="Blason"/> s'affiche toujours, sans
+/// dépendre d'aucun fichier. Si le magasin dépose son propre logo à côté du
+/// programme, c'est lui qui est repris : chaque enseigne garde ainsi son
+/// identité sans qu'il faille recompiler le logiciel.
 /// </summary>
 internal static class Enseigne
 {
@@ -57,16 +57,4 @@ internal static class Enseigne
 
         return null;
     }
-
-    /// <summary>
-    /// Couronne du blason, reprise de l'enseigne. Dessinée dans un carré de
-    /// 24 sur 24, comme les icônes du menu.
-    /// </summary>
-    public const string Couronne =
-        "M3.2,17.4 L5.4,7.2 L9.3,11.9 L12,4.6 L14.7,11.9 L18.6,7.2 L20.8,17.4 Z " +
-        "M3.6,18.9 H20.4 V21 H3.6 Z";
-
-    /// <summary>Les trois étoiles du pourtour, alignées horizontalement.</summary>
-    public const string Etoile =
-        "M12,3 L13.9,8.8 H20 L15.1,12.4 L16.9,18.2 L12,14.6 L7.1,18.2 L8.9,12.4 L4,8.8 H10.1 Z";
 }

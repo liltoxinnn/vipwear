@@ -1,5 +1,5 @@
 # =====================================================================
-#  Prépare le dossier de livraison de Gestion Magasin.
+#  Prépare le dossier de livraison de VIP MEN’S STORE.
 #
 #  Produit une version autonome : le poste du magasin n'a besoin
 #  d'aucune installation de .NET, seulement de PostgreSQL.
@@ -34,7 +34,7 @@ $nomDossier = "GestionMagasin-$Version"
 $cheminSortie = Join-Path $Destination $nomDossier
 
 Write-Host ""
-Write-Host "Compilation de Gestion Magasin $Version..." -ForegroundColor Cyan
+Write-Host "Compilation de VIP MEN’S STORE $Version..." -ForegroundColor Cyan
 Write-Host ""
 
 # Une version precedemment publiee peut encore tourner et retenir ses
@@ -61,7 +61,7 @@ if (Test-Path $cheminSortie) {
         Write-Host "  $cheminSortie"
         Write-Host ""
         Write-Host "Un programme retient encore ses fichiers. Fermez toute fenetre" -ForegroundColor Yellow
-        Write-Host "de Gestion Magasin, ainsi que l'explorateur ouvert sur ce dossier,"
+        Write-Host "de VIP MEN’S STORE, ainsi que l'explorateur ouvert sur ce dossier,"
         Write-Host "puis relancez. En dernier recours, supprimez le dossier a la main."
         Write-Host ""
         exit 1
@@ -176,6 +176,17 @@ if ($Diagnostic) {
         -Encoding UTF8
 
     Write-Host "MODE DIAGNOSTIC : toutes les exceptions seront journalisees." -ForegroundColor Yellow
+}
+
+# Logo du magasin. Posé a la racine du depot, il est livre a cote du
+# programme et remplace le blason dessine. Sans lui, le blason dessine
+# s'affiche : la livraison reste complete dans les deux cas.
+$logo = "logo.png"
+if (Test-Path $logo) {
+    Copy-Item $logo (Join-Path $cheminSortie $logo)
+    Write-Host "Logo du magasin inclus." -ForegroundColor Green
+} else {
+    Write-Host "Aucun logo.png a la racine : le blason dessine sera utilise." -ForegroundColor DarkGray
 }
 
 # Guide d'installation destiné au magasin.

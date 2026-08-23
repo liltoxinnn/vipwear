@@ -8,6 +8,10 @@
     <AssemblyName>GestionMagasin</AssemblyName>
     <ApplicationIcon />
     <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
+    <!-- Nom vu par Windows : barre des tâches, propriétés du fichier, gestionnaire des tâches. -->
+    <Product>VIP MEN’S STORE</Product>
+    <AssemblyTitle>VIP MEN’S STORE</AssemblyTitle>
+    <Company>VIP MEN’S STORE — Béjaïa</Company>
   </PropertyGroup>
 
   <ItemGroup>

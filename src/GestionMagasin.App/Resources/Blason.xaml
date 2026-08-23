@@ -1,0 +1,101 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:views="clr-namespace:GestionMagasin.App.Views">
+
+    <!--
+        Emblème de l'enseigne.
+
+        Les couleurs sont écrites en clair et non prises dans la palette : ce
+        sont celles du logo du magasin, elles ne doivent pas suivre un
+        éventuel changement de thème du logiciel.
+
+        Ce dictionnaire est fusionné après les convertisseurs, dont il se sert
+        pour masquer le blason dessiné lorsque le magasin a déposé son propre
+        fichier « logo.png » à côté du programme.
+    -->
+
+    <!-- ============================================================
+         Le lion couronné, seul. Dessiné dans un rectangle de 114 sur
+         136 ; la boîte d'ajustement le met à la taille demandée.
+         ============================================================ -->
+    <ControlTemplate x:Key="LionCouronne" TargetType="ContentControl">
+        <Viewbox Stretch="Uniform">
+            <Canvas Width="114" Height="136">
+                <Path Data="{x:Static views:Blason.CriniereLongue}" Fill="#A8871C" />
+                <Path Data="{x:Static views:Blason.CriniereCourte}" Fill="#C9A227" />
+                <Path Data="{x:Static views:Blason.Oreilles}"       Fill="#A8871C" />
+                <Path Data="{x:Static views:Blason.Disque}"         Fill="#C9A227" />
+                <Path Data="{x:Static views:Blason.Visage}"         Fill="#D8B855" />
+                <Path Data="{x:Static views:Blason.Traits}"         Fill="#0A0A0A" />
+                <Path Data="{x:Static views:Blason.Couronne}"       Fill="#C9A227" />
+            </Canvas>
+        </Viewbox>
+    </ControlTemplate>
+
+    <!-- ============================================================
+         Emblème complet : l'anneau, le nom de l'enseigne courbé, la
+         ville et les deux étoiles. Employé en grand format.
+         ============================================================ -->
+    <ControlTemplate x:Key="BlasonComplet" TargetType="ContentControl">
+        <Grid>
+            <!-- Logo déposé par le magasin : il prend toute la place. -->
+            <Ellipse Visibility="{Binding Source={x:Static views:Enseigne.LogoPresent},
+                                  Converter={StaticResource BooleenVisibilite}}">
+                <Ellipse.Fill>
+                    <ImageBrush ImageSource="{x:Static views:Enseigne.Logo}" Stretch="UniformToFill" />
+                </Ellipse.Fill>
+            </Ellipse>
+
+            <!-- Blason dessiné, employé à défaut de fichier. -->
+            <Viewbox Stretch="Uniform"
+                     Visibility="{Binding Source={x:Static views:Enseigne.LogoPresent},
+                                  Converter={StaticResource BooleenVisibilite},
+                                  ConverterParameter=inverse}">
+                <Canvas Width="200" Height="200">
+                    <Ellipse Width="200" Height="200" Fill="#0A0A0A" />
+
+                    <Ellipse Canvas.Left="6.5" Canvas.Top="6.5"
+                             Width="187" Height="187"
+                             Stroke="#FFFFFF" StrokeThickness="5" />
+
+                    <Ellipse Canvas.Left="37" Canvas.Top="37"
+                             Width="126" Height="126"
+                             Stroke="#FFFFFF" StrokeThickness="4" />
+
+                    <Path Data="{x:Static views:Blason.TexteHaut}" Fill="#FFFFFF" />
+                    <Path Data="{x:Static views:Blason.TexteBas}"  Fill="#FFFFFF" />
+                    <Path Data="{x:Static views:Blason.Etoiles}"   Fill="#FFFFFF" />
+
+                    <ContentControl Canvas.Left="43" Canvas.Top="33"
+                                    Width="114" Height="136"
+                                    Template="{StaticResource LionCouronne}" />
+                </Canvas>
+            </Viewbox>
+        </Grid>
+    </ControlTemplate>
+
+    <!-- ============================================================
+         Emblème réduit : le lion seul dans son anneau d'or. Le texte
+         courbé n'est plus lisible en dessous de cinquante pixels ; le
+         garder ne ferait qu'empâter la pastille du menu.
+         ============================================================ -->
+    <ControlTemplate x:Key="BlasonCompact" TargetType="ContentControl">
+        <Grid>
+            <Ellipse Visibility="{Binding Source={x:Static views:Enseigne.LogoPresent},
+                                  Converter={StaticResource BooleenVisibilite}}">
+                <Ellipse.Fill>
+                    <ImageBrush ImageSource="{x:Static views:Enseigne.Logo}" Stretch="UniformToFill" />
+                </Ellipse.Fill>
+            </Ellipse>
+
+            <Grid Visibility="{Binding Source={x:Static views:Enseigne.LogoPresent},
+                               Converter={StaticResource BooleenVisibilite},
+                               ConverterParameter=inverse}">
+                <Ellipse Fill="#0A0A0A" />
+                <Ellipse Stroke="{StaticResource PinceauOrPoli}" StrokeThickness="1.6" Margin="0.8" />
+                <ContentControl Template="{StaticResource LionCouronne}" Margin="4,3,4,4" />
+            </Grid>
+        </Grid>
+    </ControlTemplate>
+
+</ResourceDictionary>

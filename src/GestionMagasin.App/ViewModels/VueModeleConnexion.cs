@@ -36,7 +36,7 @@ public partial class VueModeleConnexion : VueModeleBase
     private string? _messageErreur;
 
     [ObservableProperty]
-    private string _nomMagasin = "Gestion Magasin";
+    private string _nomMagasin = "VIP MEN’S STORE";
 
     /// <summary>Vrai lorsque le mot de passe initial doit encore être changé.</summary>
     [ObservableProperty]
@@ -114,10 +114,4 @@ public partial class VueModeleConnexion : VueModeleBase
 
     [RelayCommand]
     private static void Quitter() => System.Windows.Application.Current.Shutdown();
-
-    /// <summary>Logo déposé par le magasin à côté du programme, s'il y en a un.</summary>
-    public System.Windows.Media.Imaging.BitmapImage? Logo => Views.Enseigne.Logo;
-
-    /// <summary>Vrai lorsqu'aucun logo n'a été déposé : le blason dessiné s'affiche.</summary>
-    public bool BlasonDessine => !Views.Enseigne.LogoPresent;
 }

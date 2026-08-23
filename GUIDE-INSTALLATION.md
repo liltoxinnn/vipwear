@@ -1,4 +1,4 @@
-# Gestion Magasin — Guide d'installation
+# VIP MEN’S STORE — Guide d'installation
 
 Ce guide s'adresse à la personne qui installe le logiciel dans le magasin.
 Aucune connaissance technique n'est nécessaire.
@@ -38,9 +38,14 @@ Il n'y a **rien d'autre à installer**.
 > ⚠️ **Ne déplacez pas et ne renommez pas le dossier `pgsql`** qui se trouve
 > à côté du programme : c'est la base de données du magasin.
 
-**Votre logo.** Déposez votre logo à côté de `GestionMagasin.exe`, nommé
-`logo.png`, et il remplacera le blason par défaut sur l'écran de connexion
-et dans le menu. Une image carrée donne le meilleur résultat.
+**Votre logo.** L'emblème de l'enseigne — le lion couronné, le nom et
+« BEJAIA » — est **dessiné dans le logiciel** : il s'affiche sur l'écran de
+connexion et dans le menu sans qu'aucun fichier soit nécessaire, et il reste
+net à toutes les tailles.
+
+Pour afficher la photographie exacte du logo à la place, déposez-la à côté de
+`GestionMagasin.exe` sous le nom `logo.png`. Une image **carrée** donne le
+meilleur résultat. Retirez le fichier pour revenir à l'emblème dessiné.
 
 Le premier démarrage prend une dizaine de secondes, le temps que le logiciel
 prépare sa base de données. Les suivants sont immédiats.

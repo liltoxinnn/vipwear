@@ -1,4 +1,4 @@
-# Gestion Magasin — Logiciel de gestion pour magasin de vêtements
+# VIP MEN’S STORE — Logiciel de gestion pour magasin de vêtements
 
 Logiciel de gestion complet pour un magasin de vêtements : catalogue et
 déclinaisons, stock, caisse, achats fournisseurs, clients, retours, échanges,
