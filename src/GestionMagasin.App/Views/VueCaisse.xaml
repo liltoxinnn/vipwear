@@ -17,21 +17,39 @@
                 <RowDefinition Height="290" />
             </Grid.RowDefinitions>
 
-            <!-- Scan -->
+            <!--
+                Les trois manières d'ajouter un article se valent : la douchette,
+                la recherche, ou le clic dans le rayon plus bas. Le caissier
+                prend la plus rapide selon le cas — étiquette lisible, article
+                connu de nom, ou étiquette arrachée.
+            -->
             <Border Grid.Row="0" Style="{StaticResource BarreOutils}" Margin="0,0,0,12">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="18" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
+                    <!-- Douchette : le champ garde le focus en permanence -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Code-barres — scannez l'article ou saisissez son code"
-                                   Style="{StaticResource TexteEtiquette}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Border Width="3" Height="12"
+                                    Background="{StaticResource PinceauOr}"
+                                    CornerRadius="2"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Text="Scanner un code-barres"
+                                       Style="{StaticResource TexteEtiquette}"
+                                       Margin="7,0,0,0" />
+                        </StackPanel>
+
                         <TextBox x:Name="ChampScan"
                                  Style="{StaticResource ChampScan}"
                                  Text="{Binding CodeScanne, UpdateSourceTrigger=PropertyChanged}"
-                                 KeyDown="SurToucheScan" />
+                                 KeyDown="SurToucheScan"
+                                 ToolTip="Passez l'article à la douchette, ou tapez son code puis Entrée" />
                     </StackPanel>
 
                     <Button Grid.Column="1"
@@ -39,7 +57,33 @@
                             Style="{StaticResource BoutonPrincipal}"
                             Command="{Binding ScannerCommand}"
                             VerticalAlignment="Bottom"
-                            Height="48" Width="110"
+                            Height="48" Width="100"
+                            Margin="10,0,0,0" />
+
+                    <!-- Recherche par nom, référence ou code article -->
+                    <StackPanel Grid.Column="3">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Border Width="3" Height="12"
+                                    Background="{StaticResource PinceauOr}"
+                                    CornerRadius="2"
+                                    VerticalAlignment="Center" />
+                            <TextBlock Text="Rechercher un article"
+                                       Style="{StaticResource TexteEtiquette}"
+                                       Margin="7,0,0,0" />
+                        </StackPanel>
+
+                        <TextBox Style="{StaticResource ChampScan}"
+                                 Text="{Binding TermeRecherche, UpdateSourceTrigger=PropertyChanged}"
+                                 KeyDown="SurToucheRecherche"
+                                 ToolTip="Nom du produit, référence ou code article, puis Entrée" />
+                    </StackPanel>
+
+                    <Button Grid.Column="4"
+                            Content="Rechercher"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Command="{Binding RechercherCommand}"
+                            VerticalAlignment="Bottom"
+                            Height="48" Width="115"
                             Margin="10,0,0,0" />
                 </Grid>
             </Border>
@@ -59,38 +103,43 @@
                                     Background="{StaticResource PinceauOr}"
                                     CornerRadius="2"
                                     VerticalAlignment="Center" />
-                            <TextBlock Text="Articles en rayon"
+                            <TextBlock Text="Tout le rayon"
                                        Style="{StaticResource TexteSousTitre}"
                                        Margin="8,0,0,0"
                                        VerticalAlignment="Center" />
                         </StackPanel>
 
-                        <TextBlock Text="Cliquez sur un article pour l'ajouter au panier"
+                        <TextBlock Text="Scannez, recherchez, ou cliquez directement sur un article"
                                    Style="{StaticResource TexteAttenue}"
                                    HorizontalAlignment="Right"
                                    VerticalAlignment="Center" />
                     </Grid>
 
-                    <!-- Filtre facultatif, pour un catalogue volumineux -->
-                    <Grid Grid.Row="1" Margin="4,0,4,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <!-- Retour au rayon complet après une recherche -->
+                    <Border Grid.Row="1"
+                            Background="{StaticResource PinceauFondOr}"
+                            BorderBrush="{StaticResource PinceauOr}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            Margin="4,0,4,10"
+                            Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}}">
+                        <Grid>
+                            <TextBlock Style="{StaticResource TexteSecondaire}" VerticalAlignment="Center">
+                                <Run Text="Résultats de la recherche :" />
+                                <Run Text="{Binding ResultatsRecherche.Count, Mode=OneWay}" FontWeight="Bold" />
+                                <Run Text="article(s)" />
+                            </TextBlock>
 
-                        <TextBox Grid.Column="0"
-                                 Style="{StaticResource ChampTexte}"
-                                 Text="{Binding TermeRecherche, UpdateSourceTrigger=PropertyChanged}"
-                                 KeyDown="SurToucheRecherche"
-                                 ToolTip="Facultatif : filtrer par nom, référence ou code article" />
-
-                        <Button Grid.Column="1"
-                                Content="Rechercher"
-                                Style="{StaticResource BoutonSecondaire}"
-                                Command="{Binding RechercherCommand}"
-                                Width="110"
-                                Margin="10,0,0,0" />
-                    </Grid>
+                            <Button Content="Revoir tout le rayon"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding EffacerRechercheCommand}"
+                                    HorizontalAlignment="Right"
+                                    Padding="12,4"
+                                    MinHeight="28"
+                                    FontSize="12" />
+                        </Grid>
+                    </Border>
 
                     <!-- Résultats d'une recherche, quand il y en a une -->
                     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"

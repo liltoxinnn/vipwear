@@ -270,6 +270,15 @@ public partial class VueModeleCaisse : VueModeleBase
         }, contexteJournal: "recherche d'articles en caisse").ConfigureAwait(true);
     }
 
+    /// <summary>Referme les résultats et réaffiche tout le rayon.</summary>
+    [RelayCommand]
+    private void EffacerRecherche()
+    {
+        TermeRecherche = string.Empty;
+        ResultatsRecherche.Clear();
+        MessageStatut = null;
+    }
+
     [RelayCommand]
     private void AjouterArticle(VarianteDto? variante)
     {
