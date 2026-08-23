@@ -97,6 +97,12 @@ public partial class App : System.Windows.Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
+        // Repère décisif : si cette ligne figure au journal, le logiciel s'est
+        // fermé normalement — quelqu'un ou quelque chose a demandé son arrêt.
+        // Si elle manque après un incident, il s'est arrêté brutalement, et la
+        // cause est ailleurs.
+        Log.Information("Fermeture du logiciel (code {Code}).", e.ApplicationExitCode);
+
         if (_hote is not null)
         {
             await _hote.StopAsync().ConfigureAwait(false);
@@ -246,6 +252,12 @@ public partial class App : System.Windows.Application
                 Path.Combine(dossierJournaux, "gestionmagasin-.log"),
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
+                // Une erreur qui se repete a chaque passe de rendu peut ecrire
+                // des centaines de mega-octets en quelques minutes. Le journal
+                // est borne : sur le poste d'un magasin, un disque plein est
+                // une panne bien pire que l'incident d'origine.
+                fileSizeLimitBytes: 20L * 1024 * 1024,
+                rollOnFileSizeLimit: true,
                 // Écriture immédiate : si le logiciel s'arrête brutalement, les
                 // dernières lignes sont précisément celles qui expliquent
                 // pourquoi. Mises en attente, elles seraient perdues.
@@ -416,6 +428,7 @@ public partial class App : System.Windows.Application
     private bool _signalementEnCours;
     private string? _derniereErreur;
     private DateTime _derniereErreurLe;
+    private int _repetitions;
 
     /// <summary>
     /// Dernier filet de sécurité : une erreur non interceptée est journalisée
@@ -427,24 +440,36 @@ public partial class App : System.Windows.Application
         // milieu d'un encaissement.
         e.Handled = true;
 
+        var signature = e.Exception.GetType().FullName + "|" + e.Exception.StackTrace;
+        var maintenant = DateTime.UtcNow;
+        var repetition = signature == _derniereErreur
+                         && maintenant - _derniereErreurLe < TimeSpan.FromSeconds(15);
+
+        if (repetition)
+        {
+            // Même incident, déjà journalisé. Le réécrire à chaque passe de
+            // rendu remplirait le disque sans rien apprendre de plus.
+            _repetitions++;
+
+            return;
+        }
+
+        if (_repetitions > 0)
+        {
+            Log.Error("L'erreur précédente s'est répétée {Repetitions} fois.", _repetitions);
+            _repetitions = 0;
+        }
+
         Log.Error(e.Exception, "Erreur non interceptée dans l'interface.");
+
+        _derniereErreur = signature;
+        _derniereErreurLe = maintenant;
 
         if (_signalementEnCours)
         {
             return;
         }
 
-        var signature = e.Exception.GetType().FullName + "|" + e.Exception.StackTrace;
-        var maintenant = DateTime.UtcNow;
-
-        if (signature == _derniereErreur
-            && maintenant - _derniereErreurLe < TimeSpan.FromSeconds(15))
-        {
-            return;
-        }
-
-        _derniereErreur = signature;
-        _derniereErreurLe = maintenant;
         _signalementEnCours = true;
 
         try

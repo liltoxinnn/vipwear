@@ -55,7 +55,11 @@ public class ServiceVentes : IServiceVentes
 
         var utilisateurId = _session.UtilisateurIdObligatoire;
 
+        _journal.LogDebug("Vente : ouverture de la transaction.");
+
         await using var transaction = await _uniteDeTravail.DemarrerTransactionAsync(jeton).ConfigureAwait(false);
+
+        _journal.LogDebug("Vente : chargement des déclinaisons.");
 
         var variantes = await ChargerVariantesAsync(lignesDemandees.Select(l => l.VarianteProduitId), jeton)
             .ConfigureAwait(false);
@@ -63,6 +67,8 @@ public class ServiceVentes : IServiceVentes
         await ControlerClientAsync(demande.ClientId, jeton).ConfigureAwait(false);
 
         var maintenant = _horodatage.MaintenantUtc;
+        _journal.LogDebug("Vente : attribution du numéro.");
+
         var numeroVente = await _numeros.ProchainNumeroVenteAsync(jeton).ConfigureAwait(false);
 
         var vente = new Vente
@@ -143,6 +149,8 @@ public class ServiceVentes : IServiceVentes
             });
         }
 
+        _journal.LogDebug("Vente {Numero} : écriture de l'en-tête et des lignes.", numeroVente);
+
         await _uniteDeTravail.Depot<Vente>().AjouterAsync(vente, jeton).ConfigureAwait(false);
         await _uniteDeTravail.EnregistrerAsync(jeton).ConfigureAwait(false);
 
@@ -157,6 +165,9 @@ public class ServiceVentes : IServiceVentes
 
         foreach (var element in quantitesParVariante)
         {
+            _journal.LogDebug("Vente {Numero} : retrait de {Quantite} sur la déclinaison {Variante}.",
+                numeroVente, element.Quantite, element.VarianteProduitId);
+
             await _stock.RetirerStockAsync(
                 element.VarianteProduitId,
                 element.Quantite,
@@ -165,6 +176,8 @@ public class ServiceVentes : IServiceVentes
                 numeroVente,
                 jeton).ConfigureAwait(false);
         }
+
+        _journal.LogDebug("Vente {Numero} : écriture de la trace d'audit.", numeroVente);
 
         await _audit.TracerAsync(
             ActionsAudit.Vente,
@@ -175,10 +188,15 @@ public class ServiceVentes : IServiceVentes
             jeton).ConfigureAwait(false);
 
         await _uniteDeTravail.EnregistrerAsync(jeton).ConfigureAwait(false);
+
+        _journal.LogDebug("Vente {Numero} : validation de la transaction.", numeroVente);
+
         await transaction.ValiderAsync(jeton).ConfigureAwait(false);
 
         _journal.LogInformation(
             "Vente {Numero} enregistrée pour un total de {Total} DA.", numeroVente, vente.Total);
+
+        _journal.LogDebug("Vente {Numero} : relecture pour affichage.", numeroVente);
 
         return await ObtenirObligatoireAsync(vente.Id, jeton).ConfigureAwait(false);
     }
