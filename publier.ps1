@@ -32,8 +32,35 @@ Write-Host ""
 Write-Host "Compilation de Gestion Magasin $Version..." -ForegroundColor Cyan
 Write-Host ""
 
+# Une version precedemment publiee peut encore tourner et retenir ses
+# fichiers : la suppression echouerait alors sur un « Access denied »
+# incomprehensible. On ferme donc ce qui traine avant de reconstruire.
+foreach ($nom in @("GestionMagasin", "postgres")) {
+    $processus = Get-Process -Name $nom -ErrorAction SilentlyContinue
+
+    if ($processus) {
+        Write-Host "Fermeture de $nom encore en cours d'execution..." -ForegroundColor Gray
+        $processus | Stop-Process -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Start-Sleep -Milliseconds 800
+
 if (Test-Path $cheminSortie) {
-    Remove-Item $cheminSortie -Recurse -Force
+    try {
+        Remove-Item $cheminSortie -Recurse -Force -ErrorAction Stop
+    }
+    catch {
+        Write-Host ""
+        Write-Host "Impossible de supprimer la livraison precedente :" -ForegroundColor Red
+        Write-Host "  $cheminSortie"
+        Write-Host ""
+        Write-Host "Un programme retient encore ses fichiers. Fermez toute fenetre" -ForegroundColor Yellow
+        Write-Host "de Gestion Magasin, ainsi que l'explorateur ouvert sur ce dossier,"
+        Write-Host "puis relancez. En dernier recours, supprimez le dossier a la main."
+        Write-Host ""
+        exit 1
+    }
 }
 
 $autonome = -not $Allegee
