@@ -142,7 +142,18 @@
                     </Border>
 
                     <!-- Résultats d'une recherche, quand il y en a une -->
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                    <!--
+                        La barre de défilement est toujours réservée, jamais
+                        « Auto ». Les vignettes se répartissent selon la largeur
+                        disponible : si la barre apparaissait et disparaissait,
+                        cette largeur changerait à chaque mesure, les vignettes
+                        se redistribueraient, et la mise en page ne se
+                        stabiliserait jamais. Windows arrête alors le programme
+                        sur-le-champ, la pile d'appels étant saturée.
+                    -->
+                    <ScrollViewer Grid.Row="2"
+                                  VerticalScrollBarVisibility="Visible"
+                                  HorizontalScrollBarVisibility="Disabled"
                                   Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}}">
                         <ItemsControl ItemsSource="{Binding ResultatsRecherche}"
                                       ItemTemplate="{StaticResource CarteArticle}"
@@ -153,7 +164,8 @@
                     <Grid Grid.Row="2"
                           Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}, ConverterParameter=inverse}">
 
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer VerticalScrollBarVisibility="Visible"
+                                      HorizontalScrollBarVisibility="Disabled">
                             <ItemsControl ItemsSource="{Binding Catalogue}"
                                           ItemTemplate="{StaticResource CarteArticle}"
                                           ItemsPanel="{StaticResource GrilleArticles}" />

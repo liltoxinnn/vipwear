@@ -158,6 +158,52 @@ public class TestsInterface
             "Ordre de fusion non respecté :" + Environment.NewLine + string.Join(Environment.NewLine, fautes));
     }
 
+    /// <summary>
+    /// Une zone défilante dont la barre apparaît « au besoin » change de
+    /// largeur selon son contenu. Si ce contenu se répartit d'après la largeur
+    /// — c'est le cas d'une grille de vignettes — chaque mesure en modifie une
+    /// autre et la mise en page ne se stabilise jamais. Windows arrête alors le
+    /// programme, pile d'appels saturée, sans erreur ni trace : c'est ce qui
+    /// fermait la caisse à la validation d'une vente.
+    /// </summary>
+    [Fact]
+    public void Aucune_grille_repartie_ne_defile_avec_une_barre_escamotable()
+    {
+        var fautes = new List<string>();
+
+        foreach (var fichier in FichiersXaml())
+        {
+            var lignes = File.ReadAllLines(fichier);
+
+            for (var i = 0; i < lignes.Length; i++)
+            {
+                if (!lignes[i].Contains("<ScrollViewer", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                // La balise ouvrante et le début de son contenu suffisent :
+                // le modèle de disposition y est toujours déclaré.
+                var portee = string.Join('\n', lignes.Skip(i).Take(12));
+
+                var escamotable = portee.Contains(
+                    "VerticalScrollBarVisibility=\"Auto\"", StringComparison.Ordinal);
+
+                var repartie = portee.Contains("<WrapPanel", StringComparison.Ordinal)
+                               || portee.Contains("ItemsPanel=", StringComparison.Ordinal);
+
+                if (escamotable && repartie)
+                {
+                    fautes.Add($"{Path.GetFileName(fichier)}:{i + 1} — barre escamotable " +
+                               "autour d'une grille répartie");
+                }
+            }
+        }
+
+        Assert.True(fautes.Count == 0,
+            "Mise en page instable :" + Environment.NewLine + string.Join(Environment.NewLine, fautes));
+    }
+
     /// <summary>Deux ressources de même nom : celle qui l'emporte est imprévisible.</summary>
     [Fact]
     public void Aucune_ressource_n_est_definie_deux_fois()
