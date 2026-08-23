@@ -106,6 +106,8 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
             await VerifierCompatibiliteAsync(jeton).ConfigureAwait(false);
         }
 
+        SupprimerVerrouPerime();
+
         if (await GrappeEnMarcheAsync(jeton).ConfigureAwait(false))
         {
             // Reste d'une exécution précédente mal fermée. Le dossier de
@@ -161,6 +163,65 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Retire le fichier de verrou laissé par un arrêt brutal.
+    ///
+    /// PostgreSQL écrit « postmaster.pid » au démarrage et l'efface en
+    /// s'arrêtant. Après une coupure de courant ou un processus tué, il reste
+    /// en place et le serveur refuse de démarrer. Le verrou n'est retiré que
+    /// si le processus qu'il désigne n'existe plus : sans cette vérification,
+    /// on écraserait le verrou d'un serveur bien vivant.
+    /// </summary>
+    private void SupprimerVerrouPerime()
+    {
+        var verrou = Path.Combine(_options.DossierDonnees, "postmaster.pid");
+
+        if (!File.Exists(verrou))
+        {
+            return;
+        }
+
+        try
+        {
+            var premiereLigne = File.ReadLines(verrou).FirstOrDefault();
+
+            if (!int.TryParse(premiereLigne?.Trim(), out var identifiant))
+            {
+                return;
+            }
+
+            if (ProcessusExiste(identifiant))
+            {
+                return;
+            }
+
+            File.Delete(verrou);
+            Journaliser("Verrou d'un arrêt précédent retiré.");
+        }
+        catch (Exception erreur) when (erreur is IOException or UnauthorizedAccessException)
+        {
+            // Le serveur signalera lui-même le problème, avec plus de détail.
+        }
+    }
+
+    private static bool ProcessusExiste(int identifiant)
+    {
+        try
+        {
+            using var processus = Process.GetProcessById(identifiant);
+
+            return !processus.HasExited;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -565,8 +626,36 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
             }
         }
 
-        using var processus = Process.Start(demarrage)
-            ?? throw new ServeurEmbarqueException($"Impossible de lancer « {executable} ».");
+        Process? processus;
+
+        try
+        {
+            processus = Process.Start(demarrage);
+        }
+        catch (System.ComponentModel.Win32Exception refus)
+        {
+            // Windows refuse le lancement. Le cas le plus courant est un
+            // emplacement que le logiciel n'a pas le droit d'exécuter.
+            throw new ServeurEmbarqueException(
+                "Windows a refusé de lancer la base de données." + Environment.NewLine +
+                Environment.NewLine +
+                "Déplacez le dossier du logiciel vers un emplacement simple, par" + Environment.NewLine +
+                "exemple C:\\GestionMagasin, en évitant les caractères inhabituels" + Environment.NewLine +
+                "(« ! », « # », « % »), les dossiers synchronisés et les lecteurs réseau." +
+                Environment.NewLine + Environment.NewLine +
+                $"Emplacement actuel : « {AppContext.BaseDirectory} ».",
+                refus)
+            {
+                DetailTechnique = $"{executable}{Environment.NewLine}{refus.Message}"
+            };
+        }
+
+        if (processus is null)
+        {
+            throw new ServeurEmbarqueException($"Impossible de lancer « {executable} ».");
+        }
+
+        using var _ = processus;
 
         var lectureSortie = processus.StandardOutput.ReadToEndAsync(jeton);
         var lectureErreurs = processus.StandardError.ReadToEndAsync(jeton);

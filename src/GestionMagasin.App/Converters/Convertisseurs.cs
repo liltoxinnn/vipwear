@@ -233,3 +233,33 @@ public class ConvertisseurEgalite : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException("La conversion inverse n'est pas prévue.");
 }
+
+/// <summary>
+/// Transforme le tracé d'une icône en forme affichable.
+///
+/// La conversion est explicite plutôt que laissée au moteur de liaison : une
+/// icône qui ne s'afficherait pas passerait autrement inaperçue.
+/// </summary>
+public class ConvertisseurGeometrie : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is not string trace || string.IsNullOrWhiteSpace(trace))
+        {
+            return Geometry.Empty;
+        }
+
+        try
+        {
+            return Geometry.Parse(trace);
+        }
+        catch (FormatException)
+        {
+            // Un tracé erroné ne doit pas empêcher le menu de s'afficher.
+            return Geometry.Empty;
+        }
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException("La conversion inverse d'une icône n'est pas prévue.");
+}

@@ -24,17 +24,41 @@
                 </Grid.RowDefinitions>
 
                 <!-- Identité du magasin -->
-                <StackPanel Grid.Row="0" Margin="18,22,18,18">
-                    <TextBlock Text="{Binding NomMagasin}"
-                               Foreground="White"
-                               FontSize="17"
-                               FontWeight="Bold"
-                               TextWrapping="Wrap" />
-                    <TextBlock Text="Logiciel de gestion"
-                               Foreground="#A9BCDC"
-                               FontSize="11"
-                               Margin="0,3,0,0" />
-                </StackPanel>
+                <Grid Grid.Row="0" Margin="16,20,16,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Même pastille que sur l'écran de connexion -->
+                    <Border Grid.Column="0"
+                            Background="#31548F"
+                            BorderBrush="#5C82C4"
+                            BorderThickness="1"
+                            CornerRadius="9"
+                            Width="38" Height="38"
+                            VerticalAlignment="Top">
+                        <TextBlock Text="GM"
+                                   Foreground="White"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding NomMagasin}"
+                                   Foreground="White"
+                                   FontSize="15.5"
+                                   FontWeight="Bold"
+                                   TextWrapping="Wrap"
+                                   LineHeight="19" />
+                        <TextBlock Text="Logiciel de gestion"
+                                   Foreground="#9DB2D6"
+                                   FontSize="10.5"
+                                   Margin="0,2,0,0" />
+                    </StackPanel>
+                </Grid>
 
                 <!-- Entrées de navigation -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -57,21 +81,31 @@
                                                     Padding="14,11">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="26" />
+                                                        <ColumnDefinition Width="19" />
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <TextBlock Grid.Column="0"
-                                                               Text="{Binding Icone}"
-                                                               Foreground="#C6D5EC"
-                                                               FontSize="14"
-                                                               VerticalAlignment="Center" />
+                                                    <Path x:Name="Dessin"
+                                                          Grid.Column="0"
+                                                          Data="{Binding Icone, Converter={StaticResource Icone}}"
+                                                          Stroke="#AFC4E4"
+                                                          StrokeThickness="1.5"
+                                                          StrokeLineJoin="Round"
+                                                          StrokeStartLineCap="Round"
+                                                          StrokeEndLineCap="Round"
+                                                          Fill="Transparent"
+                                                          Width="19" Height="19"
+                                                          Stretch="Uniform"
+                                                          VerticalAlignment="Center"
+                                                          SnapsToDevicePixels="True" />
 
-                                                    <TextBlock Grid.Column="1"
+                                                    <TextBlock x:Name="Libelle"
+                                                               Grid.Column="1"
                                                                Text="{Binding Libelle}"
-                                                               Foreground="#E4EBF7"
+                                                               Foreground="#DCE6F6"
                                                                FontSize="13.5"
+                                                               Margin="13,0,0,0"
                                                                VerticalAlignment="Center" />
 
                                                     <TextBlock Grid.Column="2"
@@ -84,10 +118,16 @@
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter TargetName="Fond" Property="Background" Value="#2A4779" />
+                                                    <Setter TargetName="Dessin" Property="Stroke" Value="#FFFFFF" />
+                                                    <Setter TargetName="Libelle" Property="Foreground" Value="#FFFFFF" />
                                                 </Trigger>
                                                 <DataTrigger Binding="{Binding EstActive}" Value="True">
-                                                    <Setter TargetName="Fond" Property="Background" Value="#2E4F8F" />
-                                                    <Setter TargetName="Fond" Property="BorderBrush" Value="#7FA8F0" />
+                                                    <Setter TargetName="Fond" Property="Background" Value="#31548F" />
+                                                    <Setter TargetName="Fond" Property="BorderBrush" Value="#8FB6F5" />
+                                                    <Setter TargetName="Dessin" Property="Stroke" Value="#FFFFFF" />
+                                                    <Setter TargetName="Dessin" Property="StrokeThickness" Value="1.8" />
+                                                    <Setter TargetName="Libelle" Property="Foreground" Value="#FFFFFF" />
+                                                    <Setter TargetName="Libelle" Property="FontWeight" Value="SemiBold" />
                                                 </DataTrigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -103,16 +143,36 @@
                         Background="{StaticResource PinceauPrincipalFonce}"
                         Padding="16,14">
                     <StackPanel>
-                        <TextBlock Text="{Binding NomUtilisateur}"
-                                   Foreground="White"
-                                   FontWeight="SemiBold"
-                                   FontSize="13"
-                                   TextTrimming="CharacterEllipsis" />
+                        <Grid Margin="0,0,0,11">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="{Binding RoleUtilisateur}"
-                                   Foreground="#A9BCDC"
-                                   FontSize="11"
-                                   Margin="0,2,0,10" />
+                            <Border Grid.Column="0"
+                                    Background="#4E70AC"
+                                    CornerRadius="16"
+                                    Width="32" Height="32">
+                                <TextBlock Text="{Binding InitialesUtilisateur}"
+                                           Foreground="White"
+                                           FontSize="12"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding NomUtilisateur}"
+                                           Foreground="White"
+                                           FontWeight="SemiBold"
+                                           FontSize="12.5"
+                                           TextTrimming="CharacterEllipsis" />
+
+                                <TextBlock Text="{Binding RoleUtilisateur}"
+                                           Foreground="#9DB2D6"
+                                           FontSize="10.5" />
+                            </StackPanel>
+                        </Grid>
 
                         <Button Content="Se déconnecter"
                                 Command="{Binding SeDeconnecterCommand}"

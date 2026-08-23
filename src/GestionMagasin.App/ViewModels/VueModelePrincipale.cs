@@ -15,7 +15,9 @@ public partial class EntreeMenu : ObservableObject
 {
     public required string Libelle { get; init; }
 
-    /// <summary>Pictogramme simple, sans dépendance à une police externe.</summary>
+    /// <summary>
+    /// Tracé de l'icône, dessiné dans le logiciel. Voir <see cref="Views.IconesMenu"/>.
+    /// </summary>
     public required string Icone { get; init; }
 
     /// <summary>Permission requise pour voir cette entrée. Vide = toujours visible.</summary>
@@ -86,6 +88,25 @@ public partial class VueModelePrincipale : VueModeleBase
     [ObservableProperty]
     private string _dateDuJour = string.Empty;
 
+    /// <summary>Initiales du compte connecté, affichées dans la pastille du menu.</summary>
+    public string InitialesUtilisateur
+    {
+        get
+        {
+            var mots = NomUtilisateur.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            return mots.Length switch
+            {
+                0 => "?",
+                1 => mots[0][..1].ToUpperInvariant(),
+                _ => (mots[0][..1] + mots[^1][..1]).ToUpperInvariant()
+            };
+        }
+    }
+
+    partial void OnNomUtilisateurChanged(string value) =>
+        OnPropertyChanged(nameof(InitialesUtilisateur));
+
     /// <summary>Entrées de menu visibles pour l'utilisateur connecté.</summary>
     public ObservableCollection<EntreeMenu> Menu { get; } = [];
 
@@ -133,29 +154,29 @@ public partial class VueModelePrincipale : VueModeleBase
 
         EntreeMenu[] entrees =
         [
-            new() { Libelle = "Tableau de bord", Icone = "▤", TypeVueModele = typeof(VueModeleTableauBord),
+            new() { Libelle = "Tableau de bord", Icone = Views.IconesMenu.TableauDeBord, TypeVueModele = typeof(VueModeleTableauBord),
                     PermissionRequise = CodesPermissions.VoirRapports, Raccourci = "F1" },
-            new() { Libelle = "Caisse", Icone = "▣", TypeVueModele = typeof(VueModeleCaisse),
+            new() { Libelle = "Caisse", Icone = Views.IconesMenu.Caisse, TypeVueModele = typeof(VueModeleCaisse),
                     PermissionRequise = CodesPermissions.EffectuerVente, Raccourci = "F2" },
-            new() { Libelle = "Produits", Icone = "◫", TypeVueModele = typeof(VueModeleProduits),
+            new() { Libelle = "Produits", Icone = Views.IconesMenu.Produits, TypeVueModele = typeof(VueModeleProduits),
                     PermissionRequise = CodesPermissions.VoirProduits, Raccourci = "F3" },
-            new() { Libelle = "Stock", Icone = "▦", TypeVueModele = typeof(VueModeleStock),
+            new() { Libelle = "Stock", Icone = Views.IconesMenu.Stock, TypeVueModele = typeof(VueModeleStock),
                     PermissionRequise = CodesPermissions.VoirStock, Raccourci = "F4" },
-            new() { Libelle = "Ventes", Icone = "▥", TypeVueModele = typeof(VueModeleVentes),
+            new() { Libelle = "Ventes", Icone = Views.IconesMenu.Ventes, TypeVueModele = typeof(VueModeleVentes),
                     PermissionRequise = CodesPermissions.EffectuerVente, Raccourci = "F5" },
-            new() { Libelle = "Achats", Icone = "▧", TypeVueModele = typeof(VueModeleAchats),
+            new() { Libelle = "Achats", Icone = Views.IconesMenu.Achats, TypeVueModele = typeof(VueModeleAchats),
                     PermissionRequise = CodesPermissions.VoirAchats, Raccourci = "F6" },
-            new() { Libelle = "Fournisseurs", Icone = "◨", TypeVueModele = typeof(VueModeleFournisseurs),
+            new() { Libelle = "Fournisseurs", Icone = Views.IconesMenu.Fournisseurs, TypeVueModele = typeof(VueModeleFournisseurs),
                     PermissionRequise = CodesPermissions.VoirAchats, Raccourci = "F7" },
-            new() { Libelle = "Clients", Icone = "◧", TypeVueModele = typeof(VueModeleClients),
+            new() { Libelle = "Clients", Icone = Views.IconesMenu.Clients, TypeVueModele = typeof(VueModeleClients),
                     PermissionRequise = CodesPermissions.VoirClients, Raccourci = "F8" },
-            new() { Libelle = "Retours", Icone = "◩", TypeVueModele = typeof(VueModeleRetours),
+            new() { Libelle = "Retours", Icone = Views.IconesMenu.Retours, TypeVueModele = typeof(VueModeleRetours),
                     PermissionRequise = CodesPermissions.EffectuerRetour, Raccourci = "F9" },
-            new() { Libelle = "Rapports", Icone = "◪", TypeVueModele = typeof(VueModeleRapports),
+            new() { Libelle = "Rapports", Icone = Views.IconesMenu.Rapports, TypeVueModele = typeof(VueModeleRapports),
                     PermissionRequise = CodesPermissions.VoirRapports, Raccourci = "F10" },
-            new() { Libelle = "Utilisateurs", Icone = "◈", TypeVueModele = typeof(VueModeleUtilisateurs),
+            new() { Libelle = "Utilisateurs", Icone = Views.IconesMenu.Utilisateurs, TypeVueModele = typeof(VueModeleUtilisateurs),
                     PermissionRequise = CodesPermissions.GererUtilisateurs, Raccourci = "F11" },
-            new() { Libelle = "Paramètres", Icone = "◇", TypeVueModele = typeof(VueModeleParametres),
+            new() { Libelle = "Paramètres", Icone = Views.IconesMenu.Parametres, TypeVueModele = typeof(VueModeleParametres),
                     PermissionRequise = CodesPermissions.GererParametres, Raccourci = "F12" }
         ];
 

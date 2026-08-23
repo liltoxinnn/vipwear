@@ -478,6 +478,51 @@ public partial class App : System.Windows.Application
             DossierJournaux;
     }
 
+    /// <summary>
+    /// Dernier recours pour une erreur survenue hors du fil de l'interface.
+    ///
+    /// Windows termine alors le processus : le logiciel se ferme d'un coup,
+    /// en pleine vente, sans rien afficher. On ne peut pas l'empêcher, mais on
+    /// peut écrire ce qui s'est passé et le dire à l'utilisateur, sans quoi
+    /// l'incident reste incompréhensible et introuvable.
+    /// </summary>
+    private static void SurErreurFatale(object sender, UnhandledExceptionEventArgs e)
+    {
+        var erreur = e.ExceptionObject as Exception;
+
+        Log.Fatal(erreur, "Arrêt brutal du logiciel (fil d'exécution secondaire).");
+        Log.CloseAndFlush();
+
+        try
+        {
+            MessageBox.Show(
+                "Le logiciel a dû s'arrêter." + Environment.NewLine + Environment.NewLine +
+                "Détail : " + (erreur?.Message ?? "cause inconnue") + Environment.NewLine + Environment.NewLine +
+                "Les opérations déjà enregistrées sont conservées : une vente validée " +
+                "reste validée, son stock est déjà décompté." + Environment.NewLine + Environment.NewLine +
+                "Le détail technique a été enregistré dans :" + Environment.NewLine + DossierJournaux,
+                "Arrêt du logiciel",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        catch (Exception)
+        {
+            // Le processus se termine de toute façon : rien de plus à tenter.
+        }
+    }
+
+    /// <summary>
+    /// Erreur dans une tâche dont personne n'a lu le résultat. Sans ce
+    /// traitement, elle reste invisible jusqu'au passage du ramasse-miettes,
+    /// où elle peut alors terminer le processus.
+    /// </summary>
+    private static void SurTacheNonObservee(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        Log.Error(e.Exception, "Erreur dans une tâche dont le résultat n'a pas été lu.");
+
+        e.SetObserved();
+    }
+
     public App()
     {
         // La culture est fixée avant toute création de fenêtre : les libellés
@@ -485,5 +530,12 @@ public partial class App : System.Windows.Application
         AppliquerCultureFrancaise();
 
         DispatcherUnhandledException += SurExceptionNonGeree;
+
+        // Le gestionnaire ci-dessus ne couvre que le fil de l'interface. Une
+        // erreur survenue ailleurs — accès aux données, génération d'un
+        // document, pilote de base — fermerait le logiciel sans laisser de
+        // trace.
+        AppDomain.CurrentDomain.UnhandledException += SurErreurFatale;
+        TaskScheduler.UnobservedTaskException += SurTacheNonObservee;
     }
 }

@@ -23,5 +23,6 @@
     <conv:ConvertisseurProportion x:Key="Proportion" />
     <conv:ConvertisseurEgalite x:Key="Egalite" />
     <conv:ConvertisseurLibelleEnum x:Key="LibelleEnum" />
+    <conv:ConvertisseurGeometrie x:Key="Icone" />
 
 </ResourceDictionary>
