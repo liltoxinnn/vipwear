@@ -31,30 +31,30 @@ internal static class Blason
     public const double Cote = 200d;
 
     /// <summary>Largeur du rectangle dans lequel le lion couronné est dessiné.</summary>
-    public const double LargeurLion = 104d;
+    public const double LargeurLion = 109d;
 
     /// <summary>Hauteur du rectangle dans lequel le lion couronné est dessiné.</summary>
-    public const double HauteurLion = 112d;
+    public const double HauteurLion = 118d;
 
     /// <summary>Position du lion dans le repère de l'emblème.</summary>
-    public const double LionGauche = 48d;
+    public const double LionGauche = 45.5d;
 
     /// <summary>Position du lion dans le repère de l'emblème.</summary>
-    public const double LionHaut = 44d;
+    public const double LionHaut = 41d;
 
     // Le lion est composé dans un carré de 100 sur 100, plus lisible à
     // écrire, puis reporté dans son rectangle définitif.
-    private const double EchelleLion = 1.00d;
+    private const double EchelleLion = 1.05d;
     private const double DecalageLionX = 2.0d;
-    private const double DecalageLionY = 6.0d;
+    private const double DecalageLionY = 6.3d;
 
-    private const double EchelleCouronne = 0.48d;
-    private const double DecalageCouronneX = 28.0d;
-    private const double DecalageCouronneY = 3.4d;
+    private const double EchelleCouronne = 0.50d;
+    private const double DecalageCouronneX = 29.5d;
+    private const double DecalageCouronneY = 2.2d;
 
     // Centre et rayons de la crinière, exprimés dans le repère du lion.
-    private const double CentreX = 52d;
-    private const double CentreY = 60d;
+    private const double CentreX = 54.5d;
+    private const double CentreY = 63d;
 
     // ------------------------------------------------------------------
     // Tracés du visage, écrits dans le carré de 100 sur 100
@@ -113,10 +113,10 @@ internal static class Blason
             DecalageCouronneY)));
 
     private static readonly Lazy<Geometry> TexteHautCharge = new(() =>
-        Figer(TexteEnArc("VIP MEN’S STORE", 70d, -90d, 18d, false, 1.6d)));
+        Figer(TexteEnArc("VIP MEN’S STORE", 71d, -90d, 17d, false, 3.4d)));
 
     private static readonly Lazy<Geometry> TexteBasCharge = new(() =>
-        Figer(TexteEnArc("BEJAIA", 87d, 90d, 17d, true, 7.5d)));
+        Figer(TexteEnArc("BEJAIA", 87d, 90d, 16d, true, 8.5d)));
 
     private static readonly Lazy<Geometry> EtoilesChargees = new(() =>
     {
