@@ -81,12 +81,17 @@ public partial class App : System.Windows.Application
         }
         catch (Exception erreur)
         {
+            // Le journal n'est pas forcément en place à ce stade : la cause
+            // doit donc figurer à l'écran, sans quoi l'incident est
+            // indiagnosticable sur le poste du magasin.
             Log.Fatal(erreur, "Le logiciel n'a pas pu démarrer.");
 
             MessageBox.Show(
                 "Le logiciel n'a pas pu démarrer." + Environment.NewLine + Environment.NewLine +
-                "Vérifiez que le serveur de base de données est accessible, puis relancez " +
-                "l'application. Le détail de l'erreur a été enregistré dans le journal.",
+                "Détail : " + erreur.Message + Environment.NewLine + Environment.NewLine +
+                "Vérifiez que le dossier du logiciel est complet, puis relancez " +
+                "l'application." + Environment.NewLine + Environment.NewLine +
+                "Journal : " + DossierJournaux,
                 "Démarrage impossible",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);

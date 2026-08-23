@@ -108,22 +108,38 @@ $configLivree = Join-Path $cheminSortie "appsettings.json"
 # retrouver un incident.
 $niveau = if ($Diagnostic) { "Debug" } else { "Information" }
 
-@"
+# Dans un bloc de texte PowerShell, les guillemets sont deja litteraux :
+# les doubler les ecrirait deux fois et produirait un fichier illisible.
+$configuration = @"
 {
-  ""ConnectionStrings"": {
-    ""BaseDonnees"": """"
+  "ConnectionStrings": {
+    "BaseDonnees": ""
   },
-  ""Serilog"": {
-    ""MinimumLevel"": {
-      ""Default"": ""$niveau"",
-      ""Override"": {
-        ""Microsoft"": ""Warning"",
-        ""Microsoft.EntityFrameworkCore.Database.Command"": ""Warning""
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "$niveau",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.EntityFrameworkCore.Database.Command": "Warning"
       }
     }
   }
 }
-"@ | Set-Content -Path $configLivree -Encoding UTF8
+"@
+
+Set-Content -Path $configLivree -Value $configuration -Encoding UTF8
+
+# Le logiciel refuse de demarrer si ce fichier est mal forme : on le verifie
+# ici plutot que de le decouvrir au premier lancement chez le client.
+try {
+    $configuration | ConvertFrom-Json | Out-Null
+}
+catch {
+    Write-Host ""
+    Write-Host "La configuration produite est illisible :" -ForegroundColor Red
+    Write-Host $configuration
+    exit 1
+}
 
 Write-Host "Configuration livree sans identifiants : le magasin saisira les siens au premier demarrage." -ForegroundColor Gray
 
