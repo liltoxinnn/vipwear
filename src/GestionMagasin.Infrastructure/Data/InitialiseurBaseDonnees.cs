@@ -312,15 +312,52 @@ public class InitialiseurBaseDonnees
             })
             .ToList();
 
-        if (manquantes.Count == 0)
+        if (manquantes.Count > 0)
+        {
+            _contexte.Categories.AddRange(manquantes);
+            await _contexte.SaveChangesAsync(jeton).ConfigureAwait(false);
+
+            _journal.LogInformation("{Nombre} famille(s) d'articles créée(s).", manquantes.Count);
+        }
+
+        await MasquerFamilleDeRepriseAsync(jeton).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Retire « Non classé » des listes lorsqu'aucun article ne s'y trouve.
+    ///
+    /// Cette famille n'existe que pour accueillir les articles d'une base
+    /// antérieure aux familles. Sur une installation neuve elle ne sert à
+    /// rien, et la proposer laisserait créer des articles sans rayon.
+    /// </summary>
+    private async Task MasquerFamilleDeRepriseAsync(CancellationToken jeton)
+    {
+        var reprise = await _contexte.Categories
+            .FirstOrDefaultAsync(c => c.Nom == "Non classé", jeton)
+            .ConfigureAwait(false);
+
+        if (reprise is null)
         {
             return;
         }
 
-        _contexte.Categories.AddRange(manquantes);
+        var utilisee = await _contexte.Produits
+            .AnyAsync(p => p.CategorieId == reprise.Id, jeton)
+            .ConfigureAwait(false);
+
+        if (reprise.Actif == utilisee)
+        {
+            return;
+        }
+
+        reprise.Actif = utilisee;
+
         await _contexte.SaveChangesAsync(jeton).ConfigureAwait(false);
 
-        _journal.LogInformation("{Nombre} famille(s) d'articles créée(s).", manquantes.Count);
+        _journal.LogInformation(
+            utilisee
+                ? "La famille « Non classé » reste proposée : des articles y sont rattachés."
+                : "La famille « Non classé » est masquée : aucun article ne s'y trouve.");
     }
 
     private async Task AmorcerCouleursAsync(CancellationToken jeton)

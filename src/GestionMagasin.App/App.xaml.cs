@@ -365,17 +365,54 @@ public partial class App : System.Windows.Application
         {
             journal.LogCritical(erreur, "Préparation de la base de données impossible.");
 
+            // La cause exacte doit figurer à l'écran. Sans elle, la personne
+            // devant le poste ne peut rien faire : le message se contentait
+            // de conseiller de vérifier que PostgreSQL était démarré, ce qui
+            // n'a aucun sens lorsque le logiciel démarre son propre serveur,
+            // et cachait la seule ligne utile.
+            var conseil = _serveur is not null
+                ? "Le logiciel utilise la base de données qu'il apporte lui-même. " +
+                  "Vérifiez que le dossier « pgsql » est présent à côté du programme, " +
+                  "que l'antivirus ne le bloque pas, et que le logiciel n'est PAS lancé " +
+                  "en tant qu'administrateur."
+                : "Le logiciel utilise un PostgreSQL installé sur ce poste. Vérifiez qu'il " +
+                  "est démarré et que le compte utilisé a le droit de créer des tables. " +
+                  "Relancez ensuite le logiciel : la fenêtre de configuration vous sera " +
+                  "proposée.";
+
             MessageBox.Show(
                 "La préparation de la base de données a échoué." + Environment.NewLine + Environment.NewLine +
-                "Vérifiez que le serveur PostgreSQL est démarré et que le compte utilisé a le " +
-                "droit de créer des tables. Relancez ensuite le logiciel : la fenêtre de " +
-                "configuration vous sera proposée.",
+                "Détail : " + Detailler(erreur) + Environment.NewLine + Environment.NewLine +
+                conseil + Environment.NewLine + Environment.NewLine +
+                "Le journal technique se trouve dans :" + Environment.NewLine + DossierJournaux,
                 "Base de données inaccessible",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
 
             return false;
         }
+    }
+
+    /// <summary>
+    /// Message d'une erreur, cause profonde comprise.
+    ///
+    /// Entity Framework et Npgsql emballent l'erreur réelle : « An error
+    /// occurred while… » n'apprend rien, alors que la cause profonde nomme
+    /// la table, la contrainte ou le refus de connexion.
+    /// </summary>
+    private static string Detailler(Exception erreur)
+    {
+        var messages = new List<string>();
+
+        for (var courante = erreur; courante is not null; courante = courante.InnerException)
+        {
+            if (!messages.Contains(courante.Message))
+            {
+                messages.Add(courante.Message);
+            }
+        }
+
+        return string.Join(Environment.NewLine + "→ ", messages.Take(3));
     }
 
     /// <summary>Reprend le symbole de devise du magasin pour l'affichage des montants.</summary>
