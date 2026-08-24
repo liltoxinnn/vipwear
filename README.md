@@ -347,3 +347,19 @@ Ils sont conservés 30 jours. Le **journal d'audit**, consultable dans
 l'application par un administrateur, est distinct : il conserve les actions
 métier importantes (création de produit, changement de prix, vente, retour,
 mouvement de stock, connexion) avec leur auteur et leur date.
+
+## Livrer au magasin
+
+```powershell
+.\publier.ps1
+```
+
+Le script produit `livraison\GestionMagasin-1.0.0.zip`, prêt à être envoyé.
+Le poste du magasin **n'installe rien** : ni .NET, ni PostgreSQL. Il
+décompresse l'archive et double-clique sur `GestionMagasin.exe`.
+
+Le dossier `pgsql` — les binaires PostgreSQL pour Windows, environ 150 Mo —
+n'est pas dans le dépôt. Le script le récupère de lui-même au premier
+lancement sur un poste, puis vérifie que le dossier produit **et l'archive**
+le contiennent : un paquet incomplet ne se découvrirait autrement que chez
+le client.

@@ -232,6 +232,20 @@ Sur le dossier complet du logiciel, `pgsql` compris.
 
 ---
 
+### « Copie incomplète » — le dossier `pgsql` est absent
+
+L'archive n'a pas été décompressée entièrement, ou l'antivirus a mis une
+partie des fichiers en quarantaine.
+
+1. Supprimez le dossier obtenu
+2. Décompressez **de nouveau** l'archive reçue, en entier
+3. Vérifiez que le dossier **`pgsql`** est bien à côté de
+   `GestionMagasin.exe`
+
+Ne copiez pas les fichiers un par un depuis l'archive : Windows en oublie.
+
+---
+
 ### « La base de données du magasin n'a pas pu démarrer »
 
 1. Fermez complètement le logiciel

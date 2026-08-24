@@ -149,18 +149,38 @@ Write-Host "Configuration livree sans identifiants : le magasin saisira les sien
 # presence est donc verifiee avant de constituer l'archive : un paquet
 # incomplet ne se decouvrirait que chez le client.
 if (-not $SansBaseDeDonnees) {
+    # Le dossier « pgsql » n'est pas dans le depot : 150 Mo de binaires
+    # Windows n'y ont pas leur place. Il est donc absent de tout poste ou le
+    # depot vient d'etre clone. Plutot que d'expliquer a l'operateur qu'un
+    # second script existe, on le lance : oublier cette etape produit un
+    # paquet sans base de donnees, et l'incident n'apparait que chez le
+    # client, longtemps apres.
     if (-not (Test-Path "pgsql\bin\pg_ctl.exe")) {
         Write-Host ""
-        Write-Host "Le dossier « pgsql » est introuvable." -ForegroundColor Red
+        Write-Host "Le dossier « pgsql » est absent : recuperation de PostgreSQL." -ForegroundColor Yellow
+        Write-Host "Environ 350 Mo, une seule fois sur ce poste." -ForegroundColor Gray
         Write-Host ""
-        Write-Host "Recuperez-le une seule fois avec :" -ForegroundColor Yellow
-        Write-Host "    .\outils\telecharger-postgres.ps1"
-        Write-Host ""
-        Write-Host "Ou publiez sans base de donnees (le magasin devra alors"
-        Write-Host "installer PostgreSQL lui-meme) :"
-        Write-Host "    .\publier.ps1 -SansBaseDeDonnees"
-        Write-Host ""
-        exit 1
+
+        $recuperation = Join-Path $PSScriptRoot "outils\telecharger-postgres.ps1"
+
+        if (-not (Test-Path $recuperation)) {
+            Write-Host "Le script « outils\telecharger-postgres.ps1 » est introuvable." -ForegroundColor Red
+            Write-Host "Le depot est incomplet : reclonez-le." -ForegroundColor Red
+            exit 1
+        }
+
+        & $recuperation
+
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path "pgsql\bin\pg_ctl.exe")) {
+            Write-Host ""
+            Write-Host "PostgreSQL n'a pas pu etre recupere : la livraison est interrompue." -ForegroundColor Red
+            Write-Host "Sans lui, le client devrait installer PostgreSQL lui-meme." -ForegroundColor Red
+            Write-Host ""
+            Write-Host "Pour publier quand meme, sans base de donnees :" -ForegroundColor Yellow
+            Write-Host "    .\publier.ps1 -SansBaseDeDonnees"
+            Write-Host ""
+            exit 1
+        }
     }
 
     Write-Host "Integration de PostgreSQL dans la livraison..." -ForegroundColor Gray
@@ -195,6 +215,63 @@ if (Test-Path $guide) {
     Copy-Item $guide (Join-Path $cheminSortie $guide)
 }
 
+# ---------------------------------------------------------------------
+#  Verification de ce qui a REELLEMENT ete produit.
+#
+#  Verifier la source ne suffit pas : une copie interrompue, un antivirus
+#  qui ecarte un executable, un fichier verrouille par une instance encore
+#  ouverte, et le paquet part incomplet. L'incident ne se decouvre alors
+#  que chez le client, qui n'a aucun moyen de le comprendre.
+# ---------------------------------------------------------------------
+
+Write-Host ""
+Write-Host "Verification du paquet..." -ForegroundColor Gray
+
+$attendus = @("GestionMagasin.exe", "appsettings.json", "GUIDE-INSTALLATION.md")
+
+if (-not $SansBaseDeDonnees) {
+    $attendus += @(
+        "pgsql\bin\pg_ctl.exe",
+        "pgsql\bin\postgres.exe",
+        "pgsql\bin\initdb.exe",
+        "pgsql\bin\pg_dump.exe",
+        "pgsql\bin\pg_restore.exe",
+        "pgsql\share\postgresql.conf.sample"
+    )
+}
+
+$absents = @()
+
+foreach ($fichier in $attendus) {
+    if (-not (Test-Path (Join-Path $cheminSortie $fichier))) {
+        $absents += $fichier
+    }
+}
+
+if ($absents.Count -gt 0) {
+    Write-Host ""
+    Write-Host "PAQUET INCOMPLET : ne le livrez pas." -ForegroundColor Red
+    Write-Host ""
+    foreach ($fichier in $absents) {
+        Write-Host "  manquant : $fichier" -ForegroundColor Red
+    }
+    Write-Host ""
+    Write-Host "Fermez toute instance du logiciel, verifiez que l'antivirus" -ForegroundColor Yellow
+    Write-Host "n'ecarte rien, puis relancez la publication." -ForegroundColor Yellow
+    Write-Host ""
+    exit 1
+}
+
+# Marqueur de livraison. Le logiciel s'en sert pour savoir qu'il tourne
+# chez un client et non sur un poste de developpement : si le dossier
+# « pgsql » venait a manquer, il le dira au lieu de chercher un PostgreSQL
+# installe sur la machine, qu'un magasin n'a pas.
+if (-not $SansBaseDeDonnees) {
+    Set-Content -Path (Join-Path $cheminSortie "livraison.txt") `
+        -Value "Paquet complet, base de donnees incluse. Version $Version." `
+        -Encoding UTF8
+}
+
 # Archive prête à être envoyée.
 $archive = Join-Path $Destination "$nomDossier.zip"
 if (Test-Path $archive) {
@@ -202,6 +279,33 @@ if (Test-Path $archive) {
 }
 
 Compress-Archive -Path "$cheminSortie\*" -DestinationPath $archive
+
+# L'archive est relue : c'est elle qui part chez le client, pas le dossier.
+if (-not $SansBaseDeDonnees) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+    $lecture = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $archive).Path)
+
+    try {
+        $entrees = @($lecture.Entries | Where-Object { $_.FullName -like "pgsql/*" })
+        $programme = @($lecture.Entries | Where-Object { $_.FullName -eq "GestionMagasin.exe" })
+
+        if ($entrees.Count -lt 100 -or $programme.Count -eq 0) {
+            Write-Host ""
+            Write-Host "L'ARCHIVE EST INCOMPLETE : ne la livrez pas." -ForegroundColor Red
+            Write-Host "  fichiers pgsql dans l'archive : $($entrees.Count)" -ForegroundColor Red
+            Write-Host ""
+            exit 1
+        }
+
+        Write-Host "  base de donnees incluse : $($entrees.Count) fichiers" -ForegroundColor Green
+    }
+    finally {
+        $lecture.Dispose()
+    }
+}
+
+Write-Host "  paquet complet." -ForegroundColor Green
 
 $tailleMo = [math]::Round((Get-Item $archive).Length / 1MB, 1)
 

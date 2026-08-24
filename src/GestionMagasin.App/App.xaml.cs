@@ -148,6 +148,35 @@ public partial class App : System.Windows.Application
             return true;
         }
 
+        // Le paquet livré contient sa base de données. Si elle manque ici,
+        // c'est la copie qui est incomplète — et il ne sert à rien de
+        // proposer à un magasin de configurer un PostgreSQL qu'il n'a pas
+        // installé et n'installera pas. Le dire franchement fait gagner
+        // l'après-midi que coûte l'autre message.
+        if (EstLivraison)
+        {
+            Log.Fatal(
+                "Paquet incomplet : le dossier « {Dossier} » est absent de {Chemin}.",
+                LocalisateurOutils.NomDossierEmbarque,
+                AppContext.BaseDirectory);
+
+            MessageBox.Show(
+                "Le dossier « pgsql » est absent : la copie du logiciel est incomplète." +
+                Environment.NewLine + Environment.NewLine +
+                "Ce dossier contient la base de données du magasin. Il doit se trouver " +
+                "juste à côté de GestionMagasin.exe, ici :" +
+                Environment.NewLine + AppContext.BaseDirectory +
+                Environment.NewLine + Environment.NewLine +
+                "Décompressez de nouveau l'archive reçue, sans en extraire seulement " +
+                "une partie, et sans déplacer les fichiers un par un. Si le dossier " +
+                "a été mis en quarantaine par l'antivirus, rétablissez-le.",
+                "Copie incomplète",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            return false;
+        }
+
         var chaine = LireChaineConnexion();
 
         if (!string.IsNullOrWhiteSpace(chaine))
@@ -225,6 +254,19 @@ public partial class App : System.Windows.Application
             .AddEnvironmentVariables("GESTIONMAGASIN_")
             .Build()
             .GetConnectionString("BaseDonnees");
+
+    /// <summary>
+    /// Vrai lorsque le logiciel tourne depuis un paquet livré à un magasin,
+    /// et non depuis un poste de développement.
+    ///
+    /// Le marqueur est déposé par le script de publication. Il permet de
+    /// distinguer deux situations que rien ne sépare autrement : sur un poste
+    /// de développement, l'absence du serveur livré est normale — le
+    /// PostgreSQL de la machine prend le relais ; chez un magasin, elle
+    /// signifie que la copie est incomplète.
+    /// </summary>
+    private static bool EstLivraison { get; } =
+        File.Exists(Path.Combine(AppContext.BaseDirectory, "livraison.txt"));
 
     /// <summary>
     /// Dossier où sont écrits les journaux techniques. Il est communiqué à
