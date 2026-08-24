@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 #  Récupère les binaires PostgreSQL pour Windows et n'en garde que ce
 #  qui est nécessaire au serveur embarqué.
 #

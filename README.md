@@ -350,6 +350,10 @@ mouvement de stock, connexion) avec leur auteur et leur date.
 
 ## Livrer au magasin
 
+**Sur le poste qui construit**, une seule fois : le
+[SDK .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0) — le SDK,
+pas le Runtime seul, qui exécute les applications sans savoir en construire.
+
 ```powershell
 .\publier.ps1
 ```

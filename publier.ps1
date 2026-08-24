@@ -1,4 +1,4 @@
-# =====================================================================
+﻿# =====================================================================
 #  Prépare le dossier de livraison de VIP MEN’S STORE.
 #
 #  Produit une version autonome : le poste du magasin n'a besoin
@@ -36,6 +36,62 @@ $cheminSortie = Join-Path $Destination $nomDossier
 Write-Host ""
 Write-Host "Compilation de VIP MEN’S STORE $Version..." -ForegroundColor Cyan
 Write-Host ""
+
+# ---------------------------------------------------------------------
+#  Outils necessaires SUR CE POSTE.
+#
+#  Ce sont ceux du poste qui construit, pas ceux du magasin : le paquet
+#  livre n'exige rien. Sans ce controle, l'absence du SDK se manifeste par
+#  un mur d'anglais au milieu de la sortie, qui ne dit ni ce qui manque ni
+#  ou le prendre.
+# ---------------------------------------------------------------------
+
+$dotnet = Get-Command dotnet -ErrorAction SilentlyContinue
+
+if (-not $dotnet) {
+    Write-Host "Le SDK .NET n'est pas installe sur ce poste." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Il sert uniquement a construire la livraison. Le magasin," -ForegroundColor Yellow
+    Write-Host "lui, n'installera rien." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Installez le « .NET 10 SDK » (et non le Runtime seul) :" -ForegroundColor Cyan
+    Write-Host "    https://dotnet.microsoft.com/download/dotnet/10.0"
+    Write-Host ""
+    Write-Host "Fermez puis rouvrez PowerShell apres l'installation."
+    Write-Host ""
+    exit 1
+}
+
+$sdks = @(& dotnet --list-sdks 2>$null)
+
+if ($sdks.Count -eq 0) {
+    Write-Host "Aucun SDK .NET n'est installe : seul le Runtime est present." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Le Runtime execute les applications, il n'en construit pas." -ForegroundColor Yellow
+    Write-Host "Installez le « .NET 10 SDK » :" -ForegroundColor Cyan
+    Write-Host "    https://dotnet.microsoft.com/download/dotnet/10.0"
+    Write-Host ""
+    Write-Host "Fermez puis rouvrez PowerShell apres l'installation."
+    Write-Host ""
+    exit 1
+}
+
+if (-not ($sdks | Where-Object { $_ -match "^10\." })) {
+    Write-Host "Le SDK .NET 10 est absent. Versions trouvees sur ce poste :" -ForegroundColor Red
+    Write-Host ""
+    foreach ($sdk in $sdks) {
+        Write-Host "    $sdk" -ForegroundColor Gray
+    }
+    Write-Host ""
+    Write-Host "Le logiciel vise net10.0-windows : une version anterieure ne" -ForegroundColor Yellow
+    Write-Host "sait pas le construire." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Installez le « .NET 10 SDK » :" -ForegroundColor Cyan
+    Write-Host "    https://dotnet.microsoft.com/download/dotnet/10.0"
+    Write-Host ""
+    exit 1
+}
+
 
 # Une version precedemment publiee peut encore tourner et retenir ses
 # fichiers : la suppression echouerait alors sur un « Access denied »

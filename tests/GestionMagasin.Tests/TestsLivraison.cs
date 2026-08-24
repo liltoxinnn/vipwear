@@ -34,6 +34,12 @@ public class TestsLivraison
         }
     }
 
+    private static string[] Scripts =>
+    [
+        Path.Combine(Racine, "publier.ps1"),
+        Path.Combine(Racine, "outils", "telecharger-postgres.ps1")
+    ];
+
     private static string Publication => File.ReadAllText(Path.Combine(Racine, "publier.ps1"));
 
     private static string Demarrage => File.ReadAllText(
@@ -102,6 +108,53 @@ public class TestsLivraison
     public void La_publication_recupere_postgresql_si_besoin()
     {
         Assert.Contains("telecharger-postgres.ps1", Publication, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Windows PowerShell lit un script sans marque d'ordre des octets dans
+    /// la page de codes du système, et non en UTF-8. « échoué » s'y affiche
+    /// « Ã©chouÃ© », et le nom de l'enseigne « VIP MENâ€™S STORE ». Les
+    /// messages destinés à l'exploitant deviennent illisibles au moment
+    /// précis où il en a besoin.
+    /// </summary>
+    [Fact]
+    public void Les_scripts_portent_la_marque_d_ordre_des_octets()
+    {
+        foreach (var script in Scripts)
+        {
+            var debut = new byte[3];
+
+            using (var flux = File.OpenRead(script))
+            {
+                Assert.Equal(3, flux.Read(debut, 0, 3));
+            }
+
+            Assert.True(
+                debut is [0xEF, 0xBB, 0xBF],
+                $"{Path.GetFileName(script)} n'a pas de marque UTF-8 : " +
+                "ses accents seront illisibles sous Windows PowerShell.");
+        }
+    }
+
+    /// <summary>
+    /// Le SDK .NET manque sur un poste qui n'a jamais servi à construire.
+    /// Sans contrôle, l'échec arrive sous la forme d'un mur d'anglais qui ne
+    /// dit ni ce qui manque, ni où le prendre.
+    /// </summary>
+    [Fact]
+    public void La_publication_verifie_les_outils_du_poste()
+    {
+        var script = Publication;
+
+        Assert.Contains("dotnet --list-sdks", script, StringComparison.Ordinal);
+        Assert.Contains("dotnet.microsoft.com/download/dotnet/10.0", script, StringComparison.Ordinal);
+
+        // Le contrôle doit précéder la première compilation, sinon il ne sert
+        // à rien : l'erreur brute serait déjà passée.
+        Assert.True(
+            script.IndexOf("dotnet --list-sdks", StringComparison.Ordinal)
+                < script.IndexOf("dotnet publish", StringComparison.Ordinal),
+            "Les outils doivent être vérifiés avant la première compilation.");
     }
 
     /// <summary>
