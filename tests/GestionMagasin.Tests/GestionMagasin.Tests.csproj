@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\src\GestionMagasin.Domain\GestionMagasin.Domain.csproj" />
     <ProjectReference Include="..\..\src\GestionMagasin.Application\GestionMagasin.Application.csproj" />
     <ProjectReference Include="..\..\src\GestionMagasin.Infrastructure\GestionMagasin.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\GestionMagasin.ServeurEmbarque\GestionMagasin.ServeurEmbarque.csproj" />
   </ItemGroup>
 
 </Project>

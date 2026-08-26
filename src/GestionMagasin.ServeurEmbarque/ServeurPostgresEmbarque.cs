@@ -170,9 +170,18 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
     ///
     /// PostgreSQL écrit « postmaster.pid » au démarrage et l'efface en
     /// s'arrêtant. Après une coupure de courant ou un processus tué, il reste
-    /// en place et le serveur refuse de démarrer. Le verrou n'est retiré que
-    /// si le processus qu'il désigne n'existe plus : sans cette vérification,
-    /// on écraserait le verrou d'un serveur bien vivant.
+    /// en place et le serveur refuse de démarrer.
+    ///
+    /// Le verrou n'est retiré que si le serveur qu'il désigne n'existe plus.
+    /// Constater qu'un processus porte ce numéro ne suffit pas : Windows
+    /// réattribue les numéros, et après un redémarrage ou un « taskkill » le
+    /// numéro d'un serveur mort désigne souvent un navigateur ou un jeu. Le
+    /// verrou paraissait alors valide, et le magasin restait bloqué sur
+    /// « Le serveur de base de données n'a pas pu démarrer » jusqu'à ce que
+    /// quelqu'un aille effacer le fichier à la main.
+    ///
+    /// Le nom du processus ET le dossier de données inscrit dans le verrou
+    /// sont donc vérifiés : ils ne coïncident que pour notre propre serveur.
     /// </summary>
     private void SupprimerVerrouPerime()
     {
@@ -185,20 +194,15 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
 
         try
         {
-            var premiereLigne = File.ReadLines(verrou).FirstOrDefault();
+            var lignes = File.ReadAllLines(verrou);
 
-            if (!int.TryParse(premiereLigne?.Trim(), out var identifiant))
-            {
-                return;
-            }
-
-            if (ProcessusExiste(identifiant))
+            if (!VerrouGrappe.EstPerime(lignes, _options.DossierDonnees, NomDuProcessus))
             {
                 return;
             }
 
             File.Delete(verrou);
-            Journaliser("Verrou d'un arrêt précédent retiré.");
+            Journaliser("Verrou d'un arrêt précédent retiré : plus aucun serveur ne le tient.");
         }
         catch (Exception erreur) when (erreur is IOException or UnauthorizedAccessException)
         {
@@ -206,21 +210,18 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
         }
     }
 
-    private static bool ProcessusExiste(int identifiant)
+    /// <summary>Nom du processus portant ce numéro, ou null s'il n'existe plus.</summary>
+    private static string? NomDuProcessus(int identifiant)
     {
         try
         {
             using var processus = Process.GetProcessById(identifiant);
 
-            return !processus.HasExited;
+            return processus.HasExited ? null : processus.ProcessName;
         }
-        catch (ArgumentException)
+        catch (Exception erreur) when (erreur is ArgumentException or InvalidOperationException)
         {
-            return false;
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
+            return null;
         }
     }
 
@@ -444,16 +445,104 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
 
         if (resultat.CodeSortie != 0)
         {
+            // La raison figure dans le journal du serveur, pas dans la sortie
+            // de pg_ctl. Sans elle à l'écran, la personne devant le poste n'a
+            // que « redémarrez l'ordinateur » — et si cela ne suffit pas,
+            // plus rien.
+            var cause = DerniereErreurDuJournal(journal);
+
             throw new ServeurEmbarqueException(
-                "Le serveur de base de données n'a pas pu démarrer." + Environment.NewLine +
-                Environment.NewLine +
+                "Le serveur de base de données n'a pas pu démarrer." +
+                (cause is null ? string.Empty : Environment.NewLine + Environment.NewLine + "Cause : " + cause) +
+                Environment.NewLine + Environment.NewLine +
                 "Redémarrez l'ordinateur puis relancez le logiciel. Si le message" + Environment.NewLine +
                 "revient, vérifiez que l'antivirus ne bloque pas le logiciel." + Environment.NewLine +
                 Environment.NewLine +
                 $"Journal du serveur : « {journal} ».")
             {
-                DetailTechnique = resultat.Sortie
+                DetailTechnique = resultat.Sortie + Environment.NewLine + LireFinDuJournal(journal)
             };
+        }
+    }
+
+    /// <summary>
+    /// Dernière erreur inscrite au journal du serveur, traduite lorsqu'elle
+    /// fait partie des causes connues.
+    ///
+    /// PostgreSQL écrit en anglais. Une phrase telle que « FATAL: lock file
+    /// "postmaster.pid" already exists » n'apprend rien à un commerçant, mais
+    /// « une session précédente ne s'est pas fermée » lui dit quoi faire.
+    /// </summary>
+    private static string? DerniereErreurDuJournal(string journal)
+    {
+        var lignes = LireFinDuJournal(journal);
+
+        if (string.IsNullOrWhiteSpace(lignes))
+        {
+            return null;
+        }
+
+        (string Motif, string Explication)[] causesConnues =
+        [
+            ("could not bind", "le port de la base de données est déjà occupé par un autre programme"),
+            ("address already in use", "le port de la base de données est déjà occupé par un autre programme"),
+            ("lock file", "une session précédente ne s'est pas refermée correctement"),
+            ("incompatible", "les fichiers de données proviennent d'une autre version de PostgreSQL"),
+            ("permission denied", "le logiciel n'a pas le droit d'écrire dans son dossier de données"),
+            ("administrative permissions",
+                "le logiciel a été lancé en tant qu'administrateur, ce que la base de données refuse"),
+            ("no space left", "le disque est plein"),
+            ("data directory", "le dossier de données est inutilisable")
+        ];
+
+        foreach (var (motif, explication) in causesConnues)
+        {
+            if (lignes.Contains(motif, StringComparison.OrdinalIgnoreCase))
+            {
+                return explication + ".";
+            }
+        }
+
+        // Cause inconnue : la dernière ligne « FATAL » vaut mieux que rien.
+        return lignes
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .LastOrDefault(l => l.Contains("FATAL", StringComparison.OrdinalIgnoreCase)
+                                || l.Contains("PANIC", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string LireFinDuJournal(string journal, int lignes = 25)
+    {
+        try
+        {
+            if (!File.Exists(journal))
+            {
+                return string.Empty;
+            }
+
+            // Le journal est ouvert en partage : le serveur peut encore
+            // l'écrire, et une lecture exclusive échouerait.
+            using var flux = new FileStream(
+                journal, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+
+            using var lecteur = new StreamReader(flux);
+
+            var dernieres = new Queue<string>(lignes);
+
+            while (lecteur.ReadLine() is { } ligne)
+            {
+                if (dernieres.Count == lignes)
+                {
+                    dernieres.Dequeue();
+                }
+
+                dernieres.Enqueue(ligne);
+            }
+
+            return string.Join(Environment.NewLine, dernieres);
+        }
+        catch (Exception erreur) when (erreur is IOException or UnauthorizedAccessException)
+        {
+            return string.Empty;
         }
     }
 

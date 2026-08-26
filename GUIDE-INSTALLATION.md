@@ -246,11 +246,17 @@ Ne copiez pas les fichiers un par un depuis l'archive : Windows en oublie.
 
 ---
 
-### « La base de données du magasin n'a pas pu démarrer »
+### « Le serveur de base de données n'a pas pu démarrer »
+
+La fenêtre indique la cause à la ligne **« Cause : »**. Suivez-la.
+
+Sinon, dans l'ordre :
 
 1. Fermez complètement le logiciel
-2. Redémarrez l'ordinateur
-3. Relancez le logiciel
+2. Ouvrez le **Gestionnaire des tâches** (Ctrl + Maj + Échap) et terminez
+   tout processus nommé **postgres**
+3. Relancez le logiciel par un **simple double-clic** — jamais par
+   « Exécuter en tant qu'administrateur »
 
 Si le message revient, vérifiez que le dossier **`pgsql`** est toujours
 présent à côté de `GestionMagasin.exe`, et que l'antivirus ne bloque pas le
