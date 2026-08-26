@@ -257,12 +257,39 @@ if ($Diagnostic) {
 # Logo du magasin. Posé a la racine du depot, il est livre a cote du
 # programme et remplace le blason dessine. Sans lui, le blason dessine
 # s'affiche : la livraison reste complete dans les deux cas.
-$logo = "logo.png"
-if (Test-Path $logo) {
-    Copy-Item $logo (Join-Path $cheminSortie $logo)
-    Write-Host "Logo du magasin inclus." -ForegroundColor Green
-} else {
-    Write-Host "Aucun logo.png a la racine : le blason dessine sera utilise." -ForegroundColor DarkGray
+# Les quatre noms que le logiciel sait lire, dans son ordre de preference.
+$nomsLogo = @("logo.png", "logo.jpg", "logo.jpeg", "logo.bmp")
+
+$logo = $nomsLogo | Where-Object { Test-Path (Join-Path $PSScriptRoot $_) } | Select-Object -First 1
+
+if ($logo) {
+    Copy-Item (Join-Path $PSScriptRoot $logo) (Join-Path $cheminSortie $logo)
+    Write-Host "Logo du magasin inclus : $logo" -ForegroundColor Green
+}
+else {
+    Write-Host "Aucun logo a la racine : le blason dessine sera utilise." -ForegroundColor DarkGray
+
+    # Windows masque les extensions connues : un fichier enregistre sous le
+    # nom « logo.png » devient « logo.png.png », que rien ne distingue a
+    # l'ecran. Montrer ce qui se trouve reellement la evite de chercher
+    # longtemps une erreur invisible.
+    $proches = @(Get-ChildItem -Path $PSScriptRoot -Filter "logo*" -File -ErrorAction SilentlyContinue)
+
+    if ($proches.Count -gt 0) {
+        Write-Host ""
+        Write-Host "  Ces fichiers sont pourtant presents :" -ForegroundColor Yellow
+        foreach ($fichier in $proches) {
+            Write-Host "    $($fichier.Name)" -ForegroundColor Yellow
+        }
+        Write-Host ""
+        Write-Host "  Renommez-en un en « logo.png » exactement." -ForegroundColor Yellow
+        Write-Host "  Windows masque les extensions : affichez-les dans l'Explorateur" -ForegroundColor Yellow
+        Write-Host "  (Affichage > Afficher > Extensions de noms de fichiers)." -ForegroundColor Yellow
+        Write-Host ""
+    }
+    else {
+        Write-Host "  Attendu ici : $(Join-Path $PSScriptRoot 'logo.png')" -ForegroundColor DarkGray
+    }
 }
 
 # Guide d'installation destiné au magasin.
