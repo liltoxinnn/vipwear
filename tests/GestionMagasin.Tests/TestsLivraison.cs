@@ -158,6 +158,33 @@ public class TestsLivraison
     }
 
     /// <summary>
+    /// Le séparateur employé dans les noms d'entrées d'une archive dépend de
+    /// l'outil qui l'a écrite, jamais de son contenu. Chercher « pgsql/ »
+    /// dans une archive qui contient « pgsql\ » a fait refuser un paquet
+    /// parfaitement complet, et bloqué une livraison.
+    /// </summary>
+    [Fact]
+    public void La_verification_de_l_archive_admet_les_deux_separateurs()
+    {
+        var script = Publication;
+
+        // L'archive est écrite avec des séparateurs canoniques…
+        Assert.Contains("ZipFile]::CreateFromDirectory", script, StringComparison.Ordinal);
+
+        // …et plus par Compress-Archive, dont le séparateur varie. Le mot
+        // subsiste dans un commentaire : seul un appel est fautif.
+        var appels = script
+            .Split('\n')
+            .Select(l => l.Trim())
+            .Where(l => !l.StartsWith('#') && l.Contains("Compress-Archive", StringComparison.Ordinal));
+
+        Assert.Empty(appels);
+
+        // …et relue sans supposer lesquels.
+        Assert.Contains("-replace", script, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Une publication à laquelle il manque un fichier doit s'arrêter, pas
     /// se contenter d'un avertissement que personne ne lit.
     /// </summary>

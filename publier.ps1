@@ -334,22 +334,39 @@ if (Test-Path $archive) {
     Remove-Item $archive -Force
 }
 
-Compress-Archive -Path "$cheminSortie\*" -DestinationPath $archive
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+# CreateFromDirectory plutot que Compress-Archive : ce dernier est lent sur
+# les milliers de fichiers de PostgreSQL, et surtout il ecrit les noms
+# d'entrees avec des barres inverses selon la version de PowerShell. La
+# verification qui suit cherchait alors « pgsql/ » dans une archive qui
+# contenait « pgsql\ », et refusait un paquet parfaitement complet.
+[System.IO.Compression.ZipFile]::CreateFromDirectory(
+    (Resolve-Path $cheminSortie).Path,
+    (Join-Path (Resolve-Path $Destination).Path "$nomDossier.zip"))
 
 # L'archive est relue : c'est elle qui part chez le client, pas le dossier.
 if (-not $SansBaseDeDonnees) {
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-
     $lecture = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $archive).Path)
 
     try {
-        $entrees = @($lecture.Entries | Where-Object { $_.FullName -like "pgsql/*" })
-        $programme = @($lecture.Entries | Where-Object { $_.FullName -eq "GestionMagasin.exe" })
+        # Les deux separateurs sont admis : leur choix depend de l'outil qui a
+        # ecrit l'archive, jamais de son contenu.
+        $noms = $lecture.Entries | ForEach-Object { $_.FullName -replace "\\", "/" }
+
+        $entrees = @($noms | Where-Object { $_ -like "pgsql/*" })
+        $programme = @($noms | Where-Object { $_ -eq "GestionMagasin.exe" })
 
         if ($entrees.Count -lt 100 -or $programme.Count -eq 0) {
             Write-Host ""
             Write-Host "L'ARCHIVE EST INCOMPLETE : ne la livrez pas." -ForegroundColor Red
             Write-Host "  fichiers pgsql dans l'archive : $($entrees.Count)" -ForegroundColor Red
+            Write-Host "  programme present : $($programme.Count -gt 0)" -ForegroundColor Red
+            Write-Host ""
+            Write-Host "  premieres entrees de l'archive :" -ForegroundColor Yellow
+            foreach ($nom in ($noms | Select-Object -First 5)) {
+                Write-Host "    $nom" -ForegroundColor Gray
+            }
             Write-Host ""
             exit 1
         }
