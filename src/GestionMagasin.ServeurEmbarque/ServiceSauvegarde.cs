@@ -44,7 +44,7 @@ public sealed class ServiceSauvegarde
             LocalisateurOutils.Outil(_serveur.DossierOutils, "pg_dump"),
             [
                 "--host", "127.0.0.1",
-                "--port", _serveur.Options.Port.ToString(),
+                "--port", _serveur.PortEffectif.ToString(),
                 "--username", _serveur.Options.Utilisateur,
                 "--format", "custom",
                 "--no-password",
@@ -90,7 +90,7 @@ public sealed class ServiceSauvegarde
             LocalisateurOutils.Outil(_serveur.DossierOutils, "pg_restore"),
             [
                 "--host", "127.0.0.1",
-                "--port", _serveur.Options.Port.ToString(),
+                "--port", _serveur.PortEffectif.ToString(),
                 "--username", _serveur.Options.Utilisateur,
                 "--dbname", _serveur.Options.NomBase,
                 "--clean",

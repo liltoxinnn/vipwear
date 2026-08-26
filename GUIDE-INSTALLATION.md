@@ -248,6 +248,14 @@ Ne copiez pas les fichiers un par un depuis l'archive : Windows en oublie.
 
 ### « Le serveur de base de données n'a pas pu démarrer »
 
+Le logiciel choisit lui-même un port réseau libre à chaque démarrage, et
+essaie soixante numéros : ce message ne devrait donc plus apparaître pour
+cette raison. S'il indique que Windows refuse l'ouverture d'un port,
+**redémarrez l'ordinateur** — Windows réattribue alors ses plages réservées,
+et cela suffit presque toujours.
+
+
+
 La fenêtre indique la cause à la ligne **« Cause : »**. Suivez-la.
 
 Sinon, dans l'ordre :

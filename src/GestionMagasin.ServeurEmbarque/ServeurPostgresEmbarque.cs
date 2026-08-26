@@ -90,9 +90,17 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
     /// connexion à utiliser. L'opération est sans effet si le serveur tourne
     /// déjà : c'est le cas après un arrêt brutal de l'application.
     /// </summary>
+    /// <summary>
+    /// Port réellement retenu au démarrage. Il peut différer du port souhaité
+    /// lorsque celui-ci est interdit par le système.
+    /// </summary>
+    public int PortEffectif { get; private set; }
+
     public async Task<string> DemarrerAsync(CancellationToken jeton = default)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(CheminMotDePasse))!);
+
+        PortEffectif = ChoisirPort();
 
         var motDePasse = ObtenirOuCreerMotDePasse();
 
@@ -113,6 +121,16 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
             // Reste d'une exécution précédente mal fermée. Le dossier de
             // données n'appartient qu'à ce logiciel : reprendre ce serveur
             // est sûr, et c'est le seul moyen qu'il finisse par s'arrêter.
+            //
+            // Il écoute le port qu'on lui avait donné, pas celui qui vient
+            // d'être retenu : le sien fait foi, sinon l'application irait
+            // frapper à une porte fermée.
+            if (PortInscritAuVerrou() is { } portRepris && portRepris != PortEffectif)
+            {
+                Journaliser($"Le serveur repris écoute sur le port {portRepris}.");
+                PortEffectif = portRepris;
+            }
+
             Journaliser("Le serveur d'une session précédente était encore en marche : il est repris.");
         }
         else
@@ -207,6 +225,33 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
         catch (Exception erreur) when (erreur is IOException or UnauthorizedAccessException)
         {
             // Le serveur signalera lui-même le problème, avec plus de détail.
+        }
+    }
+
+    /// <summary>
+    /// Port inscrit dans « postmaster.pid » par le serveur en marche.
+    /// La quatrième ligne du fichier le porte.
+    /// </summary>
+    private int? PortInscritAuVerrou()
+    {
+        try
+        {
+            var verrou = Path.Combine(_options.DossierDonnees, "postmaster.pid");
+
+            if (!File.Exists(verrou))
+            {
+                return null;
+            }
+
+            var lignes = File.ReadAllLines(verrou);
+
+            return lignes.Length > 3 && int.TryParse(lignes[3].Trim(), out var port) && port > 0
+                ? port
+                : null;
+        }
+        catch (Exception erreur) when (erreur is IOException or UnauthorizedAccessException)
+        {
+            return null;
         }
     }
 
@@ -428,6 +473,34 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
             jeton).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Retient un port utilisable, à partir de celui demandé.
+    ///
+    /// Ouvrir le port pour de bon est le seul contrôle qui vaille : Windows
+    /// réserve des plages entières pour Hyper-V, WSL et Docker et les
+    /// réattribue à chaque démarrage de la machine. Un port qu'aucun
+    /// programme n'occupe peut ainsi être interdit, et PostgreSQL échouer sur
+    /// « Permission denied » là où il fonctionnait la veille.
+    /// </summary>
+    private int ChoisirPort()
+    {
+        var port = SelecteurPort.Premier(_options.Port, SelecteurPort.Utilisable)
+            ?? throw new ServeurEmbarqueException(
+                "Aucun port réseau n'est disponible pour la base de données." +
+                Environment.NewLine + Environment.NewLine +
+                $"Les ports {_options.Port} à {_options.Port + SelecteurPort.Etendue - 1} sont " +
+                "tous refusés par Windows. Redémarrez l'ordinateur : cela suffit " +
+                "presque toujours. Si le message revient, un pare-feu ou un " +
+                "antivirus empêche le logiciel d'ouvrir un port local.");
+
+        if (port != _options.Port)
+        {
+            Journaliser($"Le port {_options.Port} est refusé par le système : le port {port} est utilisé.");
+        }
+
+        return port;
+    }
+
     private async Task LancerAsync(CancellationToken jeton)
     {
         var journal = Path.GetFullPath(_options.CheminJournal);
@@ -438,7 +511,7 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
             [
                 "-D", _options.DossierDonnees,
                 "-l", journal,
-                "-o", $"-p {_options.Port} -h 127.0.0.1",
+                "-o", $"-p {PortEffectif} -h 127.0.0.1",
                 "-w", "start"
             ],
             jeton).ConfigureAwait(false);
@@ -484,10 +557,18 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
 
         (string Motif, string Explication)[] causesConnues =
         [
-            ("could not bind", "le port de la base de données est déjà occupé par un autre programme"),
+            // Les motifs sont examinés dans l'ordre, du plus précis au plus
+            // général : « Permission denied » apparaît aussi bien pour un port
+            // refusé que pour un dossier interdit en écriture, et seule la
+            // phrase complète les distingue.
+            ("could not create any TCP/IP sockets",
+                "Windows a refusé au logiciel l'ouverture de son port réseau local"),
+            ("could not bind", "le port de la base de données n'a pas pu être ouvert"),
             ("address already in use", "le port de la base de données est déjà occupé par un autre programme"),
             ("lock file", "une session précédente ne s'est pas refermée correctement"),
             ("incompatible", "les fichiers de données proviennent d'une autre version de PostgreSQL"),
+            ("invalid permissions", "le dossier de données a des droits que PostgreSQL refuse"),
+            ("could not open file", "un fichier de la base de données n'a pas pu être lu"),
             ("permission denied", "le logiciel n'a pas le droit d'écrire dans son dossier de données"),
             ("administrative permissions",
                 "le logiciel a été lancé en tant qu'administrateur, ce que la base de données refuse"),
@@ -639,7 +720,7 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
         new NpgsqlConnectionStringBuilder
         {
             Host = "127.0.0.1",
-            Port = _options.Port,
+            Port = PortEffectif,
             Database = base_,
             Username = _options.Utilisateur,
             Password = motDePasse,
