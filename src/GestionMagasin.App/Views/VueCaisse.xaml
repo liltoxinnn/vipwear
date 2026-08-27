@@ -1,30 +1,31 @@
-﻿<UserControl x:Class="GestionMagasin.App.Views.VueCaisse"
+<UserControl x:Class="GestionMagasin.App.Views.VueCaisse"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Grid Margin="20,16">
+    <Grid Margin="16,14">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="14" />
-            <ColumnDefinition Width="400" />
+            <ColumnDefinition Width="380" />
         </Grid.ColumnDefinitions>
 
-        <!-- ================= Panier et recherche ================= -->
-        <Grid Grid.Column="0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="290" />
-            </Grid.RowDefinitions>
+        <!-- ================= Rayon ================= -->
+        <Border Grid.Column="0" Style="{StaticResource Carte}" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-            <!--
-                Les trois manières d'ajouter un article se valent : la douchette,
-                la recherche, ou le clic dans le rayon plus bas. Le caissier
-                prend la plus rapide selon le cas — étiquette lisible, article
-                connu de nom, ou étiquette arrachée.
-            -->
-            <Border Grid.Row="0" Style="{StaticResource BarreOutils}" Margin="0,0,0,12">
-                <Grid>
+                <!--
+                    Les trois manières d'ajouter un article se valent : la
+                    douchette, la recherche, ou le doigt sur le rayon. Le
+                    caissier prend la plus rapide selon le cas — étiquette
+                    lisible, article connu de nom, ou étiquette arrachée.
+                -->
+                <Grid Grid.Row="0" Margin="16,16,16,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -33,9 +34,8 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Douchette : le champ garde le focus en permanence -->
                     <StackPanel Grid.Column="0">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                             <Border Width="3" Height="12"
                                     Background="{StaticResource PinceauOr}"
                                     CornerRadius="2"
@@ -60,9 +60,8 @@
                             Height="48" Width="100"
                             Margin="10,0,0,0" />
 
-                    <!-- Recherche par nom, référence ou code article -->
                     <StackPanel Grid.Column="3">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                             <Border Width="3" Height="12"
                                     Background="{StaticResource PinceauOr}"
                                     CornerRadius="2"
@@ -86,94 +85,96 @@
                             Height="48" Width="115"
                             Margin="10,0,0,0" />
                 </Grid>
-            </Border>
 
-            <!-- Catalogue : le caissier choisit à la souris, sans rien saisir -->
-            <Border Grid.Row="1" Style="{StaticResource Carte}" Padding="12" Margin="0,0,0,12">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+                <!-- Familles : un onglet par rayon réellement garni -->
+                <Border Grid.Row="1"
+                        BorderBrush="{StaticResource PinceauBordure}"
+                        BorderThickness="0,0,0,1"
+                        Padding="16,0"
+                        Visibility="{Binding ResultatsRecherche.Count,
+                                     Converter={StaticResource NonVideVisibilite},
+                                     ConverterParameter=inverse}">
+                    <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Familles}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <RadioButton Style="{StaticResource OngletRayon}"
+                                                 GroupName="FamillesDuRayon"
+                                                 Content="{Binding Nom}"
+                                                 Command="{Binding DataContext.ChoisirFamilleCommand,
+                                                           RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                 CommandParameter="{Binding}"
+                                                 IsChecked="{Binding EstActive, Mode=TwoWay}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
 
-                    <Grid Grid.Row="0" Margin="4,0,4,10">
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="3" Height="16"
-                                    Background="{StaticResource PinceauOr}"
-                                    CornerRadius="2"
-                                    VerticalAlignment="Center" />
-                            <TextBlock Text="Tout le rayon"
-                                       Style="{StaticResource TexteSousTitre}"
-                                       Margin="8,0,0,0"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
+                <!-- Retour au rayon complet après une recherche -->
+                <Border Grid.Row="2"
+                        Background="{StaticResource PinceauFondOr}"
+                        BorderBrush="{StaticResource PinceauOr}"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="14,9"
+                        Margin="16,12,16,0"
+                        Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}}">
+                    <Grid>
+                        <TextBlock Style="{StaticResource TexteSecondaire}" VerticalAlignment="Center">
+                            <Run Text="Résultats de la recherche :" />
+                            <Run Text="{Binding ResultatsRecherche.Count, Mode=OneWay}" FontWeight="Bold" />
+                            <Run Text="article(s)" />
+                        </TextBlock>
 
-                        <TextBlock Text="Scannez, recherchez, ou cliquez directement sur un article"
-                                   Style="{StaticResource TexteAttenue}"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center" />
+                        <Button Content="Revoir tout le rayon"
+                                Style="{StaticResource BoutonSecondaire}"
+                                Command="{Binding EffacerRechercheCommand}"
+                                HorizontalAlignment="Right"
+                                Padding="14,6"
+                                MinHeight="36"
+                                FontSize="12.5" />
                     </Grid>
+                </Border>
 
-                    <!-- Retour au rayon complet après une recherche -->
-                    <Border Grid.Row="1"
-                            Background="{StaticResource PinceauFondOr}"
-                            BorderBrush="{StaticResource PinceauOr}"
-                            BorderThickness="1"
-                            CornerRadius="6"
-                            Padding="12,8"
-                            Margin="4,0,4,10"
-                            Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}}">
-                        <Grid>
-                            <TextBlock Style="{StaticResource TexteSecondaire}" VerticalAlignment="Center">
-                                <Run Text="Résultats de la recherche :" />
-                                <Run Text="{Binding ResultatsRecherche.Count, Mode=OneWay}" FontWeight="Bold" />
-                                <Run Text="article(s)" />
-                            </TextBlock>
+                <!--
+                    La barre de défilement est toujours réservée, jamais
+                    « Auto ». Les vignettes se répartissent selon la largeur
+                    disponible : si la barre apparaissait et disparaissait,
+                    cette largeur changerait à chaque mesure, les vignettes se
+                    redistribueraient, et la mise en page ne se stabiliserait
+                    jamais. Windows arrête alors le programme, pile d'appels
+                    saturée, sans erreur ni trace.
+                -->
+                <Grid Grid.Row="3" Margin="0,12,0,0">
 
-                            <Button Content="Revoir tout le rayon"
-                                    Style="{StaticResource BoutonSecondaire}"
-                                    Command="{Binding EffacerRechercheCommand}"
-                                    HorizontalAlignment="Right"
-                                    Padding="12,4"
-                                    MinHeight="28"
-                                    FontSize="12" />
-                        </Grid>
-                    </Border>
-
-                    <!-- Résultats d'une recherche, quand il y en a une -->
-                    <!--
-                        La barre de défilement est toujours réservée, jamais
-                        « Auto ». Les vignettes se répartissent selon la largeur
-                        disponible : si la barre apparaissait et disparaissait,
-                        cette largeur changerait à chaque mesure, les vignettes
-                        se redistribueraient, et la mise en page ne se
-                        stabiliserait jamais. Windows arrête alors le programme
-                        sur-le-champ, la pile d'appels étant saturée.
-                    -->
-                    <ScrollViewer Grid.Row="2"
-                                  VerticalScrollBarVisibility="Visible"
+                    <!-- Résultats d'une recherche : des déclinaisons précises -->
+                    <ScrollViewer VerticalScrollBarVisibility="Visible"
                                   HorizontalScrollBarVisibility="Disabled"
+                                  Padding="16,0,10,14"
                                   Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}}">
                         <ItemsControl ItemsSource="{Binding ResultatsRecherche}"
                                       ItemTemplate="{StaticResource CarteArticle}"
                                       ItemsPanel="{StaticResource GrilleArticles}" />
                     </ScrollViewer>
 
-                    <!-- Catalogue complet, affiché par défaut -->
-                    <Grid Grid.Row="2"
-                          Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}, ConverterParameter=inverse}">
+                    <!-- Rayon, affiché par défaut -->
+                    <Grid Visibility="{Binding ResultatsRecherche.Count, Converter={StaticResource NonVideVisibilite}, ConverterParameter=inverse}">
 
-                        <!-- Rayon : une vignette par produit -->
                         <Grid Visibility="{Binding ArticleChoisi, Converter={StaticResource NonVideVisibilite}, ConverterParameter=inverse}">
                             <ScrollViewer VerticalScrollBarVisibility="Visible"
-                                          HorizontalScrollBarVisibility="Disabled">
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          Padding="16,0,10,14">
                                 <ItemsControl ItemsSource="{Binding Catalogue}"
                                               ItemTemplate="{StaticResource CarteProduit}"
                                               ItemsPanel="{StaticResource GrilleArticles}" />
                             </ScrollViewer>
 
-                            <TextBlock Text="Aucun article en stock. Ajoutez des quantités depuis l'écran Stock."
+                            <TextBlock Text="Aucun article en stock dans ce rayon."
                                        Style="{StaticResource TexteAttenue}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
@@ -182,25 +183,16 @@
                         </Grid>
 
                         <!--
-                            Choix de la couleur et de la taille.
+                            Choix de la couleur et de la taille, pour les
+                            produits trop déclinés pour tenir sur leur vignette.
 
-                            Le stock est écrit sur chaque case : le caissier
-                            sait ce qu'il reste avant de cliquer, au lieu de
-                            l'apprendre par un refus devant le client. Une
-                            taille en rupture reste affichée, barrée — elle
-                            existe, et c'est une information.
-                        -->
-                        <!--
                             La visibilité est portée par ce conteneur, et le
                             contexte de données par la grille qu'il enferme.
-
                             Les deux sur le même élément ne fonctionneraient
                             pas : une liaison écrite à côté d'un
                             « DataContext » est résolue dans le NOUVEAU
-                            contexte. « ArticleChoisi » y serait cherché sur
-                            l'article lui-même, la liaison échouerait sans
-                            bruit, et le choix resterait affiché en
-                            permanence par-dessus le rayon.
+                            contexte, échouerait sans bruit, et le choix
+                            resterait affiché par-dessus le rayon.
                         -->
                         <Grid Visibility="{Binding ArticleChoisi, Converter={StaticResource NonVideVisibilite}}">
                           <Grid DataContext="{Binding ArticleChoisi}">
@@ -213,19 +205,19 @@
                                     Background="{StaticResource PinceauFondOr}"
                                     BorderBrush="{StaticResource PinceauOr}"
                                     BorderThickness="1"
-                                    CornerRadius="6"
-                                    Padding="14,10"
-                                    Margin="4,0,4,12">
+                                    CornerRadius="10"
+                                    Padding="16,12"
+                                    Margin="16,0,16,12">
                                 <Grid>
-                                    <StackPanel>
+                                    <StackPanel VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Nom}"
-                                                   FontSize="15"
+                                                   FontSize="15.5"
                                                    FontWeight="Bold"
                                                    Foreground="{StaticResource PinceauTexte}" />
 
                                         <TextBlock Text="Choisissez la couleur, puis la taille"
                                                    Style="{StaticResource TexteSecondaire}"
-                                                   FontSize="12"
+                                                   FontSize="12.5"
                                                    Margin="0,2,0,0" />
                                     </StackPanel>
 
@@ -235,37 +227,38 @@
                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             HorizontalAlignment="Right"
                                             VerticalAlignment="Center"
-                                            Padding="12,5"
-                                            MinHeight="32"
-                                            FontSize="12" />
+                                            Padding="14,6"
+                                            MinHeight="40"
+                                            FontSize="12.5" />
                                 </Grid>
                             </Border>
 
                             <ScrollViewer Grid.Row="1"
                                           VerticalScrollBarVisibility="Visible"
-                                          HorizontalScrollBarVisibility="Disabled">
-                                <ItemsControl ItemsSource="{Binding Couleurs}" Margin="4,0">
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          Padding="16,0,10,14">
+                                <ItemsControl ItemsSource="{Binding Article.Couleurs}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Margin="0,0,0,16">
-                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                                    <Border Width="16" Height="16"
-                                                            CornerRadius="8"
+                                            <StackPanel Margin="0,0,0,18">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,9">
+                                                    <Border Width="18" Height="18"
+                                                            CornerRadius="9"
                                                             BorderBrush="{StaticResource PinceauBordureForte}"
                                                             BorderThickness="1"
                                                             Background="{Binding Code, Converter={StaticResource CodeCouleur}}"
                                                             VerticalAlignment="Center" />
 
                                                     <TextBlock Text="{Binding Nom}"
-                                                               FontSize="13.5"
+                                                               FontSize="14"
                                                                FontWeight="SemiBold"
                                                                Foreground="{StaticResource PinceauTexte}"
-                                                               Margin="8,0,0,0"
+                                                               Margin="9,0,0,0"
                                                                VerticalAlignment="Center" />
 
                                                     <TextBlock Style="{StaticResource TexteAttenue}"
                                                                FontSize="11.5"
-                                                               Margin="8,0,0,0"
+                                                               Margin="9,0,0,0"
                                                                VerticalAlignment="Center">
                                                         <Run Text="—" />
                                                         <Run Text="{Binding StockTotal, Mode=OneWay}" />
@@ -274,9 +267,9 @@
                                                 </StackPanel>
 
                                                 <ItemsControl ItemsSource="{Binding Tailles}"
-                                                              ItemTemplate="{StaticResource BoutonTaille}"
+                                                              ItemTemplate="{StaticResource CaseTaille}"
                                                               ItemsPanel="{StaticResource GrilleArticles}"
-                                                              Margin="24,0,0,0" />
+                                                              Margin="27,0,0,0" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -286,163 +279,130 @@
                         </Grid>
                     </Grid>
                 </Grid>
-            </Border>
+            </Grid>
+        </Border>
 
-            <!-- Panier -->
-            <Border Grid.Row="2" Style="{StaticResource Carte}" Padding="12">
+        <!-- ================= Panier et encaissement ================= -->
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="14" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Panier : une ligne riche par article, lisible au comptoir -->
+            <Border Grid.Row="0" Style="{StaticResource Carte}" Padding="0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="4,0,4,10">
-                        <TextBlock Text="Panier" Style="{StaticResource TexteSousTitre}" />
+                    <Grid Grid.Row="0" Margin="16,15,14,13">
+                        <StackPanel>
+                            <TextBlock Text="Panier" Style="{StaticResource TexteSousTitre}" />
+                            <TextBlock Style="{StaticResource TexteAttenue}" FontSize="11.5" Margin="0,1,0,0">
+                                <Run Text="{Binding NombreArticles, Mode=OneWay}" />
+                                <Run Text="article(s)" />
+                            </TextBlock>
+                        </StackPanel>
+
                         <Button Content="Vider le panier"
                                 Style="{StaticResource BoutonSecondaire}"
                                 Command="{Binding ViderPanierCommand}"
                                 HorizontalAlignment="Right"
-                                Padding="12,5"
-                                MinHeight="30"
+                                VerticalAlignment="Center"
+                                Padding="12,6"
+                                MinHeight="38"
                                 FontSize="12" />
                     </Grid>
 
-                    <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding Panier}"
-                              SelectedItem="{Binding LigneSelectionnee}"
-                              Style="{StaticResource Tableau}"
-                              IsReadOnly="False"
-                              RowHeight="44">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Code article" Binding="{Binding Sku}"
-                                                Width="140" IsReadOnly="True" />
-                            <DataGridTextColumn Header="Désignation" Binding="{Binding Designation}"
-                                                Width="*" IsReadOnly="True" />
+                    <Grid Grid.Row="1">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Padding="11,0,11,12">
+                            <ItemsControl ItemsSource="{Binding Panier}"
+                                          ItemTemplate="{StaticResource LignePanier}" />
+                        </ScrollViewer>
 
-                            <DataGridTemplateColumn Header="Quantité" Width="140">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="−"
-                                                    Style="{StaticResource BoutonSecondaire}"
-                                                    Width="28" MinHeight="26" Padding="0"
-                                                    FontSize="14"
-                                                    Command="{Binding DataContext.DiminuerQuantiteCommand,
-                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}" />
-
-                                            <TextBlock Text="{Binding Quantite}"
-                                                       Width="38"
-                                                       TextAlignment="Center"
-                                                       VerticalAlignment="Center"
-                                                       FontWeight="SemiBold" />
-
-                                            <Button Content="+"
-                                                    Style="{StaticResource BoutonSecondaire}"
-                                                    Width="28" MinHeight="26" Padding="0"
-                                                    FontSize="14"
-                                                    Command="{Binding DataContext.AugmenterQuantiteCommand,
-                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                            <DataGridTextColumn Header="Prix unitaire"
-                                                Binding="{Binding PrixUnitaire, StringFormat={}{0:N2}}"
-                                                Width="120" />
-
-                            <DataGridTextColumn Header="Remise"
-                                                Binding="{Binding Remise, StringFormat={}{0:N2}}"
-                                                Width="110" />
-
-                            <DataGridTextColumn Header="Total"
-                                                Binding="{Binding Total, Converter={StaticResource Montant}}"
-                                                Width="140" IsReadOnly="True" />
-
-                            <DataGridTemplateColumn Header="" Width="50">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="✕"
-                                                Style="{StaticResource BoutonSecondaire}"
-                                                Foreground="{StaticResource PinceauDanger}"
-                                                Width="28" MinHeight="26" Padding="0"
-                                                ToolTip="Retirer cet article du panier"
-                                                Command="{Binding DataContext.RetirerLigneCommand,
-                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                        <TextBlock Text="Scannez ou choisissez un article pour commencer la vente."
+                                   Style="{StaticResource TexteAttenue}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   MaxWidth="230"
+                                   Visibility="{Binding PanierNonVide,
+                                                Converter={StaticResource BooleenVisibilite},
+                                                ConverterParameter=inverse}" />
+                    </Grid>
                 </Grid>
             </Border>
-        </Grid>
 
-        <!-- ================= Encaissement ================= -->
-        <Border Grid.Column="2" Style="{StaticResource Carte}" Padding="18">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <StackPanel Grid.Row="0">
-                    <TextBlock Text="Encaissement" Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
+            <!-- Encaissement -->
+            <Border Grid.Row="2" Style="{StaticResource Carte}" Padding="16,15">
+                <StackPanel>
+                    <TextBlock Text="Encaissement" Style="{StaticResource TexteSousTitre}" Margin="0,0,0,12" />
 
                     <TextBlock Text="Client (facultatif)" Style="{StaticResource TexteEtiquette}" />
                     <ComboBox Style="{StaticResource ChampListe}"
                               ItemsSource="{Binding Clients}"
                               SelectedItem="{Binding ClientSelectionne}"
                               DisplayMemberPath="NomComplet"
-                              IsEditable="False"
-                              Margin="0,0,0,14" />
-                </StackPanel>
+                              Margin="0,0,0,12" />
 
-                <StackPanel Grid.Row="1" VerticalAlignment="Top">
-                    <!-- Totaux -->
                     <Border Background="{StaticResource PinceauSurfaceAlterne}"
-                            CornerRadius="6" Padding="14" Margin="0,0,0,14">
+                            BorderBrush="{StaticResource PinceauBordure}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="13,11"
+                            Margin="0,0,0,12">
                         <StackPanel>
                             <Grid Margin="0,0,0,6">
                                 <TextBlock Text="Articles" Style="{StaticResource TexteSecondaire}" />
                                 <TextBlock Text="{Binding NombreArticles}"
-                                           HorizontalAlignment="Right" FontWeight="SemiBold" />
+                                           HorizontalAlignment="Right"
+                                           FontWeight="SemiBold" />
                             </Grid>
 
                             <Grid Margin="0,0,0,6">
                                 <TextBlock Text="Sous-total" Style="{StaticResource TexteSecondaire}" />
                                 <TextBlock Text="{Binding SousTotal, Converter={StaticResource Montant}}"
-                                           HorizontalAlignment="Right" FontWeight="SemiBold" />
+                                           HorizontalAlignment="Right"
+                                           FontWeight="SemiBold" />
                             </Grid>
 
-                            <Grid Margin="0,0,0,8" Visibility="{Binding PeutAccorderRemise,
-                                                                Converter={StaticResource BooleenVisibilite}}">
-                                <TextBlock Text="Remise sur le ticket" Style="{StaticResource TexteSecondaire}"
+                            <Grid Margin="0,0,0,10"
+                                  Visibility="{Binding PeutAccorderRemise, Converter={StaticResource BooleenVisibilite}}">
+                                <TextBlock Text="Remise sur le ticket"
+                                           Style="{StaticResource TexteSecondaire}"
                                            VerticalAlignment="Center" />
                                 <TextBox Style="{StaticResource ChampTexte}"
-                                         Text="{Binding RemiseGlobale, UpdateSourceTrigger=LostFocus, StringFormat={}{0:N2}}"
-                                         Width="110" MinHeight="30" Padding="7,4"
+                                         Text="{Binding RemiseGlobale, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
+                                         Width="112"
+                                         MinHeight="40"
                                          HorizontalAlignment="Right"
                                          HorizontalContentAlignment="Right" />
                             </Grid>
 
-                            <Separator Margin="0,4,0,10" />
-
-                            <Grid>
-                                <TextBlock Text="TOTAL" FontSize="17" FontWeight="Bold" />
-                                <TextBlock Text="{Binding Total, Converter={StaticResource Montant}}"
-                                           FontSize="19" FontWeight="Bold"
-                                           Foreground="{StaticResource PinceauPrincipal}"
-                                           HorizontalAlignment="Right" />
-                            </Grid>
+                            <Border BorderBrush="{StaticResource PinceauBordureForte}"
+                                    BorderThickness="0,1,0,0"
+                                    Padding="0,10,0,0">
+                                <Grid>
+                                    <TextBlock Text="TOTAL"
+                                               FontSize="14"
+                                               FontWeight="Bold"
+                                               VerticalAlignment="Bottom" />
+                                    <TextBlock Text="{Binding Total, Converter={StaticResource Montant}}"
+                                               FontSize="23"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource PinceauTexte}"
+                                               HorizontalAlignment="Right" />
+                                </Grid>
+                            </Border>
                         </StackPanel>
                     </Border>
 
-                    <!-- Règlement -->
                     <TextBlock Text="Mode de paiement" Style="{StaticResource TexteEtiquette}" />
                     <ComboBox Style="{StaticResource ChampListeEnum}"
                               ItemsSource="{Binding ModesPaiement}"
@@ -459,46 +419,54 @@
                         <TextBox Grid.Column="0"
                                  Style="{StaticResource ChampScan}"
                                  Text="{Binding MontantRecu, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}"
-                                 HorizontalContentAlignment="Right" />
+                                 HorizontalContentAlignment="Right"
+                                 FontWeight="Bold" />
 
                         <Button Grid.Column="1"
                                 Content="Appoint"
                                 Style="{StaticResource BoutonSecondaire}"
                                 Command="{Binding MontantExactCommand}"
-                                Width="90" Height="48"
-                                Margin="8,0,0,0"
-                                ToolTip="Saisir automatiquement le montant exact" />
+                                Width="96" Height="48"
+                                Margin="9,0,0,0"
+                                ToolTip="Le client donne le compte exact" />
                     </Grid>
 
-                    <Border Background="{StaticResource PinceauFondSucces}"
-                            CornerRadius="6" Padding="12"
+                    <!-- Monnaie à rendre : le chiffre que le caissier annonce -->
+                    <Border Background="{StaticResource PinceauFondOr}"
+                            BorderBrush="{StaticResource PinceauOr}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="13,11"
+                            Margin="0,0,0,12"
                             Visibility="{Binding MonnaieARendre, Converter={StaticResource NonVideVisibilite}}">
                         <Grid>
-                            <TextBlock Text="Monnaie à rendre" FontWeight="SemiBold"
-                                       Foreground="{StaticResource PinceauSucces}" />
+                            <TextBlock Text="MONNAIE À RENDRE"
+                                       Style="{StaticResource TexteEtiquette}"
+                                       Foreground="{StaticResource PinceauOrFonce}"
+                                       VerticalAlignment="Center" />
                             <TextBlock Text="{Binding MonnaieARendre, Converter={StaticResource Montant}}"
-                                       FontSize="16" FontWeight="Bold"
-                                       Foreground="{StaticResource PinceauSucces}"
+                                       FontSize="21"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource PinceauOrFonce}"
                                        HorizontalAlignment="Right" />
                         </Grid>
                     </Border>
-                </StackPanel>
 
-                <StackPanel Grid.Row="2">
                     <TextBlock Text="{Binding MessageStatut}"
                                Style="{StaticResource TexteAttenue}"
                                TextWrapping="Wrap"
-                               Margin="0,10,0,10"
+                               Margin="0,0,0,10"
                                Visibility="{Binding MessageStatut, Converter={StaticResource NonVideVisibilite}}" />
 
                     <Button Content="VALIDER LA VENTE"
                             Style="{StaticResource BoutonCaisse}"
                             Background="{StaticResource PinceauSucces}"
                             BorderBrush="{StaticResource PinceauSucces}"
+                            MinHeight="58"
                             Command="{Binding ValiderVenteCommand}"
                             IsEnabled="{Binding PanierNonVide}" />
                 </StackPanel>
-            </Grid>
-        </Border>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

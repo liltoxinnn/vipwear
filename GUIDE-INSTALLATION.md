@@ -340,6 +340,16 @@ Trois façons d'ajouter un article, au choix :
 | **Rechercher** par nom ou référence | L'article est connu de nom |
 | **Cliquer** sur le produit dans « Tout le rayon » | L'étiquette est arrachée, ou le client hésite |
 
-Au clic sur un produit, ses **couleurs** apparaissent, et sous chacune ses
-**tailles avec le stock restant**. Une taille épuisée reste affichée, barrée :
-vous savez qu'elle existe et qu'elle manque.
+Le rayon se range par **famille** : des onglets en haut (Tout le rayon,
+Chemises, Pantalons, Chaussures…) limitent l'affichage à un rayon.
+
+La plupart des produits montrent leurs **couleurs et leurs tailles
+directement sur la vignette** : une pastille pour la couleur, une case par
+taille avec le stock restant. Un appui sur la case vend l'article — un seul
+geste.
+
+Les produits très déclinés — cinq couleurs et six tailles — ouvrent le
+choix dans un panneau, faute de place sur la vignette.
+
+Dans les deux cas, une taille épuisée reste affichée, **barrée** : vous
+savez qu'elle existe et qu'elle manque.

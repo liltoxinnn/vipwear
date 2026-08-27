@@ -18,6 +18,9 @@ public class DepotVariantes : DepotGenerique<VarianteProduit>, IDepotVariantes
 
         return Ensemble.AsNoTracking()
             .Include(v => v.Produit).ThenInclude(p => p!.Marque)
+            // La famille alimente les onglets du rayon en caisse : sans ce
+            // chargement, chaque vignette déclencherait sa propre requête.
+            .Include(v => v.Produit).ThenInclude(p => p!.Categorie)
             .Include(v => v.Taille)
             .Include(v => v.Couleur)
             .Include(v => v.Inventaire)
@@ -30,6 +33,9 @@ public class DepotVariantes : DepotGenerique<VarianteProduit>, IDepotVariantes
 
         return Ensemble.AsNoTracking()
             .Include(v => v.Produit).ThenInclude(p => p!.Marque)
+            // La famille alimente les onglets du rayon en caisse : sans ce
+            // chargement, chaque vignette déclencherait sa propre requête.
+            .Include(v => v.Produit).ThenInclude(p => p!.Categorie)
             .Include(v => v.Taille)
             .Include(v => v.Couleur)
             .Include(v => v.Inventaire)
@@ -39,6 +45,9 @@ public class DepotVariantes : DepotGenerique<VarianteProduit>, IDepotVariantes
     public Task<VarianteProduit?> ObtenirCompleteAsync(int id, CancellationToken jeton = default) =>
         Ensemble.AsNoTracking()
             .Include(v => v.Produit).ThenInclude(p => p!.Marque)
+            // La famille alimente les onglets du rayon en caisse : sans ce
+            // chargement, chaque vignette déclencherait sa propre requête.
+            .Include(v => v.Produit).ThenInclude(p => p!.Categorie)
             .Include(v => v.Taille)
             .Include(v => v.Couleur)
             .Include(v => v.Inventaire)
@@ -80,6 +89,9 @@ public class DepotVariantes : DepotGenerique<VarianteProduit>, IDepotVariantes
         CancellationToken jeton = default) =>
         await Ensemble.AsNoTracking()
             .Include(v => v.Produit).ThenInclude(p => p!.Marque)
+            // La famille alimente les onglets du rayon en caisse : sans ce
+            // chargement, chaque vignette déclencherait sa propre requête.
+            .Include(v => v.Produit).ThenInclude(p => p!.Categorie)
             .Include(v => v.Taille)
             .Include(v => v.Couleur)
             .Include(v => v.Inventaire)
@@ -110,6 +122,9 @@ public class DepotVariantes : DepotGenerique<VarianteProduit>, IDepotVariantes
 
         return await Ensemble.AsNoTracking()
             .Include(v => v.Produit).ThenInclude(p => p!.Marque)
+            // La famille alimente les onglets du rayon en caisse : sans ce
+            // chargement, chaque vignette déclencherait sa propre requête.
+            .Include(v => v.Produit).ThenInclude(p => p!.Categorie)
             .Include(v => v.Taille)
             .Include(v => v.Couleur)
             .Include(v => v.Inventaire)

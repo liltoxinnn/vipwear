@@ -110,6 +110,44 @@ public class TestsRayonCaisse
         Assert.False(multiple.SansChoix);
     }
 
+    /// <summary>
+    /// La vignette n'affiche couleurs et tailles que si elles y tiennent.
+    /// Une chemise en cinq couleurs et six tailles ferait trente cases sur
+    /// une surface large comme la main : illisibles, et impossibles à viser
+    /// au doigt. Elle s'ouvre alors dans un panneau.
+    /// </summary>
+    [Fact]
+    public void Le_choix_reste_sur_la_vignette_tant_qu_il_y_tient()
+    {
+        static IReadOnlyList<ArticleRayon> Produit(int couleurs, int tailles)
+        {
+            var declinaisons = new List<VarianteDto>();
+            var id = 1;
+
+            for (var c = 1; c <= couleurs; c++)
+            {
+                for (var t = 1; t <= tailles; t++)
+                {
+                    declinaisons.Add(Declinaison(id++, 10, "article", c, $"C{c}", $"T{t}", t, 5));
+                }
+            }
+
+            return ArticleRayon.Regrouper(declinaisons);
+        }
+
+        // Le cas courant d'un magasin : quelques couleurs, quelques tailles.
+        Assert.True(Produit(2, 3)[0].ChoixSurLaVignette);
+        Assert.True(Produit(4, 6)[0].ChoixSurLaVignette);
+
+        // Au-delà, la vignette déborderait.
+        Assert.False(Produit(5, 6)[0].ChoixSurLaVignette);
+        Assert.False(Produit(4, 7)[0].ChoixSurLaVignette);
+
+        // Une seule déclinaison : rien à choisir du tout.
+        Assert.False(Produit(1, 1)[0].ChoixSurLaVignette);
+        Assert.True(Produit(1, 1)[0].SansChoix);
+    }
+
     [Fact]
     public void Le_prix_annonce_est_le_plus_bas_lorsque_les_declinaisons_different()
     {

@@ -20,6 +20,16 @@ public partial class LignePanier : ObservableObject
 
     public required string Designation { get; init; }
 
+    /// <summary>Nom du produit, sans la couleur ni la taille.</summary>
+    public required string ProduitNom { get; init; }
+
+    public required string Couleur { get; init; }
+
+    public required string Taille { get; init; }
+
+    /// <summary>Code hexadécimal de la couleur, pour la pastille du panier.</summary>
+    public string? CodeCouleur { get; init; }
+
     public required string Sku { get; init; }
 
     public string? CodeBarres { get; init; }
@@ -134,7 +144,20 @@ public partial class VueModeleCaisse : VueModeleBase
     /// Un produit par vignette, et non une déclinaison : quatre couleurs et
     /// six tailles feraient vingt-quatre vignettes pour un seul pantalon.
     /// </summary>
-    public ObservableCollection<ArticleRayon> Catalogue { get; } = [];
+    public ObservableCollection<VignetteRayon> Catalogue { get; } = [];
+
+    /// <summary>
+    /// Familles proposées au-dessus du rayon. « Tout le rayon » est en tête
+    /// et n'en est pas une : c'est l'absence de filtre.
+    /// </summary>
+    public ObservableCollection<FamilleRayon> Familles { get; } = [];
+
+    /// <summary>Famille retenue, ou « Tout le rayon ».</summary>
+    [ObservableProperty]
+    private FamilleRayon? _familleActive;
+
+    /// <summary>Rayon complet, avant filtrage par famille.</summary>
+    private IReadOnlyList<VignetteRayon> _rayon = [];
 
     /// <summary>Vrai tant qu'aucun article n'est disponible à la vente.</summary>
     [ObservableProperty]
@@ -145,7 +168,7 @@ public partial class VueModeleCaisse : VueModeleBase
     /// une vignette, il fait apparaître le choix à la place du rayon.
     /// </summary>
     [ObservableProperty]
-    private ArticleRayon? _articleChoisi;
+    private VignetteRayon? _articleChoisi;
 
     public ObservableCollection<ClientDto> Clients { get; } = [];
 
@@ -219,13 +242,74 @@ public partial class VueModeleCaisse : VueModeleBase
         // et le caissier ne doit pas cliquer sur un stock périmé.
         ArticleChoisi = null;
 
-        Catalogue.Clear();
-        foreach (var article in ArticleRayon.Regrouper(declinaisons))
+        _rayon = VignetteRayon.Composer(declinaisons).ToList();
+
+        // Seules les familles qui ont réellement quelque chose à vendre sont
+        // proposées : un onglet vide ne rend aucun service, et il en resterait
+        // dix sur un magasin qui n'en garnit que trois.
+        var familles = declinaisons
+            .Select(d => d.Categorie)
+            .Where(nom => !string.IsNullOrWhiteSpace(nom))
+            .Distinct()
+            .OrderBy(nom => nom)
+            .ToList();
+
+        Familles.Clear();
+        Familles.Add(FamilleRayon.ToutLeRayon);
+
+        foreach (var famille in familles)
         {
-            Catalogue.Add(article);
+            Familles.Add(new FamilleRayon(famille));
+        }
+
+        FamilleActive = Familles[0];
+
+        AppliquerFamille();
+    }
+
+    /// <summary>
+    /// Ne montre que les produits de la famille retenue. Le filtre est
+    /// appliqué sur le rayon déjà composé : changer d'onglet ne relit pas la
+    /// base, et reste instantané au comptoir.
+    /// </summary>
+    private void AppliquerFamille()
+    {
+        Catalogue.Clear();
+
+        var retenus = FamilleActive is null || FamilleActive.TouteFamille
+            ? _rayon
+            : _rayon.Where(v => v.Article.Categorie == FamilleActive.Nom);
+
+        foreach (var vignette in retenus)
+        {
+            Catalogue.Add(vignette);
         }
 
         CatalogueVide = Catalogue.Count == 0;
+    }
+
+    partial void OnFamilleActiveChanged(FamilleRayon? value)
+    {
+        foreach (var famille in Familles)
+        {
+            famille.EstActive = ReferenceEquals(famille, value);
+        }
+
+        // Le choix ouvert appartient à la famille précédente : le laisser
+        // ouvert sur un autre onglet n'aurait aucun sens.
+        ArticleChoisi = null;
+
+        AppliquerFamille();
+    }
+
+    /// <summary>Ne montre que les produits d'une famille.</summary>
+    [RelayCommand]
+    private void ChoisirFamille(FamilleRayon? famille)
+    {
+        if (famille is not null)
+        {
+            FamilleActive = famille;
+        }
     }
 
     // ==================================================================
@@ -322,7 +406,7 @@ public partial class VueModeleCaisse : VueModeleBase
     /// au panier : il n'y a rien à choisir.
     /// </summary>
     [RelayCommand]
-    private void ChoisirArticle(ArticleRayon? article)
+    private void ChoisirArticle(VignetteRayon? article)
     {
         if (article is null)
         {
@@ -352,9 +436,13 @@ public partial class VueModeleCaisse : VueModeleBase
 
         AjouterAuPanier(variante);
 
-        // Le choix se referme après l'ajout : le caissier revient au rayon
-        // pour l'article suivant, sans avoir à fermer lui-même.
-        ArticleChoisi = null;
+        // Le panneau de choix se referme après l'ajout ; les cases posées sur
+        // la vignette, elles, restent en place : le caissier enchaîne souvent
+        // deux tailles du même article pour un même client.
+        if (ArticleChoisi is not null)
+        {
+            ArticleChoisi = null;
+        }
     }
 
     private void AjouterAuPanier(VarianteDto variante)
@@ -395,6 +483,10 @@ public partial class VueModeleCaisse : VueModeleBase
         {
             VarianteProduitId = variante.Id,
             Designation = variante.Designation,
+            ProduitNom = variante.ProduitNom,
+            Couleur = variante.Couleur,
+            Taille = variante.Taille,
+            CodeCouleur = variante.CodeCouleur,
             Sku = variante.Sku,
             CodeBarres = variante.CodeBarres,
             StockDisponible = variante.QuantiteDisponible,

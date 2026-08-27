@@ -14,6 +14,9 @@ public record VarianteDto
 
     public string? Marque { get; init; }
 
+    /// <summary>Famille du produit, employée pour les onglets du rayon.</summary>
+    public string Categorie { get; init; } = string.Empty;
+
     public int TailleId { get; init; }
 
     public string Taille { get; init; } = string.Empty;

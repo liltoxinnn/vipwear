@@ -17,11 +17,13 @@ public sealed class ArticleRayon
         int produitId,
         string nom,
         string? marque,
+        string categorie,
         IReadOnlyList<CouleurRayon> couleurs)
     {
         ProduitId = produitId;
         Nom = nom;
         Marque = marque;
+        Categorie = categorie;
         Couleurs = couleurs;
 
         var declinaisons = couleurs.SelectMany(c => c.Tailles).ToList();
@@ -37,6 +39,9 @@ public sealed class ArticleRayon
     public string Nom { get; }
 
     public string? Marque { get; }
+
+    /// <summary>Famille du produit : chemises, pantalons, chaussures…</summary>
+    public string Categorie { get; }
 
     /// <summary>Déclinaisons regroupées par couleur, tailles en ordre croissant.</summary>
     public IReadOnlyList<CouleurRayon> Couleurs { get; }
@@ -58,6 +63,21 @@ public sealed class ArticleRayon
     /// rien à choisir, et la vignette l'ajoute directement au panier.
     /// </summary>
     public bool SansChoix => NombreDeclinaisons == 1;
+
+    /// <summary>Nombre maximal de tailles pour une même couleur.</summary>
+    public int TaillesParCouleur => Couleurs.Max(c => c.Tailles.Count);
+
+    /// <summary>
+    /// Vrai lorsque les couleurs et les tailles tiennent sur la vignette.
+    ///
+    /// Au-delà, le choix s'ouvre dans un panneau : une chemise en cinq
+    /// couleurs et six tailles ferait trente cases sur une vignette large
+    /// comme la main, illisibles et impossibles à viser au doigt. En deçà,
+    /// tout choisir sur place épargne deux gestes au caissier, et c'est
+    /// l'immense majorité des articles d'un magasin.
+    /// </summary>
+    public bool ChoixSurLaVignette =>
+        !SansChoix && Couleurs.Count <= 4 && TaillesParCouleur <= 6;
 
     /// <summary>Unique déclinaison, lorsqu'il n'y en a qu'une.</summary>
     public VarianteDto Declinaison => Couleurs[0].Tailles[0];
@@ -91,6 +111,7 @@ public sealed class ArticleRayon
                 produit.Key,
                 produit.First().ProduitNom,
                 produit.First().Marque,
+                produit.First().Categorie,
                 produit
                     .GroupBy(v => v.CouleurId)
                     .Select(couleur => new CouleurRayon(

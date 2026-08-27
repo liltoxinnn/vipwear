@@ -1339,6 +1339,7 @@ public class ServiceProduits : IServiceProduits
             ProduitNom = reference?.Nom ?? string.Empty,
             Reference = reference?.Reference ?? string.Empty,
             Marque = reference?.Marque?.Nom,
+            Categorie = reference?.Categorie?.Nom ?? string.Empty,
             TailleId = variante.TailleId,
             Taille = variante.Taille?.Nom ?? string.Empty,
             OrdreTaille = variante.Taille?.Ordre ?? 0,

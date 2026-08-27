@@ -27,11 +27,13 @@
     <Color x:Key="CouleurInfo">#2C7BE5</Color>
 
     <!-- Fonds légèrement chauds : l'or y paraît juste, un gris bleuté le ternirait -->
-    <Color x:Key="CouleurFond">#F5F3EF</Color>
+    <!-- Gris chaud, tirant vers l'or de l'enseigne : les cartes blanches
+         s'y détachent sans que le fond paraisse froid. -->
+    <Color x:Key="CouleurFond">#EFEDE7</Color>
     <Color x:Key="CouleurSurface">#FFFFFF</Color>
-    <Color x:Key="CouleurSurfaceAlterne">#FAF8F3</Color>
-    <Color x:Key="CouleurBordure">#E4E0D6</Color>
-    <Color x:Key="CouleurBordureForte">#CEC8B9</Color>
+    <Color x:Key="CouleurSurfaceAlterne">#F7F5F0</Color>
+    <Color x:Key="CouleurBordure">#E4DFD4</Color>
+    <Color x:Key="CouleurBordureForte">#CFC8B8</Color>
 
     <Color x:Key="CouleurTexte">#171612</Color>
     <Color x:Key="CouleurTexteSecondaire">#5D584B</Color>
