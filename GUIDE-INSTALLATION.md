@@ -327,6 +327,11 @@ même pendant que le logiciel travaille.
 En caisse, le curseur reste dans le champ de scan : vous pouvez enchaîner
 les articles à la douchette sans jamais toucher la souris.
 
+**Écran tactile.** Toutes les listes se font glisser au doigt, avec
+l'inertie habituelle. En caisse, les vignettes du rayon et les cases de
+taille sont dimensionnées pour le doigt : une vente entière se passe de
+clavier et de souris.
+
 Trois façons d'ajouter un article, au choix :
 
 | | Quand l'employer |

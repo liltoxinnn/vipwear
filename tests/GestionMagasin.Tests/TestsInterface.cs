@@ -222,6 +222,54 @@ public class TestsInterface
     }
 
     /// <summary>
+    /// Le magasin encaisse sur écran tactile : les listes doivent se faire
+    /// glisser au doigt.
+    ///
+    /// Le style qui l'autorise doit rester IMPLICITE, c'est-à-dire sans clé.
+    /// Lui en donner une le rendrait inoffensif : il n'atteindrait plus les
+    /// zones défilantes que WPF fabrique à l'intérieur des tableaux et des
+    /// listes déroulantes, qui sont précisément celles que personne ne peut
+    /// régler de l'extérieur. Rien n'échouerait — le défilement au doigt
+    /// cesserait simplement de fonctionner, et seul un essai sur la borne le
+    /// révélerait.
+    /// </summary>
+    [Fact]
+    public void Le_defilement_au_doigt_reste_actif_partout()
+    {
+        var styles = File.ReadAllText(Path.Combine(DossierInterface, "Resources", "Styles.xaml"));
+
+        var implicite = Regex.Match(
+            styles,
+            @"<Style\s+TargetType=""ScrollViewer""\s*>(.*?)</Style>",
+            RegexOptions.Singleline);
+
+        Assert.True(implicite.Success,
+            "Le style implicite des zones défilantes est absent ou porte une clé : " +
+            "le défilement au doigt ne s'appliquerait plus aux tableaux.");
+
+        Assert.Contains("PanningMode", implicite.Groups[1].Value, StringComparison.Ordinal);
+
+        // Aucun écran ne doit désactiver le défilement au doigt.
+        var refus = new List<string>();
+
+        foreach (var fichier in FichiersXaml())
+        {
+            var lignes = File.ReadAllLines(fichier);
+
+            for (var i = 0; i < lignes.Length; i++)
+            {
+                if (Regex.IsMatch(lignes[i], @"PanningMode\s*=\s*""None"""))
+                {
+                    refus.Add($"{Path.GetFileName(fichier)}:{i + 1}");
+                }
+            }
+        }
+
+        Assert.True(refus.Count == 0,
+            "Défilement au doigt désactivé :" + Environment.NewLine + string.Join(Environment.NewLine, refus));
+    }
+
+    /// <summary>
     /// Une zone défilante dont la barre apparaît « au besoin » change de
     /// largeur selon son contenu. Si ce contenu se répartit d'après la largeur
     /// — c'est le cas d'une grille de vignettes — chaque mesure en modifie une

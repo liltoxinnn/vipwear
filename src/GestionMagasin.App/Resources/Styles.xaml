@@ -597,6 +597,36 @@
     </DataTemplate>
 
     <!-- ============================================================
+         Défilement au doigt
+
+         Le magasin encaisse sur écran tactile. Sans ce réglage, faire
+         glisser une liste avec le doigt ne produit rien : il faut viser la
+         barre de défilement, large de quelques pixels. Le caissier se
+         retrouve à chercher au doigt une cible dessinée pour une souris,
+         devant le client.
+
+         Le style est implicite et sans clé : il atteint ainsi les zones
+         défilantes que je n'écris pas moi-même — celles que WPF fabrique à
+         l'intérieur des tableaux, des listes déroulantes et des champs de
+         texte —, qu'aucun réglage posé de l'extérieur ne peut toucher.
+
+         « VerticalFirst » privilégie le mouvement vertical, qui est celui
+         de toutes les listes du logiciel, et laisse le défilement
+         horizontal aux rares tableaux plus larges que l'écran. Un appui
+         sans déplacement reste un clic : les boutons et les vignettes du
+         rayon continuent de répondre normalement.
+         ============================================================ -->
+    <Style TargetType="ScrollViewer">
+        <Setter Property="PanningMode" Value="VerticalFirst" />
+
+        <!-- Inertie : le contenu poursuit sa course après le doigt, puis
+             s'arrête en une demi-seconde environ. Sans elle, le défilement
+             s'interrompt net et donne l'impression d'un écran qui accroche. -->
+        <Setter Property="PanningDeceleration" Value="0.002" />
+        <Setter Property="PanningRatio" Value="1" />
+    </Style>
+
+    <!-- ============================================================
          Pastilles d'état
          ============================================================ -->
 
