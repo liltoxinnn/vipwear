@@ -235,6 +235,19 @@
          Conteneurs
          ============================================================ -->
 
+    <!--
+        Panneau.
+
+        Aucune ombre portée, et c'est délibéré. Un élément qui porte un effet
+        voit tout son contenu dessiné à travers une surface intermédiaire, et
+        Windows y renonce au lissage sous-pixel : le texte perd sa netteté et
+        s'amincit. Sur un logiciel dont on lit les chiffres toute la journée,
+        une ombre de sept pour cent d'opacité ne vaut pas la lisibilité de ce
+        qu'elle entoure.
+
+        Le panneau se détache par sa bordure et par le fond légèrement plus
+        sombre de l'écran, ce qui suffit à le poser sans rien coûter.
+    -->
     <Style x:Key="Carte" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource PinceauSurface}" />
         <Setter Property="BorderBrush" Value="{StaticResource PinceauBordure}" />
@@ -242,19 +255,6 @@
         <Setter Property="CornerRadius" Value="16" />
         <Setter Property="Padding" Value="16" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-
-        <!--
-            L'ombre porte sur les panneaux, jamais sur les vignettes du rayon.
-            Une ombre est calculée par le processeur graphique élément par
-            élément : sur quatre cents vignettes, le défilement au doigt
-            saccaderait. Les vignettes se détachent par leur bordure.
-        -->
-        <Setter Property="Effect">
-            <Setter.Value>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="2" Direction="270"
-                                  Color="#14120E" Opacity="0.07" RenderingBias="Performance" />
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <Style x:Key="BarreOutils" TargetType="Border" BasedOn="{StaticResource Carte}">

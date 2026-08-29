@@ -1,4 +1,4 @@
-<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreVariante"
+﻿<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreVariante"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{Binding Titre}"
@@ -6,7 +6,10 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
-        Background="{StaticResource PinceauFond}">
+        Background="{StaticResource PinceauFond}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 
     <Border Margin="18" Style="{StaticResource Carte}">
         <ScrollViewer VerticalScrollBarVisibility="Auto">

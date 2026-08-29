@@ -1,4 +1,4 @@
-<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreMouvementStock"
+﻿<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreMouvementStock"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="{Binding Titre}"
@@ -6,7 +6,10 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
-        Background="{StaticResource PinceauFond}">
+        Background="{StaticResource PinceauFond}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 
     <!--
         La fenêtre est elle-même la confirmation : elle nomme l'article,

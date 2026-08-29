@@ -5,7 +5,10 @@
         Height="660" Width="440"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="{StaticResource PinceauFond}">
+        Background="{StaticResource PinceauFond}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 
     <Border Margin="26" Style="{StaticResource Carte}" Padding="30">
         <StackPanel VerticalAlignment="Center">

@@ -451,4 +451,91 @@ public class TestsInterface
             "Commandes citées par l'interface mais introuvables :" + Environment.NewLine +
             string.Join(Environment.NewLine, absentes.Select(a => $"  {a.Key} (vue dans {a.Value})")));
     }
+
+    /// <summary>
+    /// Une fenêtre qui n'arrondit pas sa mise en page rend du texte flou.
+    ///
+    /// WPF place les éléments sur des coordonnées fractionnaires. Une colonne
+    /// proportionnelle — « 1,4 fois la largeur restante » — commence donc
+    /// rarement sur un pixel entier, et tout ce qu'elle contient hérite de ce
+    /// demi-pixel : les lettres sont dessinées à cheval sur deux pixels et
+    /// paraissent baveuses. La colonne voisine, qui commence à zéro, reste
+    /// nette. C'est ce qui rendait la fiche produit floue à côté de la liste,
+    /// dans la même fenêtre et avec la même police.
+    ///
+    /// Trois réglages y remédient, et se posent sur la fenêtre puisqu'ils
+    /// descendent à tout ce qu'elle contient.
+    /// </summary>
+    [Fact]
+    public void Chaque_fenetre_arrondit_sa_mise_en_page_et_fixe_le_rendu_du_texte()
+    {
+        var manquants = new List<string>();
+
+        foreach (var fichier in FichiersXaml())
+        {
+            var contenu = File.ReadAllText(fichier);
+
+            // Seules les fenêtres portent ces réglages : une vue posée dans
+            // une fenêtre en hérite.
+            var ouverture = Regex.Match(contenu, @"<Window\b.*?>", RegexOptions.Singleline);
+
+            if (!ouverture.Success)
+            {
+                continue;
+            }
+
+            var balise = ouverture.Value;
+            var nom = Path.GetFileName(fichier);
+
+            if (!balise.Contains("UseLayoutRounding=\"True\"", StringComparison.Ordinal))
+            {
+                manquants.Add($"  {nom} : UseLayoutRounding");
+            }
+
+            if (!balise.Contains("TextFormattingMode=\"Display\"", StringComparison.Ordinal))
+            {
+                manquants.Add($"  {nom} : TextOptions.TextFormattingMode");
+            }
+
+            if (!balise.Contains("TextRenderingMode=\"ClearType\"", StringComparison.Ordinal))
+            {
+                manquants.Add($"  {nom} : TextOptions.TextRenderingMode");
+            }
+        }
+
+        Assert.True(manquants.Count == 0,
+            "Fenêtres au rendu de texte non fixé :" + Environment.NewLine +
+            string.Join(Environment.NewLine, manquants));
+    }
+
+    /// <summary>
+    /// Un effet — une ombre portée, par exemple — fait dessiner tout le
+    /// contenu de l'élément à travers une surface intermédiaire, où Windows
+    /// renonce au lissage sous-pixel. Le texte y perd sa netteté et s'amincit.
+    ///
+    /// Une ombre de sept pour cent d'opacité ne vaut pas la lisibilité des
+    /// chiffres qu'elle entoure, dans un logiciel qu'on lit toute la journée.
+    /// </summary>
+    [Fact]
+    public void Aucun_panneau_ne_porte_d_effet_sur_son_contenu()
+    {
+        var fautes = new List<string>();
+
+        foreach (var fichier in FichiersXaml())
+        {
+            var lignes = File.ReadAllLines(fichier);
+
+            for (var i = 0; i < lignes.Length; i++)
+            {
+                if (Regex.IsMatch(lignes[i], @"<(DropShadowEffect|BlurEffect)\b"))
+                {
+                    fautes.Add($"  {Path.GetFileName(fichier)}:{i + 1}");
+                }
+            }
+        }
+
+        Assert.True(fautes.Count == 0,
+            "Effets appliqués à du contenu textuel :" + Environment.NewLine +
+            string.Join(Environment.NewLine, fautes));
+    }
 }

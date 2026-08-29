@@ -6,7 +6,10 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
-        Background="{StaticResource PinceauFond}">
+        Background="{StaticResource PinceauFond}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 
     <Border Margin="18" Style="{StaticResource Carte}">
         <StackPanel>
