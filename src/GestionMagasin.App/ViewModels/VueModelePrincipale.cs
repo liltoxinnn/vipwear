@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GestionMagasin.App.Services;
@@ -109,6 +110,19 @@ public partial class VueModelePrincipale : VueModeleBase
 
     /// <summary>Entrées de menu visibles pour l'utilisateur connecté.</summary>
     public ObservableCollection<EntreeMenu> Menu { get; } = [];
+
+    /// <summary>
+    /// Version et date de compilation, affichées sous le nom du magasin.
+    ///
+    /// Sans ce repère, savoir si le poste tourne bien sur la dernière
+    /// livraison demandait de chercher une modification à l'écran et de
+    /// constater son absence — ce qui ne distingue pas un programme périmé
+    /// d'une modification ratée.
+    /// </summary>
+    public string VersionLogiciel { get; } = Edition.Decrire(
+        typeof(VueModelePrincipale).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion);
 
     /// <summary>Déclenché lorsque l'utilisateur se déconnecte.</summary>
     public event EventHandler? DeconnexionDemandee;

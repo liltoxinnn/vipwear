@@ -48,6 +48,16 @@
                                    Foreground="#8A857A"
                                    FontSize="10.5"
                                    Margin="0,2,0,0" />
+
+                        <!--
+                            Version et date de compilation. C'est le seul
+                            repère qui dise, sans chercher, si le poste
+                            tourne bien sur la dernière livraison.
+                        -->
+                        <TextBlock Text="{Binding VersionLogiciel}"
+                                   Foreground="#6E695E"
+                                   FontSize="9.5"
+                                   Margin="0,3,0,0" />
                     </StackPanel>
                 </Grid>
 

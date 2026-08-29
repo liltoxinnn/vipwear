@@ -15,6 +15,12 @@
     -->
     <ApplicationIcon>vipmensstore.ico</ApplicationIcon>
     <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
+    <!--
+      Horodatage de compilation, ajouté au numéro de version. Le menu
+      l'affiche : c'est le seul repère qui distingue une livraison de la
+      précédente, le numéro restant à 1.0.0 entre deux.
+    -->
+    <SourceRevisionId>$([System.DateTime]::UtcNow.ToString("yyyyMMdd-HHmm"))</SourceRevisionId>
     <!-- Nom vu par Windows : barre des tâches, propriétés du fichier, gestionnaire des tâches. -->
     <Product>VIP MEN’S STORE</Product>
     <AssemblyTitle>VIP MEN’S STORE</AssemblyTitle>
