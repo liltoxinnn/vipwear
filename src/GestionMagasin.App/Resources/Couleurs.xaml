@@ -37,7 +37,15 @@
 
     <Color x:Key="CouleurTexte">#171612</Color>
     <Color x:Key="CouleurTexteSecondaire">#5D584B</Color>
-    <Color x:Key="CouleurTexteAttenue">#8E887A</Color>
+    <!--
+        Texte atténué. Il était à #8E887A, soit 3,5 pour 1 contre le blanc :
+        sous le minimum de 4,5 exigé pour du texte de moins de dix-huit
+        pixels. À onze pixels et demi, des lettres aussi pâles paraissent
+        baveuses avant de paraître grises — l'œil ne distingue plus le tracé
+        du fond, et le lecteur croit l'écran flou. Porté à 5,1 pour 1, il
+        reste second sans devenir illisible.
+    -->
+    <Color x:Key="CouleurTexteAttenue">#746E60</Color>
     <Color x:Key="CouleurTexteSurPrincipale">#FFFFFF</Color>
 
     <SolidColorBrush x:Key="PinceauPrincipal" Color="{StaticResource CouleurPrincipale}" />
