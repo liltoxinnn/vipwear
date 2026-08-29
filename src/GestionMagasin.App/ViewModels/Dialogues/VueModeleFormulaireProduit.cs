@@ -13,6 +13,14 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
 {
     private readonly IServiceProduits _produits;
 
+    /// <summary>
+    /// Toutes les marques, y compris celles mises en sommeil. La liste
+    /// déroulante n'en montre que les actives, mais une marque désactivée
+    /// reste une marque : retaper son nom doit la retrouver, et non refuser
+    /// l'enregistrement pour cause de doublon.
+    /// </summary>
+    private IReadOnlyList<ReferenceDto> _toutesMarques = [];
+
     public VueModeleFormulaireProduit(
         IServiceProduits produits,
         IServiceDialogue dialogue,
@@ -54,8 +62,15 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
     [ObservableProperty]
     private CategorieDto? _famille;
 
+    /// <summary>
+    /// Marque, saisie ou choisie. Le champ est ouvert à l'écriture : un
+    /// magasin reçoit une marque nouvelle avant d'avoir songé à la déclarer,
+    /// et l'obliger à passer par un autre écran au moment où il range son
+    /// arrivage n'aurait servi à rien. Un nom inconnu est créé à
+    /// l'enregistrement du produit.
+    /// </summary>
     [ObservableProperty]
-    private ReferenceDto? _marque;
+    private string _nomMarque = string.Empty;
 
     [ObservableProperty]
     private string _collection = string.Empty;
@@ -109,7 +124,8 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
         await ExecuterAsync(async () =>
         {
             Remplir(Familles, await _produits.ListerCategoriesAsync().ConfigureAwait(true));
-            Remplir(Marques, await _produits.ListerMarquesAsync().ConfigureAwait(true));
+            _toutesMarques = await _produits.ListerMarquesAsync(inclureInactifs: true).ConfigureAwait(true);
+            Remplir(Marques, _toutesMarques.Where(m => m.Actif).ToList());
             Remplir(Collections, await _produits.ListerCollectionsAsync().ConfigureAwait(true));
             Remplir(Saisons, await _produits.ListerSaisonsAsync().ConfigureAwait(true));
 
@@ -121,7 +137,7 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
                 Nom = string.Empty;
                 Description = string.Empty;
                 Famille = null;
-                Marque = null;
+                NomMarque = string.Empty;
                 Collection = string.Empty;
                 Saison = string.Empty;
                 PrixAchat = 0m;
@@ -135,7 +151,7 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
                 Nom = produit.Nom;
                 Description = produit.Description ?? string.Empty;
                 Famille = Familles.FirstOrDefault(f => f.Id == produit.CategorieId);
-                Marque = Marques.FirstOrDefault(m => m.Id == produit.MarqueId);
+                NomMarque = _toutesMarques.FirstOrDefault(m => m.Id == produit.MarqueId)?.Nom ?? string.Empty;
                 Collection = produit.Collection ?? string.Empty;
                 Saison = produit.Saison ?? string.Empty;
                 PrixAchat = produit.PrixAchat;
@@ -162,23 +178,30 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
             return;
         }
 
-        var demande = new DemandeProduit
-        {
-            Reference = Reference,
-            Sku = Sku,
-            Nom = Nom,
-            Description = Description,
-            MarqueId = Marque?.Id,
-            CategorieId = Famille.Id,
-            Collection = Collection,
-            Saison = Saison,
-            PrixAchat = PrixAchat,
-            PrixVente = PrixVente
-        };
-
         var reussi = await ExecuterAsync(
             async () =>
             {
+                // La marque est réglée avant le produit : si elle est
+                // nouvelle, elle doit exister au moment où le produit s'y
+                // rattache. L'échec éventuel remonte ici et interrompt
+                // l'enregistrement, plutôt que d'enregistrer le produit sans
+                // sa marque.
+                var marqueId = await ResoudreMarqueAsync().ConfigureAwait(true);
+
+                var demande = new DemandeProduit
+                {
+                    Reference = Reference,
+                    Sku = Sku,
+                    Nom = Nom,
+                    Description = Description,
+                    MarqueId = marqueId,
+                    CategorieId = Famille.Id,
+                    Collection = Collection,
+                    Saison = Saison,
+                    PrixAchat = PrixAchat,
+                    PrixVente = PrixVente
+                };
+
                 var produit = IdentifiantEdite.HasValue
                     ? await _produits.ModifierProduitAsync(IdentifiantEdite.Value, demande).ConfigureAwait(true)
                     : await _produits.CreerProduitAsync(demande).ConfigureAwait(true);
@@ -192,6 +215,43 @@ public partial class VueModeleFormulaireProduit : VueModeleBase
         {
             FermetureDemandee?.Invoke(this, true);
         }
+    }
+
+    /// <summary>
+    /// Retrouve la marque saisie, ou la crée si le nom est nouveau.
+    /// </summary>
+    /// <returns>
+    /// L'identifiant de la marque, ou <c>null</c> si le champ a été laissé
+    /// vide : la marque reste facultative.
+    /// </returns>
+    private async Task<int?> ResoudreMarqueAsync()
+    {
+        var nom = NomMarque?.Trim();
+
+        if (string.IsNullOrEmpty(nom))
+        {
+            return null;
+        }
+
+        // La comparaison ignore la casse : « Lacoste » et « lacoste » sont la
+        // même marque, et en créer deux fausserait tous les filtres.
+        var connue = _toutesMarques.FirstOrDefault(
+            m => string.Equals(m.Nom, nom, StringComparison.CurrentCultureIgnoreCase));
+
+        if (connue is not null)
+        {
+            return connue.Id;
+        }
+
+        var creee = await _produits.EnregistrerMarqueAsync(null, nom, null).ConfigureAwait(true);
+
+        // La nouvelle marque rejoint les deux listes : le formulaire peut
+        // être réenregistré sans la recréer, et la liste déroulante la
+        // propose immédiatement.
+        _toutesMarques = [.. _toutesMarques, creee];
+        Marques.Add(creee);
+
+        return creee.Id;
     }
 
     [RelayCommand]

@@ -24,5 +24,6 @@
     <conv:ConvertisseurEgalite x:Key="Egalite" />
     <conv:ConvertisseurLibelleEnum x:Key="LibelleEnum" />
     <conv:ConvertisseurGeometrie x:Key="Icone" />
+    <conv:ConvertisseurValeurOuTiret x:Key="ValeurOuTiret" />
 
 </ResourceDictionary>

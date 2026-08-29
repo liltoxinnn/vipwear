@@ -162,45 +162,93 @@
                             </Border>
                         </Grid>
 
-                        <!-- Informations principales -->
-                        <UniformGrid Columns="4" Margin="0,14,0,0">
-                            <StackPanel>
-                                <TextBlock Text="Prix d'achat" Style="{StaticResource TexteEtiquette}" />
-                                <TextBlock Text="{Binding Fiche.PrixAchat, Converter={StaticResource Montant}}"
-                                           FontWeight="SemiBold" />
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="Prix de vente" Style="{StaticResource TexteEtiquette}" />
-                                <TextBlock Text="{Binding Fiche.PrixVente, Converter={StaticResource Montant}}"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource PinceauPrincipal}" />
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="Marge" Style="{StaticResource TexteEtiquette}" />
-                                <TextBlock Text="{Binding Fiche.Marge, Converter={StaticResource Montant}}"
-                                           FontWeight="SemiBold"
-                                           Foreground="{StaticResource PinceauSucces}" />
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="Stock total" Style="{StaticResource TexteEtiquette}" />
-                                <TextBlock Text="{Binding Fiche.StockTotal}" FontWeight="SemiBold" />
-                            </StackPanel>
+                        <!--
+                            Les quatre chiffres de la fiche, chacun dans son
+                            cadre. Alignés à plat sur le fond de la carte, ils
+                            se confondaient avec les intitulés qui les
+                            entourent et il fallait les chercher ; encadrés,
+                            ils se lisent d'un regard, comme les indicateurs
+                            du tableau de bord.
+                        -->
+                        <UniformGrid Columns="4" Margin="0,16,0,0">
+                            <Border Style="{StaticResource ChiffreFiche}" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="Prix d'achat" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBlock Text="{Binding Fiche.PrixAchat, Converter={StaticResource Montant}}"
+                                               FontSize="15"
+                                               FontWeight="Bold"
+                                               Margin="0,3,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource ChiffreFiche}" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="Prix de vente" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBlock Text="{Binding Fiche.PrixVente, Converter={StaticResource Montant}}"
+                                               FontSize="15"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource PinceauOrFonce}"
+                                               Margin="0,3,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource ChiffreFiche}" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="Marge" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBlock Text="{Binding Fiche.Marge, Converter={StaticResource Montant}}"
+                                               FontSize="15"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource PinceauSucces}"
+                                               Margin="0,3,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource ChiffreFiche}">
+                                <StackPanel>
+                                    <TextBlock Text="Stock total" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBlock Text="{Binding Fiche.StockTotal}"
+                                               FontSize="15"
+                                               FontWeight="Bold"
+                                               Margin="0,3,0,0" />
+                                </StackPanel>
+                            </Border>
                         </UniformGrid>
 
-                        <UniformGrid Columns="3" Margin="0,12,0,0">
-                            <StackPanel>
-                                <TextBlock Text="Marque" Style="{StaticResource TexteEtiquette}" />
-                                <TextBlock Text="{Binding Fiche.Marque}" Style="{StaticResource TexteSecondaire}" />
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="Collection" Style="{StaticResource TexteEtiquette}" />
-                                <TextBlock Text="{Binding Fiche.Collection}" Style="{StaticResource TexteSecondaire}" />
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="Saison" Style="{StaticResource TexteEtiquette}" />
-                                <TextBlock Text="{Binding Fiche.Saison}" Style="{StaticResource TexteSecondaire}" />
-                            </StackPanel>
-                        </UniformGrid>
+                        <!--
+                            Marque, collection et saison. Le tiret remplace la
+                            valeur absente : trois étiquettes suivies de rien
+                            laissaient croire à un écran mal chargé.
+                        -->
+                        <Border Background="{StaticResource PinceauSurfaceAlterne}"
+                                BorderBrush="{StaticResource PinceauBordure}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="14,10"
+                                Margin="0,10,0,0">
+                            <UniformGrid Columns="3">
+                                <StackPanel>
+                                    <TextBlock Text="Marque" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBlock Text="{Binding Fiche.Marque, Converter={StaticResource ValeurOuTiret}}"
+                                               Style="{StaticResource TexteSecondaire}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,2,8,0" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Collection" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBlock Text="{Binding Fiche.Collection, Converter={StaticResource ValeurOuTiret}}"
+                                               Style="{StaticResource TexteSecondaire}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,2,8,0" />
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="Saison" Style="{StaticResource TexteEtiquette}" />
+                                    <TextBlock Text="{Binding Fiche.Saison, Converter={StaticResource ValeurOuTiret}}"
+                                               Style="{StaticResource TexteSecondaire}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,2,0,0" />
+                                </StackPanel>
+                            </UniformGrid>
+                        </Border>
                     </StackPanel>
 
                     <!-- Actions -->

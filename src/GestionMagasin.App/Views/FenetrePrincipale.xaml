@@ -279,7 +279,95 @@
                         <TextBlock Text="{Binding DateDuJour}"
                                    Style="{StaticResource TexteSecondaire}"
                                    VerticalAlignment="Center"
-                                   Margin="0,0,16,0" />
+                                   Margin="0,0,12,0" />
+
+                        <!--
+                            Plein écran. Sur le poste de caisse, la barre des
+                            tâches et le cadre de la fenêtre ne servent à rien
+                            et prennent la place de deux rangées de vignettes.
+
+                            L'état est tenu par la fenêtre elle-même et non
+                            par la vue-modèle : il ne concerne que
+                            l'affichage, et survivrait mal à un changement
+                            d'écran.
+                        -->
+                        <ToggleButton x:Name="BasculePleinEcran"
+                                      IsChecked="{Binding PleinEcran,
+                                                  RelativeSource={RelativeSource AncestorType=Window}}"
+                                      Cursor="Hand"
+                                      Width="44" Height="38"
+                                      Margin="0,0,10,0"
+                                      VerticalAlignment="Center"
+                                      AutomationProperties.Name="Plein écran">
+                            <ToggleButton.ToolTip>
+                                <TextBlock Text="Plein écran (Ctrl+F11) — Échap pour revenir" />
+                            </ToggleButton.ToolTip>
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="Fond"
+                                            Background="{StaticResource PinceauSurface}"
+                                            BorderBrush="{StaticResource PinceauBordureForte}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            SnapsToDevicePixels="True">
+                                        <!--
+                                            Deux tracés superposés plutôt
+                                            qu'un tracé changé par le
+                                            déclencheur : une liaison posée
+                                            dans la valeur d'un Setter se
+                                            résout dans le contexte du modèle
+                                            et non dans celui de la fenêtre.
+                                        -->
+                                        <Grid>
+                                            <Path x:Name="Ouvrir"
+                                                  Data="{Binding Source={x:Static views:IconesMenu.PleinEcran},
+                                                         Converter={StaticResource Icone}}"
+                                                  Stroke="{StaticResource PinceauTexteSecondaire}"
+                                                  StrokeThickness="1.6"
+                                                  StrokeLineJoin="Round"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Fill="Transparent"
+                                                  Width="18" Height="18"
+                                                  Stretch="Uniform"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+
+                                            <Path x:Name="Quitter"
+                                                  Data="{Binding Source={x:Static views:IconesMenu.QuitterPleinEcran},
+                                                         Converter={StaticResource Icone}}"
+                                                  Stroke="{StaticResource PinceauOrFonce}"
+                                                  StrokeThickness="1.6"
+                                                  StrokeLineJoin="Round"
+                                                  StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round"
+                                                  Fill="Transparent"
+                                                  Width="18" Height="18"
+                                                  Stretch="Uniform"
+                                                  Visibility="Collapsed"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Ouvrir" Property="Visibility" Value="Collapsed" />
+                                            <Setter TargetName="Quitter" Property="Visibility" Value="Visible" />
+                                            <Setter TargetName="Fond" Property="Background"
+                                                    Value="{StaticResource PinceauFondOr}" />
+                                            <Setter TargetName="Fond" Property="BorderBrush"
+                                                    Value="{StaticResource PinceauOr}" />
+                                        </Trigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Fond" Property="BorderBrush"
+                                                    Value="{StaticResource PinceauOr}" />
+                                            <Setter TargetName="Ouvrir" Property="Stroke"
+                                                    Value="{StaticResource PinceauOrFonce}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
 
                         <Button Content="Actualiser"
                                 Style="{StaticResource BoutonSecondaire}"

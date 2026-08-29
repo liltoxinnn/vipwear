@@ -66,26 +66,38 @@
 
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Marque" Style="{StaticResource TexteEtiquette}" />
+                        <!--
+                            Champ ouvert à la saisie : une marque encore
+                            inconnue se tape ici et se crée à
+                            l'enregistrement, sans passer par un autre écran.
+                        -->
                         <ComboBox Style="{StaticResource ChampListe}"
                                   ItemsSource="{Binding Marques}"
-                                  SelectedItem="{Binding Marque}"
-                                  DisplayMemberPath="Nom" />
+                                  Text="{Binding NomMarque, UpdateSourceTrigger=PropertyChanged}"
+                                  DisplayMemberPath="Nom"
+                                  IsEditable="True"
+                                  StaysOpenOnEdit="True"
+                                  IsTextSearchEnabled="False"
+                                  ToolTip="Choisissez une marque ou tapez-en une nouvelle" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Collection" Style="{StaticResource TexteEtiquette}" />
                         <ComboBox Style="{StaticResource ChampListe}"
                                   ItemsSource="{Binding Collections}"
-                                  Text="{Binding Collection}"
-                                  IsEditable="True" />
+                                  Text="{Binding Collection, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEditable="True"
+                                  StaysOpenOnEdit="True" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="4">
                         <TextBlock Text="Saison" Style="{StaticResource TexteEtiquette}" />
                         <ComboBox Style="{StaticResource ChampListe}"
                                   ItemsSource="{Binding Saisons}"
-                                  Text="{Binding Saison}"
-                                  IsEditable="True" />
+                                  Text="{Binding Saison, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEditable="True"
+                                  StaysOpenOnEdit="True"
+                                  ToolTip="Printemps, Été, Automne, Hiver — ou une période propre au magasin" />
                     </StackPanel>
                 </Grid>
 

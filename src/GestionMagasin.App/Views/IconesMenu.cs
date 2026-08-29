@@ -76,6 +76,16 @@ internal static class IconesMenu
         "M14,4 H19 A1.5,1.5 0 0,1 20.5,5.5 V18.5 A1.5,1.5 0 0,1 19,20 H14  " +
         "M10,8 L14,12 L10,16  M14,12 H3.5";
 
+    /// <summary>Quatre flèches vers les angles : passer en plein écran.</summary>
+    public const string PleinEcran =
+        "M4,9 V4 H9  M15,4 H20 V9  M20,15 V20 H15  M9,20 H4 V15  " +
+        "M4,4 L9.5,9.5  M20,4 L14.5,9.5  M20,20 L14.5,14.5  M4,20 L9.5,14.5";
+
+    /// <summary>Quatre flèches vers le centre : revenir à la fenêtre.</summary>
+    public const string QuitterPleinEcran =
+        "M9.5,4 V9.5 H4  M14.5,4 V9.5 H20  M14.5,20 V14.5 H20  M9.5,20 V14.5 H4  " +
+        "M3.5,3.5 L9.5,9.5  M20.5,3.5 L14.5,9.5  M20.5,20.5 L14.5,14.5  M3.5,20.5 L9.5,14.5";
+
     /// <summary>Un réglage : l'axe et ses graduations.</summary>
     public const string Parametres =
         "M12,9 A3,3 0 1,1 12,15 A3,3 0 1,1 12,9  " +

@@ -1045,14 +1045,22 @@ public class ServiceProduits : IServiceProduits
             .ToListAsync(jeton)
             .ConfigureAwait(false);
 
-    public async Task<IReadOnlyList<string>> ListerSaisonsAsync(CancellationToken jeton = default) =>
-        await _uniteDeTravail.Depot<Produit>().Requete()
+    /// <summary>
+    /// Saisons proposées : les quatre saisons d'office, puis celles que le
+    /// magasin a saisies lui-même. Un catalogue vide propose donc déjà
+    /// Printemps, Été, Automne et Hiver.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> ListerSaisonsAsync(CancellationToken jeton = default)
+    {
+        var employees = await _uniteDeTravail.Depot<Produit>().Requete()
             .Where(p => p.Saison != null && p.Saison != "")
             .Select(p => p.Saison!)
             .Distinct()
-            .OrderBy(s => s)
             .ToListAsync(jeton)
             .ConfigureAwait(false);
+
+        return Saisons.Composer(employees);
+    }
 
     // ==================================================================
     // Utilitaires internes

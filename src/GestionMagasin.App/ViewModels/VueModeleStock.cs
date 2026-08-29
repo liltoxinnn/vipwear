@@ -278,6 +278,35 @@ public partial class VueModeleStock : VueModeleBase
         MouvementDemande?.Invoke(this, (LigneSelectionnee!, true));
     }
 
+    /// <summary>
+    /// Corrige la quantité d'une déclinaison désignée directement.
+    ///
+    /// C'est le geste attendu à l'inventaire : on lit une quantité qui ne
+    /// correspond pas au rayon, on la touche, on la corrige. Passer par une
+    /// sélection puis un bouton de la barre d'outils faisait trois gestes là
+    /// où il en faut un, et laissait la place à l'erreur la plus coûteuse —
+    /// corriger la quantité d'une autre taille que celle qu'on regarde.
+    /// </summary>
+    [RelayCommand]
+    private void AjusterLigne(LigneStockDto? ligne)
+    {
+        if (ligne is null)
+        {
+            return;
+        }
+
+        // La ligne touchée devient la ligne courante : l'historique affiché à
+        // droite suit, et la fenêtre de correction porte bien sur elle.
+        LigneSelectionnee = ligne;
+
+        if (!VerifierSelectionEtDroits())
+        {
+            return;
+        }
+
+        MouvementDemande?.Invoke(this, (ligne, true));
+    }
+
     private bool VerifierSelectionEtDroits()
     {
         if (LigneSelectionnee is null)

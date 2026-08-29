@@ -252,6 +252,11 @@
                                             <Run Text="{Binding StockTotal, Mode=OneWay}" />
                                             <Run Text="articles en rayon" />
                                         </TextBlock>
+
+                                        <TextBlock Text="Cliquez sur une quantité pour la corriger"
+                                                   Style="{StaticResource TexteAttenue}"
+                                                   FontSize="11"
+                                                   Margin="0,4,0,0" />
                                     </StackPanel>
 
                                     <Button Content="Retour à la liste"
@@ -292,7 +297,28 @@
 
                                     <DataGridTextColumn Header="Taille" Binding="{Binding Taille}" Width="80" />
                                     <DataGridTextColumn Header="Code article" Binding="{Binding Sku}" Width="*" />
-                                    <DataGridTextColumn Header="Stock" Binding="{Binding QuantiteDisponible}" Width="75" />
+
+                                    <!--
+                                        La quantité se corrige d'un clic : le
+                                        chiffre est lui-même le bouton qui
+                                        ouvre l'ajustement de cette
+                                        déclinaison.
+                                    -->
+                                    <DataGridTemplateColumn Header="Stock" Width="85">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource QuantiteCliquable}"
+                                                        Content="{Binding QuantiteDisponible}"
+                                                        Command="{Binding DataContext.AjusterLigneCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        IsEnabled="{Binding DataContext.PeutModifierStock,
+                                                                    RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        ToolTip="Corriger la quantité de cette taille" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
                                     <DataGridTextColumn Header="Seuil" Binding="{Binding SeuilMinimum}" Width="70" />
                                     <DataGridTextColumn Header="Valeur"
                                                         Binding="{Binding ValeurStock, Converter={StaticResource Montant}}"

@@ -343,4 +343,112 @@ public class TestsInterface
             "Ressources définies plusieurs fois :" + Environment.NewLine +
             string.Join(Environment.NewLine, doublons.Select(d => $"  {d.Key} : {string.Join(", ", d.Value)}")));
     }
+
+    /// <summary>
+    /// Une image réduite sans lissage haute qualité paraît sale.
+    ///
+    /// Le logo du magasin est fourni en grand — mille pixels de côté ou plus
+    /// — puis affiché à cent, et à quarante-quatre dans le menu. La réduction
+    /// rapide que WPF applique par défaut ne retient qu'un pixel sur dix : les
+    /// contours se hachent et les lettres fines grésillent. Le magasin conclut
+    /// que le logiciel a abîmé son logo.
+    /// </summary>
+    [Fact]
+    public void Toute_image_affichee_est_lissee()
+    {
+        var fautes = new List<string>();
+
+        foreach (var fichier in FichiersXaml())
+        {
+            var contenu = File.ReadAllText(fichier);
+
+            var porteuses = Regex.Matches(contenu, @"<(?:ImageBrush|Image)\b").Count;
+
+            if (porteuses == 0)
+            {
+                continue;
+            }
+
+            var lissages = Regex.Matches(
+                contenu, @"RenderOptions\.BitmapScalingMode=""HighQuality""").Count;
+
+            if (lissages < porteuses)
+            {
+                fautes.Add($"  {Path.GetFileName(fichier)} : {porteuses} image(s), {lissages} lissage(s)");
+            }
+        }
+
+        Assert.True(fautes.Count == 0,
+            "Images affichées sans lissage haute qualité :" + Environment.NewLine +
+            string.Join(Environment.NewLine, fautes));
+    }
+
+    /// <summary>
+    /// Une commande citée par le XAML doit exister.
+    ///
+    /// Le compilateur ne lit pas les liaisons : un nom mal orthographié
+    /// produit un bouton qui ne fait rien, sans message ni trace. Le vendeur
+    /// appuie, rien ne se passe, et il croit le logiciel bloqué.
+    /// </summary>
+    [Fact]
+    public void Toute_commande_citee_par_l_interface_existe()
+    {
+        var declarees = new HashSet<string>(StringComparer.Ordinal);
+
+        var sources = Directory.EnumerateFiles(DossierInterface, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                        && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"));
+
+        foreach (var fichier in sources)
+        {
+            var contenu = File.ReadAllText(fichier);
+
+            // Commandes engendrées par [RelayCommand] : le générateur nomme
+            // « XxxCommand » la méthode « Xxx », et retire le suffixe Async.
+            foreach (Match correspondance in
+                     Regex.Matches(contenu, @"\[RelayCommand[^\]]*\]([^(){};]*)\("))
+            {
+                var mots = Regex.Matches(correspondance.Groups[1].Value, @"\w+");
+
+                if (mots.Count == 0)
+                {
+                    continue;
+                }
+
+                var nom = mots[^1].Value;
+
+                if (nom.EndsWith("Async", StringComparison.Ordinal))
+                {
+                    nom = nom[..^"Async".Length];
+                }
+
+                declarees.Add(nom + "Command");
+            }
+
+            // Commandes écrites à la main.
+            foreach (Match correspondance in Regex.Matches(
+                         contenu,
+                         @"public\s+(?:I?RelayCommand|ICommand|IAsyncRelayCommand)[\w<>,\s?]*\s+(\w+)\s*(?:\{|=>)"))
+            {
+                declarees.Add(correspondance.Groups[1].Value);
+            }
+        }
+
+        var citees = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var fichier in FichiersXaml())
+        {
+            foreach (Match correspondance in Regex.Matches(
+                         File.ReadAllText(fichier), @"\{Binding\s+(?:[\w\.]*\.)?(\w+Command)\b"))
+            {
+                citees.TryAdd(correspondance.Groups[1].Value, Path.GetFileName(fichier));
+            }
+        }
+
+        var absentes = citees.Where(c => !declarees.Contains(c.Key)).ToList();
+
+        Assert.True(absentes.Count == 0,
+            "Commandes citées par l'interface mais introuvables :" + Environment.NewLine +
+            string.Join(Environment.NewLine, absentes.Select(a => $"  {a.Key} (vue dans {a.Value})")));
+    }
 }

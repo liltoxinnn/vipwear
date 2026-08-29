@@ -151,6 +151,11 @@ chiffre**.
    > Seules les tailles de la famille sont proposées. Pour un pantalon,
    > vous verrez 28, 30, 32… et non S, M, L.
 
+   > La **marque** se choisit dans la liste ou se tape directement : un nom
+   > inconnu crée la marque à l'enregistrement du produit. La **saison**
+   > propose d'emblée Printemps, Été, Automne et Hiver, et accepte toute
+   > autre période propre au magasin.
+
    > Le stock se compte par **déclinaison** — « T-shirt / Noir / M » — et non
    > par produit. Un produit sans déclinaison n'apparaît donc pas en Stock.
 
@@ -158,12 +163,17 @@ chiffre**.
    (*Modifier la déclinaison*) — c'est ce qui permettra de scanner en caisse
 
 5. **Stock** (F4) → cliquez sur le produit pour ouvrir ses tailles et ses
-   couleurs → sélectionnez une déclinaison → **Ajuster le stock** pour saisir
-   la quantité présente en rayon
+   couleurs → **cliquez sur la quantité** de la ligne à corriger et saisissez
+   celle qui est réellement en rayon
 
    > La liste s'ouvre sur les **produits**, avec leur stock cumulé et ce qui
    > leur manque (« 3 ruptures »). Le détail des tailles s'ouvre au clic, et
    > **Retour à la liste** ramène à la vue d'ensemble.
+
+   > Le chiffre du stock est lui-même le bouton : un clic — ou un doigt —
+   > ouvre la correction de **cette** taille, sans risque de corriger la
+   > ligne voisine. Le bouton **Ajuster le stock** de la barre d'outils
+   > continue de fonctionner sur la ligne sélectionnée.
 
 ---
 
@@ -324,8 +334,20 @@ même pendant que le logiciel travaille.
 | **F11** | Utilisateurs |
 | **F12** | Paramètres |
 
+| Combinaison | Effet |
+|---|---|
+| **Ctrl + F5** | Recharger l'écran affiché |
+| **Ctrl + F11** | Passer en plein écran, ou en sortir |
+| **Échap** | Sortir du plein écran |
+
 En caisse, le curseur reste dans le champ de scan : vous pouvez enchaîner
 les articles à la douchette sans jamais toucher la souris.
+
+**Plein écran.** Le bouton aux quatre flèches, en haut à droite à côté
+d'**Actualiser**, fait disparaître le cadre de la fenêtre et la barre des
+tâches : l'écran entier revient au logiciel, ce qui vaut deux rangées de
+vignettes de plus en caisse. Le même bouton, ou la touche **Échap**,
+rétablit la fenêtre.
 
 **Écran tactile.** Toutes les listes se font glisser au doigt, avec
 l'inertie habituelle. En caisse, les vignettes du rayon et les cases de

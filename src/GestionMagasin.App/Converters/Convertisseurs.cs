@@ -263,3 +263,26 @@ public class ConvertisseurGeometrie : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException("La conversion inverse d'une icône n'est pas prévue.");
 }
+
+/// <summary>
+/// Remplace une valeur vide par un tiret.
+///
+/// Une fiche produit dont la marque, la collection et la saison sont vides
+/// affiche trois étiquettes suivies de rien : le lecteur ne sait pas s'il
+/// manque une donnée ou si l'écran a échoué à la charger. Le tiret répond à
+/// la question — le renseignement n'a pas été saisi.
+/// </summary>
+public class ConvertisseurValeurOuTiret : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var texte = value?.ToString();
+
+        return string.IsNullOrWhiteSpace(texte)
+            ? parameter as string ?? "—"
+            : texte;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException("La conversion inverse n'est pas prévue.");
+}

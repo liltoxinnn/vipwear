@@ -38,8 +38,19 @@
          ============================================================ -->
     <ControlTemplate x:Key="BlasonComplet" TargetType="ContentControl">
         <Grid>
-            <!-- Logo déposé par le magasin : il prend toute la place. -->
-            <Ellipse Visibility="{Binding LogoPresent, Source={x:Static views:Enseigne.Courante},
+            <!--
+                Logo déposé par le magasin : il prend toute la place.
+
+                Le lissage haute qualité n'est pas un détail : un logo est
+                fourni en grand — mille pixels de côté, parfois plus — et
+                réduit ici à cent. Le réduction rapide que WPF applique par
+                défaut ne retient qu'un pixel sur dix, ce qui hache les
+                contours et fait grésiller les lettres fines. Le lissage
+                complet moyenne les pixels écartés ; il coûte un calcul, fait
+                une fois, sur une image figée.
+            -->
+            <Ellipse RenderOptions.BitmapScalingMode="HighQuality"
+                     Visibility="{Binding LogoPresent, Source={x:Static views:Enseigne.Courante},
                                   Converter={StaticResource BooleenVisibilite}}">
                 <Ellipse.Fill>
                     <ImageBrush ImageSource="{Binding Logo, Source={x:Static views:Enseigne.Courante}}" Stretch="UniformToFill" />
@@ -81,7 +92,10 @@
          ============================================================ -->
     <ControlTemplate x:Key="BlasonCompact" TargetType="ContentControl">
         <Grid>
-            <Ellipse Visibility="{Binding LogoPresent, Source={x:Static views:Enseigne.Courante},
+            <!-- Même lissage qu'en grand format : c'est ici, réduit à
+                 quarante-quatre pixels, qu'un logo mal filtré se voit le plus. -->
+            <Ellipse RenderOptions.BitmapScalingMode="HighQuality"
+                     Visibility="{Binding LogoPresent, Source={x:Static views:Enseigne.Courante},
                                   Converter={StaticResource BooleenVisibilite}}">
                 <Ellipse.Fill>
                     <ImageBrush ImageSource="{Binding Logo, Source={x:Static views:Enseigne.Courante}}" Stretch="UniformToFill" />

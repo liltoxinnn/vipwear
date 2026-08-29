@@ -203,6 +203,19 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
+    <!--
+        Chiffre d'une fiche : un cadre discret autour d'un intitulé et de sa
+        valeur. Sert partout où quatre ou cinq nombres se lisent côte à côte.
+    -->
+    <Style x:Key="ChiffreFiche" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource PinceauSurfaceAlterne}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauBordure}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="12,9" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
     <Style x:Key="ChampDate" TargetType="DatePicker">
         <Setter Property="FontSize" Value="{StaticResource TailleNormale}" />
         <Setter Property="MinHeight" Value="34" />
@@ -780,6 +793,71 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Fond" Property="Background" Value="{StaticResource PinceauOrClair}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================================================
+         Quantité corrigeable d'un clic
+
+         Une quantité de stock n'est pas une donnée à consulter : c'est la
+         donnée qu'on corrige. Elle est donc présentée comme un bouton — un
+         chiffre souligné qui réagit au survol et au doigt — et non comme du
+         texte inerte à côté duquel il faudrait chercher un bouton d'action.
+
+         La cible fait quarante-quatre pixels de haut : c'est la taille sous
+         laquelle un doigt manque sa cible sur un écran tactile.
+         ============================================================ -->
+    <Style x:Key="QuantiteCliquable" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="MinWidth" Value="58" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fond"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            CornerRadius="7"
+                            Padding="10,4"
+                            SnapsToDevicePixels="True">
+                        <!--
+                            La liaison passe par le parent gabarité et non
+                            par TemplateBinding : la quantité est un nombre,
+                            et c'est cette forme-là qui la convertit en texte.
+                        -->
+                        <TextBlock x:Name="Nombre"
+                                   Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                   FontSize="{StaticResource TailleNormale}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource PinceauTexte}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fond" Property="Background" Value="{StaticResource PinceauFondOr}" />
+                            <Setter TargetName="Fond" Property="BorderBrush" Value="{StaticResource PinceauOr}" />
+                            <Setter TargetName="Nombre" Property="Foreground" Value="{StaticResource PinceauOrFonce}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Fond" Property="Background" Value="{StaticResource PinceauOrClair}" />
+                        </Trigger>
+                        <!--
+                            Sans le droit de modifier le stock, le chiffre
+                            redevient du texte : rien ne laisse croire qu'il
+                            est cliquable.
+                        -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Cursor" Value="Arrow" />
+                            <Setter TargetName="Fond" Property="Background" Value="Transparent" />
+                            <Setter TargetName="Fond" Property="BorderBrush" Value="Transparent" />
+                            <Setter TargetName="Nombre" Property="FontWeight" Value="Normal" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
