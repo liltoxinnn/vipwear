@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using Xunit;
 
@@ -575,4 +576,65 @@ public class TestsInterface
 
         Assert.Matches(new Regex(@"QuantiteRecue\s*=\s*0"), corps);
     }
+
+    /// <summary>
+    /// Deux groupes horizontaux ne tiennent pas dans une seule cellule.
+    ///
+    /// Une grille sans colonnes déclarées n'a qu'une cellule en largeur : ses
+    /// enfants s'y superposent. Poser à gauche un groupe de boutons et à
+    /// droite un autre paraît fonctionner tant que la fenêtre est large, puis
+    /// le groupe de gauche s'allonge — un compteur qui passe de « 3 articles »
+    /// à « 11 articles » suffit — et son texte disparaît sous les boutons de
+    /// droite. C'est ce qui masquait le compteur de la réception derrière
+    /// « Annuler ».
+    ///
+    /// Le remède tient en trois colonnes : un groupe, l'espace, l'autre groupe.
+    /// </summary>
+    [Fact]
+    public void Aucune_cellule_ne_contient_deux_groupes_horizontaux()
+    {
+        var fautes = new List<string>();
+
+        foreach (var fichier in FichiersXaml())
+        {
+            XDocument document;
+
+            try
+            {
+                document = XDocument.Load(fichier);
+            }
+            catch (System.Xml.XmlException)
+            {
+                // Un fichier illisible relève d'une autre règle que celle-ci.
+                continue;
+            }
+
+            foreach (var grille in document.Descendants()
+                         .Where(e => e.Name.LocalName == "Grid"))
+            {
+                // Des colonnes déclarées : chaque groupe peut avoir la sienne.
+                if (grille.Elements().Any(e => e.Name.LocalName == "Grid.ColumnDefinitions"))
+                {
+                    continue;
+                }
+
+                var alignements = grille.Elements()
+                    .Where(e => e.Name.LocalName is "StackPanel" or "WrapPanel")
+                    .Where(e => (string?)e.Attribute("Orientation") == "Horizontal")
+                    .Where(e => e.Attribute("Grid.Column") is null)
+                    .Select(e => (string?)e.Attribute("HorizontalAlignment") ?? "Left")
+                    .ToList();
+
+                if (alignements.Count >= 2 && alignements.Contains("Right"))
+                {
+                    fautes.Add($"  {Path.GetFileName(fichier)} : {string.Join(" + ", alignements)}");
+                }
+            }
+        }
+
+        Assert.True(fautes.Count == 0,
+            "Groupes horizontaux superposés dans une même cellule :" + Environment.NewLine +
+            string.Join(Environment.NewLine, fautes));
+    }
+
 }

@@ -92,8 +92,19 @@
             </Grid>
 
             <StackPanel Grid.Row="2" Margin="0,14,0,0">
+                <!--
+                    Chaque groupe dans sa colonne. Réunis dans une seule
+                    cellule, celui de gauche grandit avec ses libellés et
+                    passe sous celui de droite.
+                -->
                 <Grid Margin="0,0,0,14">
-                    <StackPanel Orientation="Horizontal">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
                         <Button Content="Tout cocher"
                                 Style="{StaticResource BoutonSecondaire}"
                                 Command="{Binding ToutSelectionnerCommand}"
@@ -103,7 +114,7 @@
                                 Command="{Binding ToutDeselectionnerCommand}" />
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
                         <TextBlock Text="Seuil d'alerte" Style="{StaticResource TexteSecondaire}"
                                    VerticalAlignment="Center" Margin="0,0,8,0" />
                         <TextBox Style="{StaticResource ChampTexte}" Width="80"

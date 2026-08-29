@@ -16,6 +16,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Margin="0,0,0,14">
@@ -48,8 +49,47 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <Grid Grid.Row="2" Margin="0,14,0,0">
-                <StackPanel Orientation="Horizontal">
+            <!--
+                Compteur permanent, sur sa propre ligne sous le tableau.
+
+                Il était auparavant à la suite des deux boutons de gauche,
+                dans la même cellule que ceux de droite : son texte grandit
+                avec le nombre d'articles, et venait passer sous « Annuler ».
+                Une cellule ne contient qu'un groupe.
+            -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource PinceauSurfaceAlterne}"
+                    BorderBrush="{StaticResource PinceauBordure}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14,9"
+                    Margin="0,14,0,0">
+                <TextBlock Text="{Binding ResumeReception}"
+                           TextWrapping="Wrap">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource TexteSecondaire}">
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter Property="Foreground" Value="{StaticResource PinceauSucces}" />
+                            <Style.Triggers>
+                                <!-- Rien de saisi : le compteur ne s'annonce pas comme un résultat. -->
+                                <DataTrigger Binding="{Binding TotalRecu}" Value="0">
+                                    <Setter Property="FontWeight" Value="Normal" />
+                                    <Setter Property="Foreground" Value="{StaticResource PinceauTexteSecondaire}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Border>
+
+            <Grid Grid.Row="3" Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <Button Content="Tout recevoir"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding ToutRecevoirCommand}"
@@ -58,19 +98,9 @@
                     <Button Content="Tout remettre à zéro"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding RienRecevoirCommand}" />
-
-                    <!--
-                        Compteur permanent. C'est lui qui montre, avant de
-                        valider, qu'on réceptionne trois articles et non la
-                        commande entière.
-                    -->
-                    <TextBlock Text="{Binding ResumeReception}"
-                               Style="{StaticResource TexteSecondaire}"
-                               VerticalAlignment="Center"
-                               Margin="16,0,0,0" />
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <Button Content="Annuler"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding AnnulerCommand}"
