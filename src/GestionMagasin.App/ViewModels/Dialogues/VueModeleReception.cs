@@ -23,8 +23,16 @@ public partial class LigneReceptionSaisie : ObservableObject
 
     public int Restante => QuantiteCommandee - DejaRecue;
 
+    /// <summary>
+    /// Prévient la fenêtre qu'une quantité a changé, pour qu'elle recompte le
+    /// total annoncé.
+    /// </summary>
+    internal Action? SurChangement { get; set; }
+
     [ObservableProperty]
     private int _quantiteRecue;
+
+    partial void OnQuantiteRecueChanged(int value) => SurChangement?.Invoke();
 }
 
 /// <summary>
@@ -59,6 +67,30 @@ public partial class VueModeleReception : VueModeleBase
 
     public event EventHandler<bool>? FermetureDemandee;
 
+    /// <summary>
+    /// Nombre d'articles que la validation ferait entrer en stock.
+    ///
+    /// Affiché en permanence, et non seulement dans la demande de
+    /// confirmation : c'est ce compteur resté à zéro, ou monté au total de la
+    /// commande, qui signale d'un coup d'œil qu'on ne réceptionne pas ce
+    /// qu'on croyait.
+    /// </summary>
+    public int TotalRecu => Lignes.Sum(l => l.QuantiteRecue);
+
+    /// <summary>Résumé de ce qui va être réceptionné.</summary>
+    public string ResumeReception => TotalRecu switch
+    {
+        0 => "Aucun article saisi pour l'instant.",
+        1 => "1 article entrera en stock à la validation.",
+        _ => $"{TotalRecu} articles entreront en stock à la validation."
+    };
+
+    private void Recompter()
+    {
+        OnPropertyChanged(nameof(TotalRecu));
+        OnPropertyChanged(nameof(ResumeReception));
+    }
+
     /// <summary>Charge les lignes restant à recevoir.</summary>
     public void Preparer(AchatDto achat)
     {
@@ -77,11 +109,26 @@ public partial class VueModeleReception : VueModeleBase
                 Sku = ligne.Sku,
                 QuantiteCommandee = ligne.Quantite,
                 DejaRecue = ligne.QuantiteRecue,
-                // La quantité restante est proposée par défaut : la réception
-                // complète, cas le plus fréquent, ne demande aucune saisie.
-                QuantiteRecue = ligne.QuantiteRestante
+                // Rien n'est proposé d'avance, et c'est tout l'objet de cette
+                // fenêtre.
+                //
+                // Elle ne s'ouvre que par « Réception partielle » : la
+                // réception complète a son propre bouton, qui ne passe pas
+                // par ici. Pré-remplir chaque ligne avec ce qu'il reste
+                // rendait donc les deux boutons identiques — le magasin
+                // n'ayant reçu qu'un carton sur trois validait la commande
+                // entière sans s'en apercevoir, et le stock annonçait des
+                // articles qui n'étaient jamais arrivés.
+                //
+                // Les quantités partent de zéro : on saisit ce qui est
+                // réellement sur le quai. « Tout recevoir » reste là pour
+                // remplir d'un geste si finalement tout est arrivé.
+                QuantiteRecue = 0,
+                SurChangement = Recompter
             });
         }
+
+        Recompter();
     }
 
     [RelayCommand]

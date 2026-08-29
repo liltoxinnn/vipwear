@@ -538,4 +538,41 @@ public class TestsInterface
             "Effets appliqués à du contenu textuel :" + Environment.NewLine +
             string.Join(Environment.NewLine, fautes));
     }
+
+    /// <summary>
+    /// La fenêtre de réception ne doit rien proposer d'avance.
+    ///
+    /// Elle ne s'ouvre que par « Réception partielle » — la réception
+    /// complète a son propre bouton, qui ne passe pas par elle. Pré-remplir
+    /// chaque ligne avec la quantité restante rendait les deux boutons
+    /// identiques : le magasin qui n'avait reçu qu'un carton sur quatre
+    /// validait la commande entière sans s'en apercevoir, et le stock
+    /// annonçait des articles jamais arrivés, qui se vendaient ensuite en
+    /// caisse.
+    /// </summary>
+    [Fact]
+    public void La_reception_partielle_ne_propose_aucune_quantite_d_avance()
+    {
+        var fichier = Path.Combine(
+            DossierInterface, "ViewModels", "Dialogues", "VueModeleReception.cs");
+
+        Assert.True(File.Exists(fichier), $"Introuvable : {fichier}");
+
+        var source = File.ReadAllText(fichier);
+
+        var preparation = Regex.Match(
+            source,
+            @"public void Preparer\(.*?\n    \}",
+            RegexOptions.Singleline);
+
+        Assert.True(preparation.Success, "La méthode Preparer est introuvable.");
+
+        var corps = preparation.Value;
+
+        Assert.DoesNotMatch(
+            new Regex(@"QuantiteRecue\s*=\s*ligne\.QuantiteRestante"),
+            corps);
+
+        Assert.Matches(new Regex(@"QuantiteRecue\s*=\s*0"), corps);
+    }
 }

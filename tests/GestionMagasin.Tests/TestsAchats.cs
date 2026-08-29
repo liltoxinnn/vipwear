@@ -93,6 +93,51 @@ public class TestsAchats : BaseDeTest
         Assert.Equal(30, await StockAsync(variante.Id));
     }
 
+    /// <summary>
+    /// Une commande porte plusieurs articles, et le fournisseur en livre
+    /// rarement la totalité d'un coup. Réceptionner une ligne ne doit toucher
+    /// qu'elle : les autres restent dues, et surtout leur stock ne bouge pas.
+    ///
+    /// La fenêtre de réception partielle proposait d'avance, sur chaque ligne,
+    /// la quantité restante. Le magasin qui ne recevait qu'un carton sur
+    /// quatre validait donc la commande entière sans le voir, et le stock
+    /// annonçait des articles jamais arrivés — qui se vendaient en caisse.
+    /// </summary>
+    [Fact]
+    public async Task Receptionner_une_seule_ligne_ne_touche_pas_les_autres()
+    {
+        var (_, premier) = await ConstructeurDonnees.CreerArticleAsync(Produits, quantiteInitiale: 0);
+        var (_, second) = await ConstructeurDonnees.CreerArticleAsync(Produits, quantiteInitiale: 0);
+        var fournisseur = await ConstructeurDonnees.CreerFournisseurAsync(Fournisseurs);
+
+        var achat = await Achats.CreerAchatAsync(new DemandeAchat
+        {
+            FournisseurId = fournisseur.Id,
+            Lignes =
+            [
+                new LigneAchatDemande { VarianteProduitId = premier.Id, Quantite = 3, PrixUnitaire = 1200m },
+                new LigneAchatDemande { VarianteProduitId = second.Id, Quantite = 4, PrixUnitaire = 1200m }
+            ]
+        });
+
+        var ligneDuPremier = achat.Lignes.First(l => l.VarianteProduitId == premier.Id);
+
+        var apres = await Achats.ReceptionnerAsync(achat.Id,
+            [new LigneReception { LigneAchatId = ligneDuPremier.Id, QuantiteRecue = 3 }]);
+
+        Assert.Equal(StatutAchat.PartiellementRecu, apres.Statut);
+        Assert.Equal(3, await StockAsync(premier.Id));
+
+        // Le second article n'a pas été livré : ni son stock ni sa ligne ne
+        // doivent avoir bougé.
+        Assert.Equal(0, await StockAsync(second.Id));
+
+        var ligneDuSecond = apres.Lignes.First(l => l.VarianteProduitId == second.Id);
+
+        Assert.Equal(0, ligneDuSecond.QuantiteRecue);
+        Assert.Equal(4, ligneDuSecond.QuantiteRestante);
+    }
+
     [Fact]
     public async Task Receptionner_plus_que_commande_est_refuse()
     {

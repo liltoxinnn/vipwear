@@ -26,9 +26,9 @@
                     <Run Text=" • " /><Run Text="{Binding Fournisseur, Mode=OneWay}" />
                 </TextBlock>
 
-                <TextBlock Text="Saisissez les quantités réellement reçues. Le stock sera augmenté d'autant à la validation."
-                           Style="{StaticResource TexteSecondaire}"
-                           TextWrapping="Wrap" Margin="0,8,0,0" />
+                <TextBlock Style="{StaticResource TexteSecondaire}"
+                           TextWrapping="Wrap" Margin="0,8,0,0"
+                           Text="Saisissez les quantités réellement reçues. Une ligne laissée à zéro n'est pas réceptionnée : elle restera due par le fournisseur." />
             </StackPanel>
 
             <DataGrid Grid.Row="1"
@@ -58,6 +58,16 @@
                     <Button Content="Tout remettre à zéro"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding RienRecevoirCommand}" />
+
+                    <!--
+                        Compteur permanent. C'est lui qui montre, avant de
+                        valider, qu'on réceptionne trois articles et non la
+                        commande entière.
+                    -->
+                    <TextBlock Text="{Binding ResumeReception}"
+                               Style="{StaticResource TexteSecondaire}"
+                               VerticalAlignment="Center"
+                               Margin="16,0,0,0" />
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
