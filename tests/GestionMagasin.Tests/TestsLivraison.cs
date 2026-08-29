@@ -111,6 +111,30 @@ public class TestsLivraison
     }
 
     /// <summary>
+    /// L'icône du programme doit être tirée du logo du magasin, et la
+    /// conversion doit précéder la compilation : le fichier projet lit
+    /// « logo.ico » au moment où il fabrique l'exécutable. Convertie après,
+    /// elle n'aurait servi qu'à la publication suivante — et le magasin
+    /// aurait vu son logo dans le logiciel mais l'emblème dessiné sur son
+    /// raccourci de bureau.
+    /// </summary>
+    [Fact]
+    public void L_icone_est_tiree_du_logo_avant_la_compilation()
+    {
+        Assert.Contains("Convertir-LogoEnIcone", Publication, StringComparison.Ordinal);
+
+        var conversion = Publication.IndexOf("Convertir-LogoEnIcone `", StringComparison.Ordinal);
+        var compilation = Publication.IndexOf("dotnet publish", StringComparison.Ordinal);
+
+        Assert.True(conversion > 0, "La conversion du logo en icône est absente.");
+        Assert.True(compilation > 0, "L'étape de compilation est introuvable.");
+
+        Assert.True(conversion < compilation,
+            "Le logo est converti après la compilation : l'exécutable porterait " +
+            "encore l'icône de la publication précédente.");
+    }
+
+    /// <summary>
     /// Windows PowerShell lit un script sans marque d'ordre des octets dans
     /// la page de codes du système, et non en UTF-8. « échoué » s'y affiche
     /// « Ã©chouÃ© », et le nom de l'enseigne « VIP MENâ€™S STORE ». Les

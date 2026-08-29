@@ -54,3 +54,8 @@ livraison/
 # Fichiers PostgreSQL livres avec le logiciel : environ 130 Mo,
 # recuperes par outils/telecharger-postgres.ps1
 pgsql/
+
+# Icone tiree du logo du magasin par le script de publication. Elle
+# appartient au commerce et non au logiciel : chaque magasin produit la
+# sienne, l'embleme dessine servant de recours.
+src/GestionMagasin.App/logo.ico

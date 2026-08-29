@@ -36,21 +36,68 @@ public class TestsIcone
     }
 
     [Fact]
-    public void Le_projet_declare_une_icone_qui_existe()
+    public void Le_projet_declare_une_icone_de_recours_qui_existe()
+    {
+        var projet = File.ReadAllText(
+            Path.Combine(DossierInterface, "GestionMagasin.App.csproj"));
+
+        var declarations = System.Text.RegularExpressions.Regex.Matches(
+            projet, @"<ApplicationIcon[^>]*>([^<]+)</ApplicationIcon>");
+
+        Assert.True(declarations.Count > 0,
+            "Aucune icône déclarée : Windows retomberait sur celle de WPF.");
+
+        // « logo.ico » est produit par le script de publication à partir du
+        // logo du magasin, et n'est donc pas versionné. L'emblème dessiné,
+        // lui, doit toujours être là : c'est le recours.
+        var recours = declarations
+            .Select(d => d.Groups[1].Value.Trim())
+            .Where(nom => !nom.Equals("logo.ico", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        Assert.True(recours.Count > 0,
+            "Aucune icône de recours : sans logo de magasin, le programme n'en aurait aucune.");
+
+        foreach (var nom in recours)
+        {
+            var fichier = Path.Combine(DossierInterface, nom);
+
+            Assert.True(File.Exists(fichier), $"L'icône déclarée est introuvable : {fichier}");
+        }
+    }
+
+    /// <summary>
+    /// Sans conscience du zoom d'affichage, Windows dessine le logiciel à
+    /// cent pour cent puis étire l'image entière au facteur voulu. Sur un
+    /// écran réglé à 125 ou 150 % — le réglage d'usine de presque tous les
+    /// portables — tout devient flou : le texte, les bordures, le logo. Le
+    /// magasin croit alors le logiciel mal fait.
+    /// </summary>
+    [Fact]
+    public void Le_manifeste_declare_la_conscience_du_zoom_d_affichage()
     {
         var projet = File.ReadAllText(
             Path.Combine(DossierInterface, "GestionMagasin.App.csproj"));
 
         var declaration = System.Text.RegularExpressions.Regex.Match(
-            projet, @"<ApplicationIcon>([^<]+)</ApplicationIcon>");
+            projet, @"<ApplicationManifest>([^<]+)</ApplicationManifest>");
 
         Assert.True(declaration.Success,
-            "Aucune icône déclarée : Windows retomberait sur celle de WPF.");
+            "Aucun manifeste déclaré : le logiciel serait étiré au lieu d'être redessiné.");
 
         var fichier = Path.Combine(DossierInterface, declaration.Groups[1].Value.Trim());
 
-        Assert.True(File.Exists(fichier),
-            $"L'icône déclarée est introuvable : {fichier}");
+        Assert.True(File.Exists(fichier), $"Le manifeste est introuvable : {fichier}");
+
+        var manifeste = File.ReadAllText(fichier);
+
+        Assert.Contains("PerMonitorV2", manifeste, StringComparison.Ordinal);
+        Assert.Contains("<dpiAware", manifeste, StringComparison.Ordinal);
+
+        // La conscience par moniteur n'est honorée que si le programme se
+        // déclare compatible avec Windows 10 : sans cette ligne, Windows le
+        // traite comme écrit pour Vista et l'étire quand même.
+        Assert.Contains("8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a", manifeste, StringComparison.Ordinal);
     }
 
     /// <summary>

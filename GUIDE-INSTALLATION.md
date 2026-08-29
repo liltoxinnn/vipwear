@@ -324,6 +324,24 @@ même pendant que le logiciel travaille.
 
 ---
 
+## Votre logo
+
+Déposez votre logo à la racine du dossier, sous le nom exact **`logo.png`**,
+avant de lancer `publier.ps1`. Il devient alors :
+
+- l'emblème affiché dans le menu et sur l'écran de connexion ;
+- l'icône du programme — barre des tâches, raccourci du bureau, Explorateur ;
+- l'icône de chaque fenêtre.
+
+Une image carrée donne le meilleur résultat. Sans logo, l'emblème dessiné
+dans le logiciel prend le relais : le logiciel n'est jamais livré sans
+enseigne.
+
+Vous pouvez aussi changer le logo depuis **Paramètres** (F12) sans
+republier : le menu et les barres de titre suivent immédiatement.
+
+---
+
 ## Rappel des raccourcis clavier
 
 | Touche | Écran |

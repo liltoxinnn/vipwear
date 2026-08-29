@@ -124,6 +124,123 @@ if (Test-Path $cheminSortie) {
     }
 }
 
+# ---------------------------------------------------------------------
+# Icone du programme
+#
+# Le logo du magasin devient l'icone de l'executable : barre des taches,
+# raccourci du bureau, Explorateur. Sans cette conversion, le magasin
+# voyait son logo dans le logiciel mais l'embleme dessine sur son
+# raccourci — deux emblemes pour un seul commerce.
+#
+# La conversion doit avoir lieu avant la compilation : le fichier projet
+# lit « logo.ico » au moment ou il fabrique l'executable.
+# ---------------------------------------------------------------------
+function Convertir-LogoEnIcone {
+    param(
+        [Parameter(Mandatory = $true)][string]$Source,
+        [Parameter(Mandatory = $true)][string]$Destination
+    )
+
+    Add-Type -AssemblyName System.Drawing
+
+    # Windows choisit dans le fichier la taille qui lui convient. N'y mettre
+    # que le grand format ferait reduire l'image a la volee dans la barre
+    # des taches, ou elle paraitrait sale.
+    $tailles = @(16, 24, 32, 48, 64, 128, 256)
+
+    $image = $null
+    $vignettes = @()
+
+    try {
+        $image = [System.Drawing.Image]::FromFile($Source)
+
+        foreach ($taille in $tailles) {
+            $carre = New-Object System.Drawing.Bitmap $taille, $taille
+            $dessin = [System.Drawing.Graphics]::FromImage($carre)
+
+            $dessin.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+            $dessin.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+            $dessin.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+            $dessin.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+            $dessin.Clear([System.Drawing.Color]::Transparent)
+            $dessin.DrawImage($image, 0, 0, $taille, $taille)
+            $dessin.Dispose()
+
+            $memoire = New-Object System.IO.MemoryStream
+            $carre.Save($memoire, [System.Drawing.Imaging.ImageFormat]::Png)
+            $carre.Dispose()
+
+            $vignettes += ,@($taille, $memoire.ToArray())
+            $memoire.Dispose()
+        }
+    }
+    finally {
+        if ($image) { $image.Dispose() }
+    }
+
+    # Assemblage du conteneur ICO : un en-tete, un repertoire de six octets
+    # par image, puis les images elles-memes, au format PNG.
+    $flux = New-Object System.IO.MemoryStream
+    $ecrivain = New-Object System.IO.BinaryWriter $flux
+
+    $ecrivain.Write([UInt16]0)                     # reserve
+    $ecrivain.Write([UInt16]1)                     # type : icone
+    $ecrivain.Write([UInt16]$vignettes.Count)
+
+    $decalage = 6 + 16 * $vignettes.Count
+
+    foreach ($vignette in $vignettes) {
+        $taille = $vignette[0]
+        $octets = $vignette[1]
+
+        # Zero designe 256 : un octet ne va pas plus loin.
+        $ecrivain.Write([Byte]($(if ($taille -ge 256) { 0 } else { $taille })))
+        $ecrivain.Write([Byte]($(if ($taille -ge 256) { 0 } else { $taille })))
+        $ecrivain.Write([Byte]0)                   # palette
+        $ecrivain.Write([Byte]0)                   # reserve
+        $ecrivain.Write([UInt16]1)                 # plans
+        $ecrivain.Write([UInt16]32)                # bits par pixel
+        $ecrivain.Write([UInt32]$octets.Length)
+        $ecrivain.Write([UInt32]$decalage)
+
+        $decalage += $octets.Length
+    }
+
+    foreach ($vignette in $vignettes) {
+        $ecrivain.Write($vignette[1])
+    }
+
+    $ecrivain.Flush()
+    [System.IO.File]::WriteAllBytes($Destination, $flux.ToArray())
+    $ecrivain.Dispose()
+    $flux.Dispose()
+}
+
+$nomsLogoSource = @("logo.png", "logo.jpg", "logo.jpeg", "logo.bmp")
+$logoSource = $nomsLogoSource | Where-Object { Test-Path (Join-Path $PSScriptRoot $_) } | Select-Object -First 1
+$cheminIcone = Join-Path $PSScriptRoot "src\GestionMagasin.App\logo.ico"
+
+if ($logoSource) {
+    try {
+        Convertir-LogoEnIcone `
+            -Source (Join-Path $PSScriptRoot $logoSource) `
+            -Destination $cheminIcone
+
+        Write-Host "Icone du programme tiree de $logoSource." -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Le logo n'a pas pu servir d'icone : $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host "L'embleme dessine sera employe a la place." -ForegroundColor Yellow
+
+        if (Test-Path $cheminIcone) { Remove-Item $cheminIcone -Force }
+    }
+}
+elseif (Test-Path $cheminIcone) {
+    # Le logo a ete retire depuis la derniere publication : l'icone qui en
+    # decoulait ne doit pas survivre.
+    Remove-Item $cheminIcone -Force
+}
+
 $autonome = -not $Allegee
 
 if ($autonome) {

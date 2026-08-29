@@ -39,9 +39,61 @@ public partial class App : System.Windows.Application
     /// </summary>
     private ServeurPostgresEmbarque? _serveur;
 
+    /// <summary>
+    /// Fait porter le logo du magasin à toutes les fenêtres : barre de titre
+    /// et barre des tâches.
+    ///
+    /// Le geste est posé une fois pour toutes, sur la classe Window, plutôt
+    /// qu'écrit dans chacune des quinze fenêtres : une fenêtre ajoutée plus
+    /// tard hériterait sinon de l'icône du programme, et le magasin verrait
+    /// deux emblèmes différents selon l'écran ouvert.
+    ///
+    /// Sans logo déposé, rien n'est fait : Windows retombe alors sur l'icône
+    /// de l'exécutable, qui porte l'emblème dessiné.
+    /// </summary>
+    private static void InstallerIconeDesFenetres()
+    {
+        EventManager.RegisterClassHandler(
+            typeof(Window),
+            FrameworkElement.LoadedEvent,
+            new RoutedEventHandler((expediteur, _) =>
+            {
+                if (expediteur is Window fenetre)
+                {
+                    AppliquerIcone(fenetre);
+                }
+            }));
+
+        // Le magasin peut changer son logo depuis l'écran Paramètres. Les
+        // fenêtres déjà ouvertes suivent, sans quoi la barre de titre
+        // continuerait d'afficher l'ancien jusqu'au prochain démarrage.
+        Enseigne.Courante.PropertyChanged += (_, argument) =>
+        {
+            if (argument.PropertyName is not (nameof(Enseigne.Logo) or nameof(Enseigne.LogoPresent)))
+            {
+                return;
+            }
+
+            foreach (Window fenetre in Current.Windows)
+            {
+                AppliquerIcone(fenetre);
+            }
+        };
+    }
+
+    private static void AppliquerIcone(Window fenetre)
+    {
+        if (Enseigne.Courante.Logo is { } logo)
+        {
+            fenetre.Icon = logo;
+        }
+    }
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        InstallerIconeDesFenetres();
 
         try
         {

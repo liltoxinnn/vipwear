@@ -13,8 +13,21 @@
       Les fenêtres WPF la reprennent d'elles-mêmes : aucune n'a besoin de
       fixer sa propre Icon.
     -->
-    <ApplicationIcon>vipmensstore.ico</ApplicationIcon>
+    <!--
+      Le logo du magasin l'emporte lorsqu'il a été converti par le script de
+      publication ; l'emblème dessiné sert de recours. « logo.ico » n'est pas
+      versionné : il appartient au magasin, pas au logiciel.
+    -->
+    <ApplicationIcon Condition="Exists('$(MSBuildProjectDirectory)\logo.ico')">logo.ico</ApplicationIcon>
+    <ApplicationIcon Condition="'$(ApplicationIcon)' == ''">vipmensstore.ico</ApplicationIcon>
     <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
+    <!--
+      Manifeste Windows. Il déclare surtout la conscience du zoom
+      d'affichage : sans elle, Windows étire l'image du logiciel au lieu de
+      le laisser se redessiner, et tout paraît flou sur un écran réglé à
+      125 ou 150 %.
+    -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <!--
       Horodatage de compilation, ajouté au numéro de version. Le menu
       l'affiche : c'est le seul repère qui distingue une livraison de la

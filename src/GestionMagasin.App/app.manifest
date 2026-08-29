@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.0.0.0" name="VIPMensStore.app" />
+
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <!--
+          Le logiciel travaille dans le dossier de l'utilisateur : il n'a
+          jamais besoin des droits d'administrateur, et les réclamer ferait
+          apparaître un avertissement Windows à chaque démarrage.
+        -->
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!--
+        Versions de Windows reconnues. Sans cette liste, Windows traite le
+        programme comme écrit pour Windows Vista et lui refuse les réglages
+        d'affichage modernes déclarés plus bas.
+      -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" /><!-- Windows 10 et 11 -->
+      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}" /><!-- Windows 8.1 -->
+      <supportedOS Id="{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}" /><!-- Windows 8 -->
+      <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}" /><!-- Windows 7 -->
+    </application>
+  </compatibility>
+
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <!--
+        Netteté sur les écrans agrandis.
+
+        Sans cette déclaration, Windows considère que le programme ignore le
+        zoom d'affichage : il le laisse dessiner à cent pour cent puis étire
+        l'image entière au facteur voulu. Sur un écran réglé à 125 ou 150 %
+        — le réglage par défaut de presque tous les portables vendus
+        aujourd'hui — tout devient flou : le texte, les bordures, le logo.
+        C'est une image agrandie, pas un dessin.
+
+        Déclarer la conscience par moniteur rend la main à WPF, qui redessine
+        à la bonne taille au lieu de subir un agrandissement. La version 2
+        prolonge cela aux barres de titre et aux boîtes de dialogue, et suit
+        le changement d'écran : un portable branché sur la télévision du
+        magasin reste net des deux côtés.
+
+        Les deux balises coexistent volontairement : les Windows anciens
+        lisent la première, les récents la seconde.
+      -->
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+    </windowsSettings>
+  </application>
+</assembly>
