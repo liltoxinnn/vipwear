@@ -801,6 +801,118 @@
     </Style>
 
     <!-- ============================================================
+         Saisie d'une quantité au doigt
+
+         Trois pièces : deux boutons de part et d'autre d'un nombre écrit
+         en grand. Corriger un écart d'une ou deux unités — le cas courant
+         en réserve — ne demande alors aucun clavier, et le nombre reste
+         saisissable pour les écarts plus larges.
+         ============================================================ -->
+    <Style x:Key="BoutonCompteur" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Width" Value="52" />
+        <Setter Property="Height" Value="52" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fond"
+                            Background="{StaticResource PinceauSurfaceAlterne}"
+                            BorderBrush="{StaticResource PinceauBordureForte}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            SnapsToDevicePixels="True">
+                        <TextBlock x:Name="Signe"
+                                   Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                   FontSize="24"
+                                   Foreground="{StaticResource PinceauTexte}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fond" Property="Background" Value="{StaticResource PinceauFondOr}" />
+                            <Setter TargetName="Fond" Property="BorderBrush" Value="{StaticResource PinceauOr}" />
+                            <Setter TargetName="Signe" Property="Foreground" Value="{StaticResource PinceauOrFonce}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Fond" Property="Background" Value="{StaticResource PinceauOrClair}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ChampNombre" TargetType="TextBox" BasedOn="{StaticResource ChampTexte}">
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="MinHeight" Value="52" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauOr}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- ============================================================
+         Motif proposé d'un tapotement
+
+         Le motif n'est plus obligatoire. Mais un historique de stock sans
+         motif ne se relit pas : ces quatre pastilles remplissent le champ
+         en un geste, ce qui donne un historique lisible sans rien exiger.
+         ============================================================ -->
+    <Style x:Key="PuceMotif" TargetType="Button">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="0,0,7,7" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Fond"
+                            Background="{StaticResource PinceauSurfaceAlterne}"
+                            BorderBrush="{StaticResource PinceauBordureForte}"
+                            BorderThickness="1"
+                            CornerRadius="17"
+                            Padding="14,6"
+                            SnapsToDevicePixels="True">
+                        <TextBlock x:Name="Libelle"
+                                   Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                   FontSize="{StaticResource TaillePetite}"
+                                   Foreground="{StaticResource PinceauTexteSecondaire}"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fond" Property="Background" Value="{StaticResource PinceauFondOr}" />
+                            <Setter TargetName="Fond" Property="BorderBrush" Value="{StaticResource PinceauOr}" />
+                            <Setter TargetName="Libelle" Property="Foreground" Value="{StaticResource PinceauOrFonce}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Fond" Property="Background" Value="{StaticResource PinceauOrClair}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============================================================
+         En-tête d'une fenêtre de saisie
+
+         La barre de titre de Windows ne dit que le nom de la fenêtre. Ce
+         bandeau porte ce dont la saisie a besoin : l'article concerné, son
+         code, et l'état d'où l'on part.
+         ============================================================ -->
+    <Style x:Key="BandeauFenetre" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource PinceauPrincipal}" />
+        <Setter Property="BorderBrush" Value="{StaticResource PinceauOr}" />
+        <Setter Property="BorderThickness" Value="0,0,0,2" />
+        <Setter Property="CornerRadius" Value="16,16,0,0" />
+        <Setter Property="Padding" Value="20,16" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!-- ============================================================
          Quantité corrigeable d'un clic
 
          Une quantité de stock n'est pas une donnée à consulter : c'est la

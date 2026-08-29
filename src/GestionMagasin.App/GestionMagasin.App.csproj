@@ -6,7 +6,14 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>GestionMagasin.App</RootNamespace>
     <AssemblyName>GestionMagasin</AssemblyName>
-    <ApplicationIcon />
+    <!--
+      Icône du programme : le lion couronné de l'enseigne, aux sept tailles
+      que Windows réclame. Sans elle, chaque barre de titre et la barre des
+      tâches affichaient l'icône par défaut de WPF, crénelée.
+      Les fenêtres WPF la reprennent d'elles-mêmes : aucune n'a besoin de
+      fixer sa propre Icon.
+    -->
+    <ApplicationIcon>vipmensstore.ico</ApplicationIcon>
     <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
     <!-- Nom vu par Windows : barre des tâches, propriétés du fichier, gestionnaire des tâches. -->
     <Product>VIP MEN’S STORE</Product>

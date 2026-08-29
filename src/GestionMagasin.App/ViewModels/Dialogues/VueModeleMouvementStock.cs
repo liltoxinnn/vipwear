@@ -85,6 +85,62 @@ public partial class VueModeleMouvementStock : VueModeleBase
     private string _motif = string.Empty;
 
     /// <summary>
+    /// Motifs proposés d'un geste. Le motif reste facultatif, mais il figure
+    /// dans l'historique du stock : c'est ce qui permet, trois mois plus tard,
+    /// de distinguer un vol d'une erreur de saisie. Le proposer en un tapotement
+    /// donne un historique lisible sans rien imposer au vendeur.
+    /// </summary>
+    public IReadOnlyList<string> MotifsCourants { get; } =
+    [
+        "Inventaire",
+        "Article abîmé",
+        "Perte ou vol",
+        "Erreur de saisie"
+    ];
+
+    /// <summary>Écart entre le stock enregistré et la quantité retenue.</summary>
+    public int Ecart => StockApres - StockActuel;
+
+    /// <summary>
+    /// Écart mis en toutes lettres, à côté du nouveau total : « +5 »,
+    /// « −3 » ou l'absence de changement.
+    /// </summary>
+    public string LibelleEcart => Ecart switch
+    {
+        0 => "aucun changement",
+        > 0 => $"+{Ecart}",
+        _ => $"−{-Ecart}"
+    };
+
+    /// <summary>Vrai lorsque l'opération ajoute des articles au rayon.</summary>
+    public bool EcartPositif => Ecart > 0;
+
+    /// <summary>Vrai lorsque l'opération en retire.</summary>
+    public bool EcartNegatif => Ecart < 0;
+
+    /// <summary>
+    /// Motif finalement inscrit dans l'historique.
+    ///
+    /// Le champ est facultatif à la saisie — l'exiger faisait perdre du temps
+    /// à chaque correction, pour un texte souvent tapé au hasard. Mais
+    /// l'historique, lui, ne peut pas rester muet : sans motif, personne ne
+    /// saurait plus tard pourquoi une quantité a changé. Une mention par
+    /// défaut est donc écrite à la place.
+    /// </summary>
+    private string MotifRetenu => string.IsNullOrWhiteSpace(Motif)
+        ? MotifParDefaut
+        : Motif.Trim();
+
+    /// <summary>Mention inscrite à défaut de motif saisi.</summary>
+    private string MotifParDefaut => EstAjustement
+        ? "Ajustement d'inventaire"
+        : "Mouvement manuel";
+
+    /// <summary>Rappel affiché sous le champ, pour que rien ne soit une surprise.</summary>
+    public string MentionMotifParDefaut =>
+        $"Laissé vide, l'historique du stock portera la mention « {MotifParDefaut} ».";
+
+    /// <summary>
     /// Sens retenu pour le mouvement. Une entrée par défaut : c'est le geste
     /// le plus courant, et la fenêtre ne doit jamais rester sans sens valide.
     /// </summary>
@@ -114,7 +170,47 @@ public partial class VueModeleMouvementStock : VueModeleBase
     {
         OnPropertyChanged(nameof(StockApres));
         OnPropertyChanged(nameof(StockNegatif));
+        OnPropertyChanged(nameof(Ecart));
+        OnPropertyChanged(nameof(LibelleEcart));
+        OnPropertyChanged(nameof(EcartPositif));
+        OnPropertyChanged(nameof(EcartNegatif));
     }
+
+    /// <summary>
+    /// Ajoute un article à la quantité retenue. Les deux boutons permettent
+    /// de corriger un écart d'une ou deux unités — le cas le plus fréquent —
+    /// sans clavier, ce qui compte sur un écran tactile posé en réserve.
+    /// </summary>
+    [RelayCommand]
+    private void Augmenter()
+    {
+        if (EstAjustement)
+        {
+            QuantiteConstatee++;
+        }
+        else
+        {
+            Quantite++;
+        }
+    }
+
+    /// <summary>Retire un article, sans jamais descendre sous zéro.</summary>
+    [RelayCommand]
+    private void Diminuer()
+    {
+        if (EstAjustement)
+        {
+            QuantiteConstatee = Math.Max(0, QuantiteConstatee - 1);
+        }
+        else
+        {
+            Quantite = Math.Max(1, Quantite - 1);
+        }
+    }
+
+    /// <summary>Inscrit un motif proposé.</summary>
+    [RelayCommand]
+    private void ChoisirMotif(string? motif) => Motif = motif ?? string.Empty;
 
     /// <summary>Prépare la fenêtre pour l'article sélectionné.</summary>
     public void Preparer(LigneStockDto ligne, bool estAjustement)
@@ -131,21 +227,13 @@ public partial class VueModeleMouvementStock : VueModeleBase
         TypeMouvement = estAjustement ? TypeMouvementStock.Ajustement : TypeMouvementStock.Correction;
 
         OnPropertyChanged(nameof(Titre));
+        OnPropertyChanged(nameof(MentionMotifParDefaut));
         NotifierResultat();
     }
 
     [RelayCommand]
     private async Task ValiderAsync()
     {
-        if (string.IsNullOrWhiteSpace(Motif))
-        {
-            Dialogue.Avertir(
-                "Veuillez indiquer le motif de ce mouvement : il figurera dans l'historique.",
-                "Motif obligatoire");
-
-            return;
-        }
-
         if (!EstAjustement && Quantite <= 0)
         {
             Dialogue.Avertir("La quantité doit être supérieure à zéro.", "Quantité incorrecte");
@@ -158,34 +246,30 @@ public partial class VueModeleMouvementStock : VueModeleBase
             return;
         }
 
-        var message = EstAjustement
-            ? $"Ajuster le stock de « {Designation} » de {StockActuel} à {QuantiteConstatee} ?"
-            : $"Enregistrer {(EstEntree ? "une entrée" : "une sortie")} de {Quantite} " +
-              $"article(s) pour « {Designation} » ?" + Environment.NewLine +
-              $"Le stock passera de {StockActuel} à {StockApres}.";
-
-        if (!Dialogue.Confirmer(message, "Confirmer le mouvement"))
-        {
-            return;
-        }
+        // Aucune boîte Windows par-dessus la fenêtre : celle-ci est déjà la
+        // confirmation. Elle nomme l'article, montre le stock d'avant, celui
+        // d'après et l'écart entre les deux, et rien ne part avant que le
+        // bouton ne soit pressé. Redemander « êtes-vous sûr ? » n'ajoutait
+        // aucune information — seulement un geste de plus, et l'habitude de
+        // valider sans lire.
 
         var reussi = await ExecuterAsync(
             async () =>
             {
                 if (EstAjustement)
                 {
-                    await _stock.AjusterStockAsync(VarianteProduitId, QuantiteConstatee, Motif)
+                    await _stock.AjusterStockAsync(VarianteProduitId, QuantiteConstatee, MotifRetenu)
                         .ConfigureAwait(true);
                 }
                 else if (EstEntree)
                 {
                     await _stock.EnregistrerEntreeManuelleAsync(
-                        VarianteProduitId, Quantite, TypeMouvement, Motif).ConfigureAwait(true);
+                        VarianteProduitId, Quantite, TypeMouvement, MotifRetenu).ConfigureAwait(true);
                 }
                 else
                 {
                     await _stock.EnregistrerSortieManuelleAsync(
-                        VarianteProduitId, Quantite, TypeMouvement, Motif).ConfigureAwait(true);
+                        VarianteProduitId, Quantite, TypeMouvement, MotifRetenu).ConfigureAwait(true);
                 }
             },
             "Mouvement de stock enregistré avec succès.",

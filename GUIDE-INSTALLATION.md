@@ -175,6 +175,13 @@ chiffre**.
    > ligne voisine. Le bouton **Ajuster le stock** de la barre d'outils
    > continue de fonctionner sur la ligne sélectionnée.
 
+   > La fenêtre s'ouvre sur la quantité, déjà sélectionnée : tapez le nouveau
+   > nombre, ou servez-vous des boutons **−** et **+**. Elle montre le stock
+   > d'avant, celui d'après et l'écart entre les deux ; **Confirmer**
+   > enregistre. Le **motif est facultatif** — quatre motifs courants sont
+   > proposés d'un tapotement, et à défaut l'historique portera la mention
+   > « Ajustement d'inventaire ».
+
 ---
 
 ## Sauvegarder vos données
