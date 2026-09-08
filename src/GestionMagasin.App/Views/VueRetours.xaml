@@ -18,33 +18,39 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" Style="{StaticResource BarreOutils}" Margin="0,0,0,12">
-                <StackPanel Orientation="Horizontal">
+                <!--
+                    Toute la barre se replie : elle n'a pas de colonnes, donc
+                    ce qui dépasse sortait du cadre et se retrouvait coupé par
+                    le bord arrondi, sans que rien ne le signale.
+                -->
+                <WrapPanel Orientation="Horizontal" Margin="0,-3">
                     <TextBox Style="{StaticResource ChampTexte}"
                              Width="200"
                              Text="{Binding Recherche, UpdateSourceTrigger=PropertyChanged}"
                              KeyDown="SurToucheRecherche"
-                             ToolTip="Numéro de retour ou numéro de vente" />
+                             ToolTip="Numéro de retour ou numéro de vente"
+                             Margin="0,3" />
 
                     <TextBlock Text="Du" Style="{StaticResource TexteSecondaire}"
-                               VerticalAlignment="Center" Margin="12,0,6,0" />
+                               VerticalAlignment="Center" Margin="12,3,6,3" />
                     <DatePicker Style="{StaticResource ChampDate}" Width="140"
-                                SelectedDate="{Binding DateDebut}" />
+                                SelectedDate="{Binding DateDebut}" Margin="0,3" />
 
                     <TextBlock Text="au" Style="{StaticResource TexteSecondaire}"
-                               VerticalAlignment="Center" Margin="8,0,6,0" />
+                               VerticalAlignment="Center" Margin="8,3,6,3" />
                     <DatePicker Style="{StaticResource ChampDate}" Width="140"
-                                SelectedDate="{Binding DateFin}" />
+                                SelectedDate="{Binding DateFin}" Margin="0,3" />
 
                     <Button Content="Rechercher"
                             Style="{StaticResource BoutonPrincipal}"
                             Command="{Binding RechercherCommand}"
-                            Margin="10,0,0,0" />
+                            Margin="10,3,0,3" />
 
                     <Button Content="Exporter"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding ExporterCommand}"
-                            Margin="8,0,0,0" />
-                </StackPanel>
+                            Margin="8,3,0,3" />
+                </WrapPanel>
             </Border>
 
             <Border Grid.Row="1" Style="{StaticResource Carte}" Padding="12">

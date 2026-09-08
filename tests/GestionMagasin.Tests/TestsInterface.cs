@@ -285,35 +285,152 @@ public class TestsInterface
 
         foreach (var fichier in FichiersXaml())
         {
-            var lignes = File.ReadAllLines(fichier);
+            XDocument document;
 
-            for (var i = 0; i < lignes.Length; i++)
+            try
             {
-                if (!lignes[i].Contains("<ScrollViewer", StringComparison.Ordinal))
+                document = XDocument.Load(fichier);
+            }
+            catch (System.Xml.XmlException)
+            {
+                continue;
+            }
+
+            foreach (var reparti in document.Descendants()
+                         .Where(e => e.Name.LocalName == "WrapPanel"))
+            {
+                // On remonte tous les ancêtres, et non les douze lignes qui
+                // suivent la balise : un panneau réparti peut se trouver cent
+                // lignes plus bas que la zone défilante qui le contient. La
+                // règle laissait ainsi passer les pastilles de motif de la
+                // fenêtre de mouvement de stock.
+                var coupable = reparti.Ancestors()
+                    .FirstOrDefault(a => a.Name.LocalName == "ScrollViewer"
+                                         && (string?)a.Attribute("VerticalScrollBarVisibility") == "Auto");
+
+                if (coupable is not null)
                 {
-                    continue;
-                }
-
-                // La balise ouvrante et le début de son contenu suffisent :
-                // le modèle de disposition y est toujours déclaré.
-                var portee = string.Join('\n', lignes.Skip(i).Take(12));
-
-                var escamotable = portee.Contains(
-                    "VerticalScrollBarVisibility=\"Auto\"", StringComparison.Ordinal);
-
-                var repartie = portee.Contains("<WrapPanel", StringComparison.Ordinal)
-                               || portee.Contains("ItemsPanel=", StringComparison.Ordinal);
-
-                if (escamotable && repartie)
-                {
-                    fautes.Add($"{Path.GetFileName(fichier)}:{i + 1} — barre escamotable " +
-                               "autour d'une grille répartie");
+                    fautes.Add($"  {Path.GetFileName(fichier)} : panneau réparti sous une " +
+                               "zone défilante à barre escamotable");
                 }
             }
         }
 
         Assert.True(fautes.Count == 0,
             "Mise en page instable :" + Environment.NewLine + string.Join(Environment.NewLine, fautes));
+    }
+
+    /// <summary>
+    /// Une barre de filtres ne doit pas pouvoir déborder sur les boutons
+    /// qu'elle côtoie.
+    ///
+    /// Un empilement horizontal ne se comprime pas : il mesure la somme de
+    /// ses enfants, et lorsque la fenêtre est plus étroite que cette somme il
+    /// déborde de sa colonne au lieu de rétrécir — le dernier bouton passe
+    /// sous celui de la colonne voisine. Sur un grand écran tout tient et
+    /// rien ne se voit ; sur celui du magasin, « Réinitialiser » disparaît
+    /// derrière « Exporter ».
+    ///
+    /// Un panneau qui replie mesure la largeur qu'on lui donne et passe à la
+    /// ligne.
+    /// </summary>
+    [Fact]
+    public void Les_barres_de_filtres_se_replient_au_lieu_de_deborder()
+    {
+        var fautes = new List<string>();
+
+        foreach (var fichier in FichiersXaml())
+        {
+            XDocument document;
+
+            try
+            {
+                document = XDocument.Load(fichier);
+            }
+            catch (System.Xml.XmlException)
+            {
+                continue;
+            }
+
+            var barres = document.Descendants()
+                .Where(e => e.Name.LocalName == "Border")
+                .Where(e => ((string?)e.Attribute("Style") ?? string.Empty).Contains(
+                    "BarreOutils", StringComparison.Ordinal));
+
+            foreach (var barre in barres)
+            {
+                foreach (var panneau in barre.Descendants()
+                             .Where(e => e.Name.LocalName == "StackPanel")
+                             .Where(e => (string?)e.Attribute("Orientation") == "Horizontal"))
+                {
+                    // Un empilement logé dans une colonne « Auto » élargit sa
+                    // colonne au lieu de déborder : il serre son voisin, mais
+                    // ne cache rien. Seuls débordent ceux qui reçoivent une
+                    // largeur imposée — une colonne proportionnelle, ou une
+                    // grille qui n'en déclare aucune.
+                    if (LargeurImposeeParLaColonne(panneau))
+                    {
+                        continue;
+                    }
+
+                    // Un groupe niché dans un panneau qui replie est déjà
+                    // protégé : il passe à la ligne d'un bloc. C'est même ce
+                    // qu'on veut de « Du … au … », dont les deux dates ne
+                    // doivent jamais se retrouver sur des lignes différentes.
+                    if (panneau.Ancestors().TakeWhile(a => a != barre)
+                        .Any(a => a.Name.LocalName == "WrapPanel"))
+                    {
+                        continue;
+                    }
+
+                    // Trois contrôles tiennent partout ; au-delà, la barre
+                    // dépasse la largeur d'un écran de magasin.
+                    var controles = panneau.Elements()
+                        .Count(e => !e.Name.LocalName.Contains('.', StringComparison.Ordinal));
+
+                    if (controles >= 4)
+                    {
+                        fautes.Add($"  {Path.GetFileName(fichier)} : {controles} contrôles " +
+                                   "dans un empilement horizontal");
+                    }
+                }
+            }
+        }
+
+        Assert.True(fautes.Count == 0,
+            "Barres de filtres qui peuvent déborder :" + Environment.NewLine +
+            string.Join(Environment.NewLine, fautes));
+    }
+
+    /// <summary>
+    /// Vrai lorsque la colonne d'accueil se dimensionne sur son contenu, et
+    /// non l'inverse : l'élément y grandit librement, sans jamais recouvrir
+    /// son voisin.
+    /// </summary>
+    private static bool LargeurImposeeParLaColonne(XElement element)
+    {
+        var grille = element.Parent;
+
+        if (grille is null || grille.Name.LocalName != "Grid")
+        {
+            return false;
+        }
+
+        var definitions = grille.Elements()
+            .FirstOrDefault(e => e.Name.LocalName == "Grid.ColumnDefinitions");
+
+        if (definitions is null)
+        {
+            // Sans colonnes, la grille n'a qu'une cellule : sa largeur est
+            // celle de la grille, donc imposée.
+            return false;
+        }
+
+        var index = int.TryParse((string?)element.Attribute("Grid.Column"), out var lu) ? lu : 0;
+
+        var colonne = definitions.Elements().ElementAtOrDefault(index);
+
+        return ((string?)colonne?.Attribute("Width") ?? "*") == "Auto";
     }
 
     /// <summary>Deux ressources de même nom : celle qui l'emporte est imprévisible.</summary>
