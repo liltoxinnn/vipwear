@@ -1,0 +1,108 @@
+<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreChoixImprimante"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Imprimante de tickets"
+        Height="400" Width="560"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{StaticResource PinceauFond}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <!--
+        Demandée une seule fois : au premier ticket imprimé sur un poste qui
+        n'a pas encore d'imprimante. Le choix est retenu, et les tickets
+        suivants partent directement.
+    -->
+    <Border Margin="18" Style="{StaticResource Carte}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                <TextBlock Text="Sur quelle imprimante sortent les tickets ?"
+                           Style="{StaticResource TexteSousTitre}" />
+
+                <TextBlock Style="{StaticResource TexteSecondaire}" Margin="0,6,0,0"
+                           Text="Ce choix est retenu pour ce poste : les tickets suivants partiront directement, sans cette question." />
+            </StackPanel>
+
+            <TextBlock Grid.Row="1" Text="Imprimante" Style="{StaticResource TexteEtiquette}" />
+
+            <ComboBox Grid.Row="2"
+                      x:Name="ListeImprimantes"
+                      Style="{StaticResource ChampListe}"
+                      SelectionChanged="SurImprimanteChoisie"
+                      Margin="0,0,0,8" />
+
+            <StackPanel Grid.Row="3">
+                <TextBlock x:Name="TexteAucune"
+                           Style="{StaticResource TexteSecondaire}"
+                           Foreground="{StaticResource PinceauDanger}"
+                           TextWrapping="Wrap"
+                           Visibility="Collapsed"
+                           Margin="0,0,0,12"
+                           Text="Windows ne signale aucune imprimante. Installez le pilote de l'imprimante de tickets, imprimez une page de test depuis Windows, puis réessayez." />
+
+                <TextBlock Text="Largeur du rouleau" Style="{StaticResource TexteEtiquette}" Margin="0,6,0,0" />
+
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <RadioButton x:Name="Choix58"
+                                 GroupName="LargeurChoixImprimante"
+                                 Content="58 mm"
+                                 IsChecked="True"
+                                 FontSize="{StaticResource TailleNormale}"
+                                 VerticalContentAlignment="Center"
+                                 MinHeight="34"
+                                 Margin="0,0,24,0" />
+
+                    <RadioButton x:Name="Choix80"
+                                 GroupName="LargeurChoixImprimante"
+                                 Content="80 mm"
+                                 FontSize="{StaticResource TailleNormale}"
+                                 VerticalContentAlignment="Center"
+                                 MinHeight="34" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Un groupe par colonne : rien ne peut passer sous rien. -->
+            <Grid Grid.Row="5" Margin="0,16,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0"
+                        Content="En PDF, cette fois"
+                        Style="{StaticResource BoutonSecondaire}"
+                        Click="SurPdf"
+                        ToolTip="Produire ce ticket en PDF comme avant, sans rien enregistrer" />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="Annuler"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Width="110"
+                            IsCancel="True"
+                            Click="SurAnnuler"
+                            Margin="0,0,10,0" />
+
+                    <Button x:Name="BoutonImprimer"
+                            Content="Imprimer"
+                            Style="{StaticResource BoutonPrincipal}"
+                            Width="130"
+                            IsDefault="True"
+                            Click="SurImprimer" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

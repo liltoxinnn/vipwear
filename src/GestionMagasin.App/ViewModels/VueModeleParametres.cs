@@ -277,15 +277,23 @@ public partial class VueModeleParametres : VueModeleBase
     [RelayCommand]
     private void EnregistrerImprimante()
     {
-        try
+        if (Sauvegarder())
         {
-            _impression.Enregistrer(ReglagesSaisis());
-
             Dialogue.Informer(
                 ImprimanteChoisie is null
                     ? "Aucune imprimante n'est choisie : les tickets seront produits en PDF."
                     : $"Les tickets de ce poste partiront sur « {ImprimanteChoisie} ».",
                 "Imprimante de tickets");
+        }
+    }
+
+    private bool Sauvegarder()
+    {
+        try
+        {
+            _impression.Enregistrer(ReglagesSaisis());
+
+            return true;
         }
         catch (Exception erreur) when (erreur is IOException or UnauthorizedAccessException)
         {
@@ -295,6 +303,8 @@ public partial class VueModeleParametres : VueModeleBase
                 "Les réglages de l'imprimante n'ont pas pu être enregistrés sur ce poste." +
                 Environment.NewLine + erreur.Message,
                 "Enregistrement impossible");
+
+            return false;
         }
     }
 
@@ -316,13 +326,25 @@ public partial class VueModeleParametres : VueModeleBase
         {
             await _impression.ImprimerEssaiAsync(ReglagesSaisis()).ConfigureAwait(true);
 
-            Dialogue.Informer(
-                $"Le ticket d'essai a été envoyé à « {ImprimanteChoisie} »." +
-                Environment.NewLine + Environment.NewLine +
-                "Vérifiez qu'il est lisible jusqu'au bord, que les montants sont alignés à droite " +
-                "et que les accents de « Veste légère été — Écru » sont bien imprimés. " +
-                "Si c'est le cas, enregistrez ces réglages.",
-                "Ticket d'essai");
+            // Un essai réussi était suivi d'un oubli : le ticket sortait bien,
+            // mais rien n'était enregistré, et la caisse continuait de
+            // produire des PDF. La question est posée ici, au moment où l'on
+            // a le ticket sous les yeux.
+            if (Dialogue.Confirmer(
+                    $"Le ticket d'essai a été envoyé à « {ImprimanteChoisie} »." +
+                    Environment.NewLine + Environment.NewLine +
+                    "Est-il correct — lisible jusqu'au bord, montants alignés à droite, accents de " +
+                    "« Veste légère été — Écru » bien imprimés ?" +
+                    Environment.NewLine + Environment.NewLine +
+                    "Oui : ces réglages sont retenus et les tickets de la caisse partiront sur cette " +
+                    "imprimante.",
+                    "Ticket d'essai")
+                && Sauvegarder())
+            {
+                Dialogue.Informer(
+                    $"Les tickets de ce poste partiront sur « {ImprimanteChoisie} ».",
+                    "Imprimante de tickets");
+            }
         }
         catch (ImpressionTicketException erreur)
         {

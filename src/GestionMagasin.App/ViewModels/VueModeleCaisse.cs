@@ -798,23 +798,26 @@ public partial class VueModeleCaisse : VueModeleBase
 
         var reglages = _impression.Reglages;
 
-        if (reglages.EstConfiguree)
+        // Le ticket part directement sur l'imprimante, sans fichier à
+        // enregistrer ni lecteur à ouvrir. Un poste qui n'en a pas encore la
+        // demande une fois, ici même, et la retient.
+        var imprimer = (reglages.EstConfiguree && reglages.ImprimerSansDemander)
+                       || Dialogue.Confirmer(
+                           message + Environment.NewLine + Environment.NewLine + "Imprimer le ticket ?",
+                           "Vente enregistrée");
+
+        if (imprimer)
         {
-            // Imprimante de tickets choisie : le ticket part directement,
-            // sans fichier à enregistrer ni lecteur à ouvrir.
-            if (reglages.ImprimerSansDemander
-                || Dialogue.Confirmer(
-                    message + Environment.NewLine + Environment.NewLine + "Imprimer le ticket ?",
-                    "Vente enregistrée"))
+            switch (ImpressionGuidee.Preparer(_impression, Dialogue, Journal))
             {
-                await ImprimerTicketThermiqueAsync(vente, recu).ConfigureAwait(true);
+                case SuiteChoixImprimante.Imprimer:
+                    await ImprimerTicketThermiqueAsync(vente, recu).ConfigureAwait(true);
+                    break;
+
+                case SuiteChoixImprimante.Pdf:
+                    await ImprimerTicketAsync(vente).ConfigureAwait(true);
+                    break;
             }
-        }
-        else if (Dialogue.Confirmer(
-                     message + Environment.NewLine + Environment.NewLine + "Voulez-vous imprimer le ticket ?",
-                     "Vente enregistrée"))
-        {
-            await ImprimerTicketAsync(vente).ConfigureAwait(true);
         }
 
         Journal.LogInformation("Vente {Numero} : caisse prête pour le client suivant.",

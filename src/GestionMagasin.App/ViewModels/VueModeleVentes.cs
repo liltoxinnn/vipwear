@@ -252,20 +252,24 @@ public partial class VueModeleVentes : VueModeleBase
     [RelayCommand]
     private async Task ImprimerTicketAsync()
     {
-        if (!_impression.Reglages.EstConfiguree)
-        {
-            await ProduireDocumentAsync(
-                v => _pdf.GenererTicketAsync(v),
-                v => $"Ticket-{v.NumeroVente}.pdf",
-                "impression d'un ticket").ConfigureAwait(true);
-
-            return;
-        }
-
         if (Detail is null)
         {
             Dialogue.Avertir("Sélectionnez d'abord une vente.", "Aucune sélection");
             return;
+        }
+
+        switch (ImpressionGuidee.Preparer(_impression, Dialogue, Journal))
+        {
+            case SuiteChoixImprimante.Annuler:
+                return;
+
+            case SuiteChoixImprimante.Pdf:
+                await ProduireDocumentAsync(
+                    v => _pdf.GenererTicketAsync(v),
+                    v => $"Ticket-{v.NumeroVente}.pdf",
+                    "impression d'un ticket").ConfigureAwait(true);
+
+                return;
         }
 
         try

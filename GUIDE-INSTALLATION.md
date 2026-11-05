@@ -197,12 +197,17 @@ fichier à enregistrer ni lecteur PDF à ouvrir.
 3. Vérifiez qu'elle répond : Windows → **Paramètres** → **Bluetooth et
    appareils** → **Imprimantes et scanners** → l'imprimante → **Imprimer une
    page de test**.
-4. Dans le logiciel : **Paramètres** (F12) → onglet **Imprimante de tickets**
-   → **Actualiser** → choisissez l'imprimante → largeur **58 mm** →
-   **Imprimer un ticket d'essai**.
-5. Si le ticket d'essai est correct — lisible jusqu'au bord, montants alignés
-   à droite, accents de « Veste légère été — Écru » bien imprimés — cliquez
-   **Enregistrer**.
+4. Faites une vente en **Caisse** et répondez **Oui** à « Imprimer le
+   ticket ? ». La première fois, le logiciel demande sur quelle imprimante
+   sortent les tickets : l'imprimante de caisse est déjà sélectionnée, avec
+   la largeur de son rouleau. Cliquez **Imprimer**.
+
+Le choix est retenu : les tickets suivants partent directement, sans cette
+question. Pour le modifier, ou pour essayer d'abord : **Paramètres** (F12) →
+onglet **Imprimante de tickets** → **Imprimer un ticket d'essai**. Si le
+ticket est correct — lisible jusqu'au bord, montants alignés à droite,
+accents de « Veste légère été — Écru » bien imprimés — répondez **Oui** et
+les réglages sont retenus.
 
 > Sans le pilote du fabricant, ajoutez l'imprimante dans Windows avec le
 > pilote **Generic / Text Only**, sur son port USB (USB001 en général). Le
