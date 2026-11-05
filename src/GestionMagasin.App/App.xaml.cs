@@ -393,6 +393,7 @@ public partial class App : System.Windows.Application
 
                 // --- Services propres à l'interface ---
                 services.AddSingleton<IServiceDialogue, ServiceDialogue>();
+                services.AddScoped<Impression.IServiceImpressionTicket, Impression.ServiceImpressionTicket>();
                 services.AddSingleton<IServiceNavigation, ServiceNavigation>();
                 services.AddSingleton<IFabriqueFenetres, FabriqueFenetres>();
 

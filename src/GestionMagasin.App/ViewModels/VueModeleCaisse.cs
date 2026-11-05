@@ -3,6 +3,7 @@ using System.IO;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using GestionMagasin.App.Impression;
 using GestionMagasin.App.Services;
 using GestionMagasin.Application.Common;
 using GestionMagasin.Application.DTOs;
@@ -103,6 +104,7 @@ public partial class VueModeleCaisse : VueModeleBase
     private readonly IServiceVentes _ventes;
     private readonly IServiceClients _clients;
     private readonly IServiceDocumentsPdf _documents;
+    private readonly IServiceImpressionTicket _impression;
     private readonly ISessionUtilisateur _session;
 
     public VueModeleCaisse(
@@ -110,6 +112,7 @@ public partial class VueModeleCaisse : VueModeleBase
         IServiceVentes ventes,
         IServiceClients clients,
         IServiceDocumentsPdf documents,
+        IServiceImpressionTicket impression,
         ISessionUtilisateur session,
         IServiceDialogue dialogue,
         ILogger<VueModeleCaisse> journal)
@@ -119,6 +122,7 @@ public partial class VueModeleCaisse : VueModeleBase
         _ventes = ventes;
         _clients = clients;
         _documents = documents;
+        _impression = impression;
         _session = session;
 
         Panier.CollectionChanged += (_, _) => RecalculerTotaux();
@@ -753,6 +757,11 @@ public partial class VueModeleCaisse : VueModeleBase
 
         var monnaie = MonnaieARendre;
 
+        // La somme remise par le client est relevée avant la remise à zéro
+        // de la caisse : le ticket imprime ce qu'il a donné et ce qu'on lui
+        // a rendu, et c'est le seul moment où on le sait encore.
+        var recu = MontantRecu;
+
         // À partir d'ici la vente EST enregistrée et le stock décompté. Plus
         // rien ne doit pouvoir faire échouer l'opération : ce qui suit ne
         // concerne que l'affichage et l'impression.
@@ -787,15 +796,66 @@ public partial class VueModeleCaisse : VueModeleBase
 
         MessageStatut = message;
 
-        if (Dialogue.Confirmer(
-                message + Environment.NewLine + Environment.NewLine + "Voulez-vous imprimer le ticket ?",
-                "Vente enregistrée"))
+        var reglages = _impression.Reglages;
+
+        if (reglages.EstConfiguree)
+        {
+            // Imprimante de tickets choisie : le ticket part directement,
+            // sans fichier à enregistrer ni lecteur à ouvrir.
+            if (reglages.ImprimerSansDemander
+                || Dialogue.Confirmer(
+                    message + Environment.NewLine + Environment.NewLine + "Imprimer le ticket ?",
+                    "Vente enregistrée"))
+            {
+                await ImprimerTicketThermiqueAsync(vente, recu).ConfigureAwait(true);
+            }
+        }
+        else if (Dialogue.Confirmer(
+                     message + Environment.NewLine + Environment.NewLine + "Voulez-vous imprimer le ticket ?",
+                     "Vente enregistrée"))
         {
             await ImprimerTicketAsync(vente).ConfigureAwait(true);
         }
 
         Journal.LogInformation("Vente {Numero} : caisse prête pour le client suivant.",
             vente.NumeroVente);
+    }
+
+    /// <summary>
+    /// Imprime le ticket sur l'imprimante thermique du poste.
+    ///
+    /// La vente est enregistrée à ce stade, et rien de ce qui arrive à
+    /// l'imprimante — plus de papier, câble débranché, pilote absent — ne
+    /// doit la remettre en cause. L'échec est dit, avec ce qu'il faut faire,
+    /// et la caisse reste prête pour le client suivant.
+    /// </summary>
+    private async Task ImprimerTicketThermiqueAsync(VenteDto vente, decimal recu)
+    {
+        try
+        {
+            await _impression.ImprimerAsync(vente, recu > 0 ? recu : null).ConfigureAwait(true);
+        }
+        catch (ImpressionTicketException erreur)
+        {
+            Journal.LogWarning(erreur, "Ticket {Numero} : impression impossible.", vente.NumeroVente);
+
+            Dialogue.Avertir(
+                erreur.Message + Environment.NewLine + Environment.NewLine +
+                $"La vente {vente.NumeroVente} est bien enregistrée. " +
+                "Vous pourrez réimprimer son ticket depuis l'écran Ventes.",
+                "Ticket non imprimé");
+        }
+        catch (Exception erreur)
+        {
+            Journal.LogError(erreur, "Ticket {Numero} : incident pendant l'impression.", vente.NumeroVente);
+
+            Dialogue.Avertir(
+                $"La vente {vente.NumeroVente} est bien enregistrée, mais le ticket n'a pas pu " +
+                "être imprimé." + Environment.NewLine + Environment.NewLine +
+                "Vérifiez que l'imprimante est allumée, branchée et approvisionnée en papier, " +
+                "puis réimprimez le ticket depuis l'écran Ventes.",
+                "Ticket non imprimé");
+        }
     }
 
     /// <summary>

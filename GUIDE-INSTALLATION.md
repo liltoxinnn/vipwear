@@ -184,6 +184,54 @@ chiffre**.
 
 ---
 
+## Imprimante de tickets
+
+Le logiciel imprime directement sur les imprimantes thermiques de caisse de
+**58 mm** ou de **80 mm** — celles vendues sous les noms POS-58, XP-58,
+R58P et des dizaines d'autres. Le ticket sort à la bonne longueur, sans
+fichier à enregistrer ni lecteur PDF à ouvrir.
+
+1. Branchez l'imprimante en USB et allumez-la.
+2. Installez le **pilote fourni** avec l'imprimante. Elle apparaît alors dans
+   Windows sous un nom comme « POS-58 ».
+3. Vérifiez qu'elle répond : Windows → **Paramètres** → **Bluetooth et
+   appareils** → **Imprimantes et scanners** → l'imprimante → **Imprimer une
+   page de test**.
+4. Dans le logiciel : **Paramètres** (F12) → onglet **Imprimante de tickets**
+   → **Actualiser** → choisissez l'imprimante → largeur **58 mm** →
+   **Imprimer un ticket d'essai**.
+5. Si le ticket d'essai est correct — lisible jusqu'au bord, montants alignés
+   à droite, accents de « Veste légère été — Écru » bien imprimés — cliquez
+   **Enregistrer**.
+
+> Sans le pilote du fabricant, ajoutez l'imprimante dans Windows avec le
+> pilote **Generic / Text Only**, sur son port USB (USB001 en général). Le
+> logiciel envoie lui-même ses commandes à l'imprimante : ce pilote suffit.
+
+> Le réglage appartient **au poste**, pas au magasin : il est enregistré sur
+> cet ordinateur. Un second poste de caisse choisit sa propre imprimante.
+
+Options :
+
+| Option | Effet |
+|---|---|
+| Imprimer sans demander | Le ticket sort dès la vente validée, sans question |
+| Imprimer le logo | Le logo du magasin en tête de ticket |
+| Couper le papier | Sur une imprimante à massicot ; sans effet sinon |
+| Ouvrir le tiroir-caisse | Seulement si un tiroir est branché sur l'imprimante |
+
+Un ticket se réimprime depuis l'écran **Ventes** → la vente → **Imprimer le
+ticket**. La somme reçue et la monnaie rendue n'y figurent plus : elles ne
+sont connues qu'au moment de la vente.
+
+**Le ticket ne sort pas ?** Le message affiché dit pourquoi. Les cas les plus
+fréquents : l'imprimante a été renommée ou réinstallée (choisissez-la de
+nouveau dans la liste), elle est éteinte ou sans papier, ou son pilote
+refuse l'envoi direct (installez-la avec le pilote « Generic / Text Only »).
+La vente, elle, est toujours enregistrée.
+
+---
+
 ## Sauvegarder vos données
 
 **C'est la partie la plus importante de ce guide.**

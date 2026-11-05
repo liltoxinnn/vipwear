@@ -402,5 +402,158 @@
             </Grid>
         </TabItem>
 
+        <!-- ============ Imprimante de tickets ============ -->
+        <!--
+            Réglage du poste, et non du magasin : l'imprimante est branchée
+            sur cet ordinateur. Ces réglages sont enregistrés dans le dossier
+            de l'utilisateur, pas dans la base de données.
+        -->
+        <TabItem Header="Imprimante de tickets">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Carte}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="Imprimante de ce poste"
+                                       Style="{StaticResource TexteSousTitre}" Margin="0,0,0,6" />
+
+                            <TextBlock Style="{StaticResource TexteSecondaire}" Margin="0,0,0,16"
+                                       Text="Le ticket part directement sur l'imprimante, à la bonne longueur, sans fichier à enregistrer ni lecteur PDF à ouvrir." />
+
+                            <TextBlock Text="Imprimante" Style="{StaticResource TexteEtiquette}" />
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <ComboBox Grid.Column="0"
+                                          Style="{StaticResource ChampListe}"
+                                          ItemsSource="{Binding Imprimantes}"
+                                          SelectedItem="{Binding ImprimanteChoisie}" />
+
+                                <Button Grid.Column="1"
+                                        Content="Actualiser"
+                                        Style="{StaticResource BoutonSecondaire}"
+                                        Command="{Binding ActualiserImprimantesCommand}"
+                                        ToolTip="Relire la liste des imprimantes installées dans Windows"
+                                        Margin="8,0,0,0" />
+                            </Grid>
+
+                            <TextBlock Text="{Binding EtatImprimante}" TextWrapping="Wrap" Margin="0,0,0,18">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource TexteSecondaire}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ImprimanteChoisieExiste}" Value="False">
+                                                <Setter Property="Foreground" Value="{StaticResource PinceauDanger}" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <TextBlock Text="Largeur du rouleau" Style="{StaticResource TexteEtiquette}" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,18">
+                                <RadioButton GroupName="LargeurRouleau"
+                                             Content="58 mm"
+                                             IsChecked="{Binding Rouleau58}"
+                                             FontSize="{StaticResource TailleNormale}"
+                                             VerticalContentAlignment="Center"
+                                             MinHeight="34"
+                                             Margin="0,0,24,0" />
+
+                                <RadioButton GroupName="LargeurRouleau"
+                                             Content="80 mm"
+                                             IsChecked="{Binding Rouleau80}"
+                                             FontSize="{StaticResource TailleNormale}"
+                                             VerticalContentAlignment="Center"
+                                             MinHeight="34" />
+                            </StackPanel>
+
+                            <CheckBox Style="{StaticResource CaseACocher}"
+                                      Content="Imprimer le ticket après chaque vente, sans demander"
+                                      IsChecked="{Binding ImprimerSansDemander}" />
+
+                            <CheckBox Style="{StaticResource CaseACocher}"
+                                      Content="Imprimer le logo en tête du ticket"
+                                      IsChecked="{Binding ImprimerLogo}" />
+
+                            <CheckBox Style="{StaticResource CaseACocher}"
+                                      Content="Couper le papier en fin de ticket"
+                                      IsChecked="{Binding CouperPapier}"
+                                      ToolTip="Sans effet sur une imprimante sans massicot : le papier se déchire alors à la main" />
+
+                            <CheckBox Style="{StaticResource CaseACocher}"
+                                      Content="Ouvrir le tiroir-caisse branché sur l'imprimante"
+                                      IsChecked="{Binding OuvrirTiroir}"
+                                      ToolTip="Seulement si un tiroir est relié à la prise de l'imprimante" />
+
+                            <TextBlock Text="Exemplaires par vente" Style="{StaticResource TexteEtiquette}"
+                                       Margin="0,14,0,4" />
+                            <ComboBox Style="{StaticResource ChampListe}"
+                                      ItemsSource="{Binding ChoixExemplaires}"
+                                      SelectedItem="{Binding Exemplaires}"
+                                      Width="90"
+                                      HorizontalAlignment="Left"
+                                      Margin="0,0,0,22" />
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Imprimer un ticket d'essai"
+                                        Style="{StaticResource BoutonSecondaire}"
+                                        Command="{Binding ImprimerEssaiCommand}"
+                                        ToolTip="Essaie les réglages affichés, même avant de les enregistrer"
+                                        Margin="0,0,8,0" />
+
+                                <Button Content="Enregistrer"
+                                        Style="{StaticResource BoutonPrincipal}"
+                                        Command="{Binding EnregistrerImprimanteCommand}" />
+                            </StackPanel>
+
+                            <Button Content="Ne plus utiliser d'imprimante (tickets en PDF)"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding RetirerImprimanteCommand}"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,10,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource Carte}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="Installer l'imprimante"
+                                       Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
+
+                            <TextBlock Style="{StaticResource TexteSecondaire}" Margin="0,0,0,10"
+                                       Text="1. Branchez l'imprimante sur un port USB et allumez-la." />
+
+                            <TextBlock Style="{StaticResource TexteSecondaire}" Margin="0,0,0,10"
+                                       Text="2. Installez le pilote fourni avec l'imprimante. Windows la fait alors apparaître sous un nom comme « POS-58 » ou « XP-58 »." />
+
+                            <TextBlock Style="{StaticResource TexteSecondaire}" Margin="0,0,0,10"
+                                       Text="3. Dans Windows, ouvrez Paramètres, Bluetooth et appareils, Imprimantes et scanners, choisissez l'imprimante et imprimez une page de test : elle doit sortir." />
+
+                            <TextBlock Style="{StaticResource TexteSecondaire}" Margin="0,0,0,18"
+                                       Text="4. Revenez ici : Actualiser, choisissez l'imprimante, réglez la largeur du rouleau, puis Imprimer un ticket d'essai. S'il est correct, Enregistrer." />
+
+                            <Separator Margin="0,0,0,14" />
+
+                            <TextBlock Text="Sans le pilote du fabricant"
+                                       Style="{StaticResource TexteEtiquette}" />
+
+                            <TextBlock Style="{StaticResource TexteSecondaire}"
+                                       Text="Ajoutez l'imprimante dans Windows avec le pilote « Generic / Text Only », sur son port USB (USB001 en général). Le logiciel lui envoie lui-même ses commandes : ce pilote suffit." />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
+        </TabItem>
+
     </TabControl>
 </UserControl>
