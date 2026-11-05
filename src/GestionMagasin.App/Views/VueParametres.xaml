@@ -42,7 +42,10 @@
                     <Border Grid.Column="2" Style="{StaticResource Carte}" VerticalAlignment="Top">
                         <StackPanel>
                             <TextBlock Text="Mentions légales et réglages"
-                                       Style="{StaticResource TexteSousTitre}" Margin="0,0,0,14" />
+                                       Style="{StaticResource TexteSousTitre}" Margin="0,0,0,4" />
+
+                            <TextBlock Text="Imprimées sur les factures, pas sur les tickets."
+                                       Style="{StaticResource TexteAttenue}" Margin="0,0,0,14" />
 
                             <TextBlock Text="Registre du commerce" Style="{StaticResource TexteEtiquette}" />
                             <TextBox Style="{StaticResource ChampTexte}" Text="{Binding RegistreCommerce}"

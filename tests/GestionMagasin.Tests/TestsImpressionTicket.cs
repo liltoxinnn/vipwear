@@ -206,6 +206,31 @@ public class TestsImpressionTicket
     /// aucune table de caractères de l'imprimante, et ne peuvent donc pas
     /// s'y perdre.
     /// </summary>
+    /// <summary>
+    /// Le magasin ne veut sur ses tickets ni registre du commerce, ni NIF, ni
+    /// le compte qui a encaissé — même quand ces renseignements sont saisis,
+    /// puisqu'ils servent à la facture.
+    /// </summary>
+    [Fact]
+    public void Le_ticket_n_imprime_ni_rc_ni_nif_ni_le_compte_du_caissier()
+    {
+        var magasin = Magasin();
+        magasin.RegistreCommerce = "06/00-1234567B21";
+        magasin.NumeroIdentificationFiscale = "000206123456789";
+
+        var lignes = CompositionTicket.Composer(
+            Vente(Article("HOODIE — Rouge / S", 1, 4_000m)), magasin, Rouleau58);
+
+        var texte = string.Join('\n', lignes.Select(l => l.Texte));
+
+        Assert.DoesNotContain("RC :", texte);
+        Assert.DoesNotContain("06/00-1234567B21", texte);
+        Assert.DoesNotContain("NIF", texte);
+        Assert.DoesNotContain("000206123456789", texte);
+        Assert.DoesNotContain("Caissier", texte);
+        Assert.DoesNotContain("Compte Administrateur", texte);
+    }
+
     [Fact]
     public void Les_accents_sont_conserves()
     {

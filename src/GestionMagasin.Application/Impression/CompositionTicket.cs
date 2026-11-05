@@ -98,11 +98,11 @@ public static class CompositionTicket
 
         // ---------------- En-tête ----------------
 
+        // Le registre du commerce et le NIF ne figurent que sur la facture :
+        // le magasin a choisi de ne pas les imprimer sur les tickets.
         AjouterCentre(magasin.NomMagasin, StyleLigne.Grand);
         AjouterCentre(magasin.Adresse);
         AjouterCentre(Renseigne("Tél. : ", magasin.Telephone));
-        AjouterCentre(Renseigne("RC : ", magasin.RegistreCommerce));
-        AjouterCentre(Renseigne("NIF : ", magasin.NumeroIdentificationFiscale));
 
         if (!string.IsNullOrWhiteSpace(mention))
         {
@@ -114,9 +114,10 @@ public static class CompositionTicket
 
         // ---------------- Vente ----------------
 
+        // Le compte qui a encaissé n'est pas imprimé : il reste dans la vente,
+        // consultable à l'écran Ventes, mais ne regarde pas le client.
         Ajouter(Tronquer($"Ticket n° {vente.NumeroVente}", colonnes), StyleLigne.Gras);
         Ajouter(Tronquer($"Date : {FormatageMontant.FormaterDateHeure(vente.DateVente)}", colonnes));
-        Ajouter(Tronquer($"Caissier : {vente.UtilisateurNom}", colonnes));
 
         if (!string.IsNullOrWhiteSpace(vente.ClientNom))
         {

@@ -59,18 +59,15 @@ public class ServiceDocumentsPdf : IServiceDocumentsPdf
                         colonne.Item().AlignCenter().Text($"Tél. : {magasin.Telephone}").FontSize(7.5f);
                     }
 
-                    if (!string.IsNullOrWhiteSpace(magasin.RegistreCommerce))
-                    {
-                        colonne.Item().AlignCenter().Text($"RC : {magasin.RegistreCommerce}").FontSize(7f);
-                    }
-
+                    // Ni registre du commerce ni NIF ni compte du caissier : le
+                    // ticket PDF suit le ticket imprimé. Ces mentions restent
+                    // sur la facture.
                     colonne.Item().PaddingVertical(3).LineHorizontal(0.7f)
                         .LineColor(StyleDocuments.CouleurBordure);
 
                     // Informations de la vente
                     colonne.Item().Text($"Ticket n° {vente.NumeroVente}").Bold();
                     colonne.Item().Text($"Date : {FormatageMontant.FormaterDateHeure(vente.DateVente)}");
-                    colonne.Item().Text($"Caissier : {vente.UtilisateurNom}");
 
                     if (!string.IsNullOrWhiteSpace(vente.ClientNom))
                     {
