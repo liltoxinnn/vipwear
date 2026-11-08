@@ -1,5 +1,6 @@
 using GestionMagasin.Application.Common;
 using GestionMagasin.Application.DTOs;
+using GestionMagasin.Application.Impression;
 using GestionMagasin.Application.Services.Abstractions;
 using GestionMagasin.Domain.Entities;
 using QuestPDF.Fluent;
@@ -59,18 +60,15 @@ public class ServiceDocumentsPdf : IServiceDocumentsPdf
                         colonne.Item().AlignCenter().Text($"Tél. : {magasin.Telephone}").FontSize(7.5f);
                     }
 
-                    if (!string.IsNullOrWhiteSpace(magasin.RegistreCommerce))
-                    {
-                        colonne.Item().AlignCenter().Text($"RC : {magasin.RegistreCommerce}").FontSize(7f);
-                    }
-
+                    // Ni registre du commerce ni NIF ni compte du caissier : le
+                    // ticket PDF suit le ticket imprimé. Ces mentions restent
+                    // sur la facture.
                     colonne.Item().PaddingVertical(3).LineHorizontal(0.7f)
                         .LineColor(StyleDocuments.CouleurBordure);
 
                     // Informations de la vente
                     colonne.Item().Text($"Ticket n° {vente.NumeroVente}").Bold();
                     colonne.Item().Text($"Date : {FormatageMontant.FormaterDateHeure(vente.DateVente)}");
-                    colonne.Item().Text($"Caissier : {vente.UtilisateurNom}");
 
                     if (!string.IsNullOrWhiteSpace(vente.ClientNom))
                     {
@@ -154,9 +152,16 @@ public class ServiceDocumentsPdf : IServiceDocumentsPdf
                         colonne.Item().AlignCenter().Text(magasin.InformationsTicket).FontSize(7.5f).Italic();
                     }
 
-                    colonne.Item().PaddingTop(2).AlignCenter()
-                        .Text($"Échange ou retour sous {magasin.DelaiRetourJours} jours sur présentation du ticket.")
-                        .FontSize(6.5f).FontColor(StyleDocuments.CouleurTexteAttenue);
+                    // Pas de conditions d'échange : le ticket PDF suit le ticket imprimé.
+
+                    // Même QR code que sur le ticket imprimé, à la même taille.
+                    if (!string.IsNullOrWhiteSpace(magasin.LienQrCodeTicket))
+                    {
+                        colonne.Item().PaddingTop(4).AlignCenter().Width(18, Unit.Millimetre)
+                            .Image(CodeQr.Png(magasin.LienQrCodeTicket));
+
+                        colonne.Item().AlignCenter().Text(CompositionTicket.LegendeQrCode).FontSize(7f);
+                    }
                 });
             });
         }).GeneratePdf();

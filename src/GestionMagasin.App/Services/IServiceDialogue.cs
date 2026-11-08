@@ -1,4 +1,25 @@
+using GestionMagasin.Application.Impression;
+
 namespace GestionMagasin.App.Services;
+
+/// <summary>Suite donnée au choix de l'imprimante de tickets.</summary>
+public enum SuiteChoixImprimante
+{
+    /// <summary>Une imprimante est choisie : elle est retenue et le ticket y part.</summary>
+    Imprimer,
+
+    /// <summary>Ce ticket-ci est produit en PDF, et rien n'est retenu.</summary>
+    Pdf,
+
+    /// <summary>Pas de ticket.</summary>
+    Annuler
+}
+
+/// <summary>Imprimante de tickets choisie, avec la largeur de son rouleau.</summary>
+public sealed record ChoixImprimanteTicket(
+    SuiteChoixImprimante Suite,
+    string? Nom = null,
+    LargeurRouleau Largeur = LargeurRouleau.Rouleau58);
 
 /// <summary>
 /// Affichage des messages destinés à l'utilisateur. Passer par ce service
@@ -30,4 +51,10 @@ public interface IServiceDialogue
 
     /// <summary>Propose la sélection d'un fichier existant.</summary>
     string? DemanderCheminOuverture(string filtre);
+
+    /// <summary>
+    /// Demande sur quelle imprimante sortent les tickets, l'imprimante de
+    /// caisse présélectionnée si l'une s'annonce comme telle.
+    /// </summary>
+    ChoixImprimanteTicket ChoisirImprimanteTicket(IReadOnlyList<string> imprimantes);
 }

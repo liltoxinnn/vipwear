@@ -77,6 +77,9 @@ Allez dans **Paramètres** (menu de gauche, ou touche **F12**) et renseignez :
 - Votre **registre du commerce**, **NIF** et **article d'imposition** —
   ces mentions sont imprimées en bas des factures
 - Le **message de remerciement** en pied de ticket
+- Le **lien du QR code** imprimé en bas des tickets — votre page
+  Instagram, Facebook ou Linktree. Le logiciel fabrique le code lui-même :
+  collez le lien, pas une image. Laissé vide, aucun QR code n'est imprimé.
 - Le **délai de retour** accepté (30 jours par défaut)
 
 Cliquez sur **Enregistrer les paramètres**.
@@ -181,6 +184,59 @@ chiffre**.
    > enregistre. Le **motif est facultatif** — quatre motifs courants sont
    > proposés d'un tapotement, et à défaut l'historique portera la mention
    > « Ajustement d'inventaire ».
+
+---
+
+## Imprimante de tickets
+
+Le logiciel imprime directement sur les imprimantes thermiques de caisse de
+**58 mm** ou de **80 mm** — celles vendues sous les noms POS-58, XP-58,
+R58P et des dizaines d'autres. Le ticket sort à la bonne longueur, sans
+fichier à enregistrer ni lecteur PDF à ouvrir.
+
+1. Branchez l'imprimante en USB et allumez-la.
+2. Installez le **pilote fourni** avec l'imprimante. Elle apparaît alors dans
+   Windows sous un nom comme « POS-58 ».
+3. Vérifiez qu'elle répond : Windows → **Paramètres** → **Bluetooth et
+   appareils** → **Imprimantes et scanners** → l'imprimante → **Imprimer une
+   page de test**.
+4. Faites une vente en **Caisse** et répondez **Oui** à « Imprimer le
+   ticket ? ». La première fois, le logiciel demande sur quelle imprimante
+   sortent les tickets : l'imprimante de caisse est déjà sélectionnée, avec
+   la largeur de son rouleau. Cliquez **Imprimer**.
+
+Le choix est retenu : les tickets suivants partent directement, sans cette
+question. Pour le modifier, ou pour essayer d'abord : **Paramètres** (F12) →
+onglet **Imprimante de tickets** → **Imprimer un ticket d'essai**. Si le
+ticket est correct — lisible jusqu'au bord, montants alignés à droite,
+accents de « Veste légère été — Écru » bien imprimés — répondez **Oui** et
+les réglages sont retenus.
+
+> Sans le pilote du fabricant, ajoutez l'imprimante dans Windows avec le
+> pilote **Generic / Text Only**, sur son port USB (USB001 en général). Le
+> logiciel envoie lui-même ses commandes à l'imprimante : ce pilote suffit.
+
+> Le réglage appartient **au poste**, pas au magasin : il est enregistré sur
+> cet ordinateur. Un second poste de caisse choisit sa propre imprimante.
+
+Options :
+
+| Option | Effet |
+|---|---|
+| Imprimer sans demander | Le ticket sort dès la vente validée, sans question |
+| Imprimer le logo | Le logo du magasin en tête de ticket |
+| Couper le papier | Sur une imprimante à massicot ; sans effet sinon |
+| Ouvrir le tiroir-caisse | Seulement si un tiroir est branché sur l'imprimante |
+
+Un ticket se réimprime depuis l'écran **Ventes** → la vente → **Imprimer le
+ticket**. La somme reçue et la monnaie rendue n'y figurent plus : elles ne
+sont connues qu'au moment de la vente.
+
+**Le ticket ne sort pas ?** Le message affiché dit pourquoi. Les cas les plus
+fréquents : l'imprimante a été renommée ou réinstallée (choisissez-la de
+nouveau dans la liste), elle est éteinte ou sans papier, ou son pilote
+refuse l'envoi direct (installez-la avec le pilote « Generic / Text Only »).
+La vente, elle, est toujours enregistrée.
 
 ---
 
@@ -326,12 +382,22 @@ même pendant que le logiciel travaille.
 
 ## Votre logo
 
-Déposez votre logo à la racine du dossier, sous le nom exact **`logo.png`**,
-avant de lancer `publier.ps1`. Il devient alors :
+Le logo du magasin est fourni avec le logiciel : c'est le fichier
+**`logo.png`** à la racine du dossier. `publier.ps1` le livre à côté du
+programme, et il devient :
 
 - l'emblème affiché dans le menu et sur l'écran de connexion ;
+- le logo imprimé en tête des tickets ;
 - l'icône du programme — barre des tâches, raccourci du bureau, Explorateur ;
 - l'icône de chaque fenêtre.
+
+Pour en changer, remplacez ce fichier par un autre du même nom avant de
+publier.
+
+Sur le ticket, le logo est réduit à deux tons — l'imprimante ne sait que
+brûler ou laisser blanc. Le partage entre les teintes sombres et claires
+est calculé d'après le logo lui-même : le lion doré sort blanc sur le
+disque noir. Un logo à aplats nets s'imprime mieux qu'une photographie.
 
 Une image carrée donne le meilleur résultat. Sans logo, l'emblème dessiné
 dans le logiciel prend le relais : le logiciel n'est jamais livré sans

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using GestionMagasin.App.Impression;
 using GestionMagasin.App.Services;
 using GestionMagasin.Application.Common;
 using GestionMagasin.Application.DTOs;
@@ -18,12 +19,14 @@ public partial class VueModeleVentes : VueModeleBase
     private readonly IServiceVentes _ventes;
     private readonly IServiceDocumentsPdf _pdf;
     private readonly IServiceExportExcel _excel;
+    private readonly IServiceImpressionTicket _impression;
     private readonly ISessionUtilisateur _session;
 
     public VueModeleVentes(
         IServiceVentes ventes,
         IServiceDocumentsPdf pdf,
         IServiceExportExcel excel,
+        IServiceImpressionTicket impression,
         ISessionUtilisateur session,
         IServiceDialogue dialogue,
         ILogger<VueModeleVentes> journal)
@@ -32,6 +35,7 @@ public partial class VueModeleVentes : VueModeleBase
         _ventes = ventes;
         _pdf = pdf;
         _excel = excel;
+        _impression = impression;
         _session = session;
 
         var maintenant = DateTime.Now;
@@ -240,12 +244,52 @@ public partial class VueModeleVentes : VueModeleBase
             "encaissement du solde d'une vente").ConfigureAwait(true);
     }
 
+    /// <summary>
+    /// Réimprime le ticket de la vente sélectionnée : sur l'imprimante de
+    /// tickets si le poste en a une, en PDF sinon. La somme remise par le
+    /// client n'est plus connue, et le ticket réimprimé ne l'indique donc pas.
+    /// </summary>
     [RelayCommand]
-    private async Task ImprimerTicketAsync() =>
-        await ProduireDocumentAsync(
-            v => _pdf.GenererTicketAsync(v),
-            v => $"Ticket-{v.NumeroVente}.pdf",
-            "impression d'un ticket").ConfigureAwait(true);
+    private async Task ImprimerTicketAsync()
+    {
+        if (Detail is null)
+        {
+            Dialogue.Avertir("Sélectionnez d'abord une vente.", "Aucune sélection");
+            return;
+        }
+
+        switch (ImpressionGuidee.Preparer(_impression, Dialogue, Journal))
+        {
+            case SuiteChoixImprimante.Annuler:
+                return;
+
+            case SuiteChoixImprimante.Pdf:
+                await ProduireDocumentAsync(
+                    v => _pdf.GenererTicketAsync(v),
+                    v => $"Ticket-{v.NumeroVente}.pdf",
+                    "impression d'un ticket").ConfigureAwait(true);
+
+                return;
+        }
+
+        try
+        {
+            await _impression.ImprimerAsync(Detail).ConfigureAwait(true);
+        }
+        catch (ImpressionTicketException erreur)
+        {
+            Journal.LogWarning(erreur, "Ticket {Numero} : réimpression impossible.", Detail.NumeroVente);
+            Dialogue.Avertir(erreur.Message, "Ticket non imprimé");
+        }
+        catch (Exception erreur)
+        {
+            Journal.LogError(erreur, "Ticket {Numero} : incident pendant la réimpression.", Detail.NumeroVente);
+            Dialogue.Avertir(
+                "Le ticket n'a pas pu être imprimé. Vérifiez que l'imprimante est allumée, " +
+                "branchée et approvisionnée en papier, puis réessayez.",
+                "Ticket non imprimé");
+        }
+    }
 
     [RelayCommand]
     private async Task ImprimerFactureAsync() =>

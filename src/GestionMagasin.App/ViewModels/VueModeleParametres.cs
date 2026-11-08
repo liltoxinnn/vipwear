@@ -1,9 +1,12 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GestionMagasin.App.Converters;
+using GestionMagasin.App.Impression;
 using GestionMagasin.App.Services;
 using GestionMagasin.Application.DTOs;
+using GestionMagasin.Application.Impression;
 using GestionMagasin.Application.Services.Abstractions;
 using GestionMagasin.ServeurEmbarque;
 using GestionMagasin.Domain.Entities;
@@ -19,6 +22,7 @@ public partial class VueModeleParametres : VueModeleBase
 {
     private readonly IServiceParametres _parametres;
     private readonly IServiceProduits _produits;
+    private readonly IServiceImpressionTicket _impression;
 
     /// <summary>
     /// Absent lorsque le magasin utilise un PostgreSQL installé sur la
@@ -31,6 +35,7 @@ public partial class VueModeleParametres : VueModeleBase
     public VueModeleParametres(
         IServiceParametres parametres,
         IServiceProduits produits,
+        IServiceImpressionTicket impression,
         IServiceDialogue dialogue,
         ILogger<VueModeleParametres> journal,
         ServiceSauvegarde? sauvegarde = null)
@@ -38,6 +43,7 @@ public partial class VueModeleParametres : VueModeleBase
     {
         _parametres = parametres;
         _produits = produits;
+        _impression = impression;
         _sauvegarde = sauvegarde;
     }
 
@@ -70,6 +76,10 @@ public partial class VueModeleParametres : VueModeleBase
 
     [ObservableProperty]
     private string _informationsTicket = string.Empty;
+
+    /// <summary>Lien imprimé en QR code en bas des tickets ; vide, pas de QR code.</summary>
+    [ObservableProperty]
+    private string _lienQrCodeTicket = string.Empty;
 
     [ObservableProperty]
     private string _registreCommerce = string.Empty;
@@ -121,6 +131,7 @@ public partial class VueModeleParametres : VueModeleBase
             Devise = magasin.Devise;
             SymboleDevise = magasin.SymboleDevise;
             InformationsTicket = magasin.InformationsTicket ?? string.Empty;
+            LienQrCodeTicket = magasin.LienQrCodeTicket ?? string.Empty;
             RegistreCommerce = magasin.RegistreCommerce ?? string.Empty;
             NumeroIdentificationFiscale = magasin.NumeroIdentificationFiscale ?? string.Empty;
             ArticleImposition = magasin.ArticleImposition ?? string.Empty;
@@ -128,7 +139,240 @@ public partial class VueModeleParametres : VueModeleBase
             DelaiRetourJours = magasin.DelaiRetourJours;
 
             await ChargerReferencesAsync().ConfigureAwait(true);
+
+            ChargerImprimante();
         }, contexteJournal: "chargement des paramètres").ConfigureAwait(true);
+
+    // ==================================================================
+    // Imprimante de tickets
+    // ==================================================================
+
+    /// <summary>Imprimantes installées dans Windows sur ce poste.</summary>
+    public ObservableCollection<string> Imprimantes { get; } = [];
+
+    /// <summary>Choix d'exemplaires proposés : au-delà de trois, c'est une erreur de saisie.</summary>
+    public IReadOnlyList<int> ChoixExemplaires { get; } = [1, 2, 3];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EtatImprimante))]
+    [NotifyPropertyChangedFor(nameof(ImprimanteChoisieExiste))]
+    private string? _imprimanteChoisie;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Rouleau58))]
+    private bool _rouleau80;
+
+    [ObservableProperty]
+    private bool _imprimerSansDemander;
+
+    [ObservableProperty]
+    private bool _couperPapier = true;
+
+    [ObservableProperty]
+    private bool _ouvrirTiroir;
+
+    [ObservableProperty]
+    private bool _imprimerLogo = true;
+
+    [ObservableProperty]
+    private int _exemplaires = 1;
+
+    /// <summary>
+    /// Pendant de <see cref="Rouleau80"/> pour le second bouton radio. Seul
+    /// le passage à vrai est pris en compte : c'est le groupe de boutons qui
+    /// décoche l'autre.
+    /// </summary>
+    public bool Rouleau58
+    {
+        get => !Rouleau80;
+        set
+        {
+            if (value)
+            {
+                Rouleau80 = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Faux lorsque l'imprimante enregistrée n'apparaît plus dans Windows :
+    /// renommée, débranchée et désinstallée, ou installée sous un autre nom
+    /// après une réinstallation du pilote.
+    /// </summary>
+    public bool ImprimanteChoisieExiste =>
+        ImprimanteChoisie is null || Imprimantes.Contains(ImprimanteChoisie);
+
+    /// <summary>Ce que fera la caisse, en une phrase.</summary>
+    public string EtatImprimante => ImprimanteChoisie is null
+        ? "Aucune imprimante choisie : les tickets sont produits en PDF."
+        : ImprimanteChoisieExiste
+            ? $"Les tickets partent directement sur « {ImprimanteChoisie} »."
+            : $"« {ImprimanteChoisie} » n'est plus installée dans Windows. " +
+              "Choisissez-la de nouveau dans la liste.";
+
+    private void ChargerImprimante()
+    {
+        var reglages = _impression.Reglages;
+
+        RemplirImprimantes(reglages.NomImprimante);
+
+        ImprimanteChoisie = reglages.NomImprimante;
+        Rouleau80 = reglages.Largeur == LargeurRouleau.Rouleau80;
+        ImprimerSansDemander = reglages.ImprimerSansDemander;
+        CouperPapier = reglages.CouperPapier;
+        OuvrirTiroir = reglages.OuvrirTiroir;
+        ImprimerLogo = reglages.ImprimerLogo;
+        Exemplaires = reglages.Exemplaires;
+    }
+
+    /// <summary>
+    /// Remplit la liste. L'imprimante enregistrée y figure même si Windows ne
+    /// la connaît plus : la retirer en silence ferait croire qu'aucune n'a
+    /// jamais été choisie.
+    /// </summary>
+    private void RemplirImprimantes(string? aConserver)
+    {
+        Imprimantes.Clear();
+
+        foreach (var nom in _impression.ListerImprimantes())
+        {
+            Imprimantes.Add(nom);
+        }
+
+        if (aConserver is not null && !Imprimantes.Contains(aConserver))
+        {
+            Imprimantes.Add(aConserver);
+        }
+
+        OnPropertyChanged(nameof(ImprimanteChoisieExiste));
+        OnPropertyChanged(nameof(EtatImprimante));
+    }
+
+    private ReglagesTicket ReglagesSaisis() => new ReglagesTicket
+    {
+        NomImprimante = ImprimanteChoisie,
+        Largeur = Rouleau80 ? LargeurRouleau.Rouleau80 : LargeurRouleau.Rouleau58,
+        ImprimerSansDemander = ImprimerSansDemander,
+        CouperPapier = CouperPapier,
+        OuvrirTiroir = OuvrirTiroir,
+        ImprimerLogo = ImprimerLogo,
+        Exemplaires = Exemplaires
+    }.Normaliser();
+
+    [RelayCommand]
+    private void ActualiserImprimantes()
+    {
+        var choisie = ImprimanteChoisie;
+
+        RemplirImprimantes(choisie);
+
+        // Le remplissage vide la liste, et la liste déroulante perd alors sa
+        // sélection : elle est rétablie.
+        ImprimanteChoisie = choisie;
+
+        if (Imprimantes.Count == 0)
+        {
+            Dialogue.Avertir(
+                "Windows ne signale aucune imprimante. Vérifiez que l'imprimante est branchée et " +
+                "allumée, et que son pilote a été installé, puis actualisez la liste.",
+                "Aucune imprimante");
+        }
+    }
+
+    [RelayCommand]
+    private void EnregistrerImprimante()
+    {
+        if (Sauvegarder())
+        {
+            Dialogue.Informer(
+                ImprimanteChoisie is null
+                    ? "Aucune imprimante n'est choisie : les tickets seront produits en PDF."
+                    : $"Les tickets de ce poste partiront sur « {ImprimanteChoisie} ».",
+                "Imprimante de tickets");
+        }
+    }
+
+    private bool Sauvegarder()
+    {
+        try
+        {
+            _impression.Enregistrer(ReglagesSaisis());
+
+            return true;
+        }
+        catch (Exception erreur) when (erreur is IOException or UnauthorizedAccessException)
+        {
+            Journal.LogError(erreur, "Réglages de l'imprimante : enregistrement impossible.");
+
+            Dialogue.Erreur(
+                "Les réglages de l'imprimante n'ont pas pu être enregistrés sur ce poste." +
+                Environment.NewLine + erreur.Message,
+                "Enregistrement impossible");
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Imprime un ticket d'essai avec les réglages affichés, enregistrés ou
+    /// non : on règle, on essaie, on corrige, et on n'enregistre que ce qui a
+    /// donné un bon ticket.
+    /// </summary>
+    [RelayCommand]
+    private async Task ImprimerEssaiAsync()
+    {
+        if (ImprimanteChoisie is null)
+        {
+            Dialogue.Avertir("Choisissez d'abord l'imprimante à essayer.", "Aucune imprimante");
+            return;
+        }
+
+        try
+        {
+            await _impression.ImprimerEssaiAsync(ReglagesSaisis()).ConfigureAwait(true);
+
+            // Un essai réussi était suivi d'un oubli : le ticket sortait bien,
+            // mais rien n'était enregistré, et la caisse continuait de
+            // produire des PDF. La question est posée ici, au moment où l'on
+            // a le ticket sous les yeux.
+            if (Dialogue.Confirmer(
+                    $"Le ticket d'essai a été envoyé à « {ImprimanteChoisie} »." +
+                    Environment.NewLine + Environment.NewLine +
+                    "Est-il correct — lisible jusqu'au bord, montants alignés à droite, accents de " +
+                    "« Veste légère été — Écru » bien imprimés ?" +
+                    Environment.NewLine + Environment.NewLine +
+                    "Oui : ces réglages sont retenus et les tickets de la caisse partiront sur cette " +
+                    "imprimante.",
+                    "Ticket d'essai")
+                && Sauvegarder())
+            {
+                Dialogue.Informer(
+                    $"Les tickets de ce poste partiront sur « {ImprimanteChoisie} ».",
+                    "Imprimante de tickets");
+            }
+        }
+        catch (ImpressionTicketException erreur)
+        {
+            Journal.LogWarning(erreur, "Ticket d'essai : impression impossible.");
+            Dialogue.Avertir(erreur.Message, "Ticket d'essai non imprimé");
+        }
+        catch (Exception erreur)
+        {
+            Journal.LogError(erreur, "Ticket d'essai : incident pendant l'impression.");
+            Dialogue.Avertir(
+                "Le ticket d'essai n'a pas pu être imprimé. Vérifiez que l'imprimante est allumée, " +
+                "branchée et approvisionnée en papier.",
+                "Ticket d'essai non imprimé");
+        }
+    }
+
+    /// <summary>Revient au ticket en PDF sur ce poste.</summary>
+    [RelayCommand]
+    private void RetirerImprimante()
+    {
+        ImprimanteChoisie = null;
+        EnregistrerImprimante();
+    }
 
     private async Task ChargerReferencesAsync()
     {
@@ -161,6 +405,7 @@ public partial class VueModeleParametres : VueModeleBase
                     Devise = Devise,
                     SymboleDevise = SymboleDevise,
                     InformationsTicket = InformationsTicket,
+                    LienQrCodeTicket = LienQrCodeTicket,
                     RegistreCommerce = RegistreCommerce,
                     NumeroIdentificationFiscale = NumeroIdentificationFiscale,
                     ArticleImposition = ArticleImposition,

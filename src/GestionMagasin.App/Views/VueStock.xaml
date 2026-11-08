@@ -63,8 +63,22 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <TextBox Style="{StaticResource ChampTexte}"
+                <!--
+                    Les filtres se replient au lieu de déborder.
+
+                    Un empilement horizontal ne se comprime pas : il mesure
+                    la somme de ses enfants et déborde de sa colonne, en
+                    passant sous les boutons de droite. Sur un grand écran
+                    tout tenait, et rien ne se voyait ; sur celui du magasin,
+                    « Réinitialiser » disparaissait derrière « Exporter ».
+
+                    Un panneau qui replie mesure la largeur qu'on lui donne
+                    et passe à la ligne. La barre s'allonge vers le bas, ce
+                    que la rangée « Auto » de la page permet, et aucun bouton
+                    ne se cache plus jamais.
+                -->
+                <WrapPanel Grid.Column="0" Orientation="Horizontal" Margin="0,-3">
+                    <TextBox Margin="0,3" Style="{StaticResource ChampTexte}"
                              Width="240"
                              Text="{Binding Recherche, UpdateSourceTrigger=PropertyChanged}"
                              KeyDown="SurToucheRecherche"
@@ -73,25 +87,26 @@
                     <Button Content="Rechercher"
                             Style="{StaticResource BoutonPrincipal}"
                             Command="{Binding RechercherCommand}"
-                            Margin="8,0,0,0" />
+                            Margin="8,3,0,3" />
 
                     <Button Content="Stock faible"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding AfficherStockFaibleCommand}"
-                            Margin="14,0,0,0" />
+                            Margin="14,3,0,3" />
 
                     <Button Content="Ruptures"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding AfficherRupturesCommand}"
-                            Margin="8,0,0,0" />
+                            Margin="8,3,0,3" />
 
                     <Button Content="Tout afficher"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding ReinitialiserFiltresCommand}"
-                            Margin="8,0,0,0" />
-                </StackPanel>
+                            Margin="8,3,0,3" />
+                </WrapPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <StackPanel Grid.Column="1"
+                        VerticalAlignment="Top" Orientation="Horizontal">
                     <Button Content="Imprimer l'état"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding ImprimerCommand}"

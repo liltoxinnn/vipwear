@@ -1,4 +1,5 @@
 using GestionMagasin.Application.Common;
+using GestionMagasin.Application.Impression;
 using GestionMagasin.Application.Services.Abstractions;
 using GestionMagasin.Domain.Entities;
 using GestionMagasin.Domain.Exceptions;
@@ -82,6 +83,9 @@ public class ServiceParametres : IServiceParametres
             existants.Devise = parametres.Devise.Trim();
             existants.SymboleDevise = parametres.SymboleDevise.Trim();
             existants.InformationsTicket = parametres.InformationsTicket?.Trim();
+            existants.LienQrCodeTicket = string.IsNullOrWhiteSpace(parametres.LienQrCodeTicket)
+                ? null
+                : parametres.LienQrCodeTicket.Trim();
             existants.RegistreCommerce = parametres.RegistreCommerce?.Trim();
             existants.NumeroIdentificationFiscale = parametres.NumeroIdentificationFiscale?.Trim();
             existants.ArticleImposition = parametres.ArticleImposition?.Trim();
@@ -145,6 +149,14 @@ public class ServiceParametres : IServiceParametres
         if (!string.IsNullOrWhiteSpace(parametres.Email) && !parametres.Email.Contains('@'))
         {
             erreurs.Add("L'adresse e-mail du magasin n'est pas valide.");
+        }
+
+        if (parametres.LienQrCodeTicket?.Trim().Length > CodeQr.LongueurMaximale)
+        {
+            erreurs.Add(
+                $"Le lien du QR code dépasse {CodeQr.LongueurMaximale} caractères : le code serait trop " +
+                "grand pour le ticket et ses carrés trop fins pour être lus. Raccourcissez-le, par " +
+                "exemple avec une page Linktree.");
         }
 
         if (erreurs.Count > 0)

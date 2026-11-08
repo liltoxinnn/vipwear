@@ -49,7 +49,19 @@
             </Border>
 
             <!-- ============ Saisie ============ -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,18">
+            <!--
+                La barre de défilement reste affichée en permanence.
+
+                Escamotable, elle apparaît quand le contenu grandit, ce qui
+                rétrécit la largeur ; les pastilles de motif se replient alors
+                sur une ligne de plus, le contenu grandit encore, et la mise
+                en page peut ne jamais se stabiliser. Windows arrête le
+                programme, pile d'appels saturée, sans message — au milieu
+                d'une correction de stock.
+
+                Une barre toujours là ne change jamais la largeur.
+            -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Visible" Padding="20,18">
                 <StackPanel>
 
                     <!-- Mouvement manuel : sens et type -->

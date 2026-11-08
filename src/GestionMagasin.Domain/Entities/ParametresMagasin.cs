@@ -28,6 +28,12 @@ public class ParametresMagasin : EntiteBase
     /// <summary>Message libre imprimé en pied de ticket (remerciements, conditions...).</summary>
     public string? InformationsTicket { get; set; }
 
+    /// <summary>
+    /// Lien imprimé en QR code en bas des tickets : page Instagram, Facebook,
+    /// Linktree… Vide, aucun QR code n'est imprimé.
+    /// </summary>
+    public string? LienQrCodeTicket { get; set; }
+
     /// <summary>Numéro de registre du commerce, mention obligatoire en Algérie.</summary>
     public string? RegistreCommerce { get; set; }
 

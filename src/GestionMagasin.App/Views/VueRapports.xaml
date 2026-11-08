@@ -16,17 +16,31 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <TextBlock Text="Période" Style="{StaticResource TexteSecondaire}"
-                               VerticalAlignment="Center" Margin="0,0,8,0" />
+                <!--
+                    Les filtres se replient au lieu de déborder.
 
-                    <ComboBox Style="{StaticResource ChampListe}"
+                    Un empilement horizontal ne se comprime pas : il mesure
+                    la somme de ses enfants et déborde de sa colonne, en
+                    passant sous les boutons de droite. Sur un grand écran
+                    tout tenait, et rien ne se voyait ; sur celui du magasin,
+                    « Réinitialiser » disparaissait derrière « Exporter ».
+
+                    Un panneau qui replie mesure la largeur qu'on lui donne
+                    et passe à la ligne. La barre s'allonge vers le bas, ce
+                    que la rangée « Auto » de la page permet, et aucun bouton
+                    ne se cache plus jamais.
+                -->
+                <WrapPanel Grid.Column="0" Orientation="Horizontal" Margin="0,-3">
+                    <TextBlock Text="Période" Style="{StaticResource TexteSecondaire}"
+                               VerticalAlignment="Center" Margin="0,3,8,3" />
+
+                    <ComboBox Margin="0,3" Style="{StaticResource ChampListe}"
                               Width="190"
                               ItemsSource="{Binding Periodes}"
                               SelectedItem="{Binding PeriodeChoisie}"
                               DisplayMemberPath="Libelle" />
 
-                    <StackPanel Orientation="Horizontal"
+                    <StackPanel Margin="0,3" Orientation="Horizontal"
                                 Visibility="{Binding PeriodePersonnalisee, Converter={StaticResource BooleenVisibilite}}">
                         <TextBlock Text="Du" Style="{StaticResource TexteSecondaire}"
                                    VerticalAlignment="Center" Margin="14,0,6,0" />
@@ -42,15 +56,16 @@
                     <Button Content="Appliquer"
                             Style="{StaticResource BoutonPrincipal}"
                             Command="{Binding AppliquerCommand}"
-                            Margin="12,0,0,0" />
+                            Margin="12,3,0,3" />
 
                     <TextBlock Text="{Binding LibellePeriode}"
                                Style="{StaticResource TexteAttenue}"
                                VerticalAlignment="Center"
-                               Margin="16,0,0,0" />
-                </StackPanel>
+                               Margin="16,3,0,3" />
+                </WrapPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <StackPanel Grid.Column="1"
+                        VerticalAlignment="Top" Orientation="Horizontal">
                     <Button Content="Imprimer le rapport"
                             Style="{StaticResource BoutonSecondaire}"
                             Command="{Binding ImprimerCommand}"

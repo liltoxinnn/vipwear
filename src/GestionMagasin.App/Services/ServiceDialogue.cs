@@ -71,6 +71,16 @@ public class ServiceDialogue : IServiceDialogue
             return boite.ShowDialog() == true ? boite.FileName : null;
         });
 
+    public ChoixImprimanteTicket ChoisirImprimanteTicket(IReadOnlyList<string> imprimantes) =>
+        Executer(() =>
+        {
+            var fenetre = new FenetreChoixImprimante(imprimantes) { Owner = FenetreActive() };
+
+            fenetre.ShowDialog();
+
+            return fenetre.Choix;
+        });
+
     private static void Afficher(string message, string titre, MessageBoxImage icone) =>
         Executer(() => MessageBox.Show(FenetreActive(), message, titre, MessageBoxButton.OK, icone));
 
