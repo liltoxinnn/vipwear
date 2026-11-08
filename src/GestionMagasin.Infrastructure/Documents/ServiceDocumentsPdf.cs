@@ -152,9 +152,7 @@ public class ServiceDocumentsPdf : IServiceDocumentsPdf
                         colonne.Item().AlignCenter().Text(magasin.InformationsTicket).FontSize(7.5f).Italic();
                     }
 
-                    colonne.Item().PaddingTop(2).AlignCenter()
-                        .Text($"Échange ou retour sous {magasin.DelaiRetourJours} jours sur présentation du ticket.")
-                        .FontSize(6.5f).FontColor(StyleDocuments.CouleurTexteAttenue);
+                    // Pas de conditions d'échange : le ticket PDF suit le ticket imprimé.
 
                     // Même QR code que sur le ticket imprimé, à la même taille.
                     if (!string.IsNullOrWhiteSpace(magasin.LienQrCodeTicket))

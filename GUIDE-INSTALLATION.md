@@ -382,12 +382,22 @@ même pendant que le logiciel travaille.
 
 ## Votre logo
 
-Déposez votre logo à la racine du dossier, sous le nom exact **`logo.png`**,
-avant de lancer `publier.ps1`. Il devient alors :
+Le logo du magasin est fourni avec le logiciel : c'est le fichier
+**`logo.png`** à la racine du dossier. `publier.ps1` le livre à côté du
+programme, et il devient :
 
 - l'emblème affiché dans le menu et sur l'écran de connexion ;
+- le logo imprimé en tête des tickets ;
 - l'icône du programme — barre des tâches, raccourci du bureau, Explorateur ;
 - l'icône de chaque fenêtre.
+
+Pour en changer, remplacez ce fichier par un autre du même nom avant de
+publier.
+
+Sur le ticket, le logo est réduit à deux tons — l'imprimante ne sait que
+brûler ou laisser blanc. Le partage entre les teintes sombres et claires
+est calculé d'après le logo lui-même : le lion doré sort blanc sur le
+disque noir. Un logo à aplats nets s'imprime mieux qu'une photographie.
 
 Une image carrée donne le meilleur résultat. Sans logo, l'emblème dessiné
 dans le logiciel prend le relais : le logiciel n'est jamais livré sans

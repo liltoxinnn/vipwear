@@ -244,7 +244,25 @@ public class TestsImpressionTicket
 
         Assert.Contains("Veste été", texte);
         Assert.Contains("Béjaïa", texte);
-        Assert.Contains("Échange ou retour", texte);
+        Assert.Contains("Espèces", texte);
+    }
+
+    /// <summary>
+    /// Le magasin a retiré les conditions d'échange de ses tickets. Le délai
+    /// de retour reste réglé : il gouverne les retours acceptés, mais ne
+    /// s'imprime plus.
+    /// </summary>
+    [Fact]
+    public void Le_ticket_n_imprime_plus_les_conditions_d_echange()
+    {
+        var lignes = CompositionTicket.Composer(
+            Vente(Article("HOODIE — Rouge / S", 1, 4_000m)), Magasin(), Rouleau58);
+
+        var texte = string.Join(' ', lignes.Select(l => l.Texte.Trim()));
+
+        Assert.DoesNotContain("Échange", texte);
+        Assert.DoesNotContain("retour", texte, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("présentation du ticket", texte);
     }
 
     [Fact]
@@ -355,40 +373,66 @@ public class TestsImpressionTicket
     }
 
     /// <summary>
-    /// Un gris moyen seuillé devient tout blanc ; tramé, il devient une
-    /// moitié de points. C'est ce qui garde le logo visible.
+    /// Logo du magasin : lion doré sur disque noir. L'or est plus clair que
+    /// le disque : il doit sortir blanc, sinon le lion se fond dans le noir.
     /// </summary>
     [Fact]
-    public void Un_gris_tramé_garde_sa_densite_et_un_gris_seuille_la_perd()
+    public void Un_motif_dore_sur_fond_noir_sort_blanc()
     {
-        const int Cote = 64;
-        var gris = Enumerable.Repeat((byte)140, Cote * Cote).ToArray();
+        // Un quart d'or (168), trois quarts de noir (15), comme le centre du logo.
+        var gris = Enumerable.Range(0, 64).Select(i => i < 16 ? (byte)168 : (byte)15).ToArray();
 
-        static int Noirs(byte[] points) => points.Sum(o => System.Numerics.BitOperations.PopCount(o));
+        var seuil = Monochrome.SeuilDuLogo(gris, 8, 8);
 
-        var seuille = Monochrome.VersPoints(gris, Cote, Cote, rangeesTramees: 0);
-        var trame = Monochrome.VersPoints(gris, Cote, Cote, rangeesTramees: Cote);
+        Assert.InRange(seuil, 16, 168);
 
-        Assert.Equal(0, Noirs(seuille));
+        var points = Monochrome.VersPoints(gris, 8, 8, rangeesLogo: 8);
 
-        // 140 sur 255 : environ 45 % de noir attendu.
-        var proportion = Noirs(trame) / (double)(Cote * Cote);
-
-        Assert.InRange(proportion, 0.40, 0.50);
+        Assert.Equal(0, points[0]);        // rangée d'or : rien de brûlé
+        Assert.Equal(0xFF, points[7]);     // rangée noire : tout brûlé
     }
 
     /// <summary>
-    /// Le texte passe dans la trame quand il croise le logo : un pixel déjà
-    /// tout noir ou tout blanc ne doit rien répartir autour de lui.
+    /// Le même or sur un logo à fond blanc doit, lui, sortir noir : un seuil
+    /// fixe à mi-gris l'aurait effacé dans le papier.
     /// </summary>
     [Fact]
-    public void La_trame_ne_brouille_pas_le_noir_et_blanc_pur()
+    public void Un_motif_dore_sur_fond_blanc_sort_noir()
     {
-        byte[] gris = [0, 255, 255, 0, 0, 255, 255, 0];
+        var gris = Enumerable.Range(0, 64).Select(i => i < 16 ? (byte)168 : (byte)255).ToArray();
 
-        Assert.Equal(
-            Monochrome.VersPoints(gris, 8, 1, rangeesTramees: 0),
-            Monochrome.VersPoints(gris, 8, 1, rangeesTramees: 1));
+        var points = Monochrome.VersPoints(gris, 8, 8, rangeesLogo: 8);
+
+        Assert.Equal(0xFF, points[0]);     // rangée d'or : brûlée
+        Assert.Equal(0, points[7]);        // rangée blanche : papier
+    }
+
+    /// <summary>
+    /// Le gris propre au logo ne vaut que pour lui : le texte qui suit garde
+    /// le gris moyen, quel que soit le logo.
+    /// </summary>
+    [Fact]
+    public void Le_texte_sous_le_logo_garde_le_seuil_moyen()
+    {
+        // Logo : or sur blanc, qui fait monter le seuil au-dessus de 168.
+        // Texte : un gris 200, qui doit rester blanc au seuil moyen.
+        var gris = new byte[8 * 3];
+        Array.Fill(gris, (byte)168, 0, 8);
+        Array.Fill(gris, (byte)255, 8, 8);
+        Array.Fill(gris, (byte)200, 16, 8);
+
+        var points = Monochrome.VersPoints(gris, 8, 3, rangeesLogo: 2);
+
+        Assert.Equal(0, points[2]);
+    }
+
+    [Fact]
+    public void Un_logo_d_une_seule_teinte_ne_fait_pas_d_erreur()
+    {
+        var gris = Enumerable.Repeat((byte)90, 64).ToArray();
+
+        Assert.Equal(128, Monochrome.SeuilDuLogo(gris, 8, 8));
+        Assert.Equal(Enumerable.Repeat((byte)0xFF, 8), Monochrome.VersPoints(gris, 8, 8, rangeesLogo: 8));
     }
 
     // ==================================================================

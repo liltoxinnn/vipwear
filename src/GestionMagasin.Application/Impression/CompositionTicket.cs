@@ -207,8 +207,9 @@ public static class CompositionTicket
             }
         }
 
-        AjouterCentre(
-            $"Échange ou retour sous {magasin.DelaiRetourJours} jours sur présentation du ticket.");
+        // Les conditions d'échange ne sont pas imprimées : le magasin a choisi
+        // de les retirer du ticket. Le délai reste réglé dans les paramètres,
+        // où il gouverne les retours acceptés.
 
         // Le QR code ferme le ticket : c'est la dernière chose qu'on regarde
         // avant de le ranger, et il ne gêne la lecture de rien.
