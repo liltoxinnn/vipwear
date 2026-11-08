@@ -77,6 +77,9 @@ Allez dans **Paramètres** (menu de gauche, ou touche **F12**) et renseignez :
 - Votre **registre du commerce**, **NIF** et **article d'imposition** —
   ces mentions sont imprimées en bas des factures
 - Le **message de remerciement** en pied de ticket
+- Le **lien du QR code** imprimé en bas des tickets — votre page
+  Instagram, Facebook ou Linktree. Le logiciel fabrique le code lui-même :
+  collez le lien, pas une image. Laissé vide, aucun QR code n'est imprimé.
 - Le **délai de retour** accepté (30 jours par défaut)
 
 Cliquez sur **Enregistrer les paramètres**.

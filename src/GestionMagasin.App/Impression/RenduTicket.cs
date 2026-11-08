@@ -64,6 +64,7 @@ internal static class RenduTicket
         // ---------- Mise en place ----------
 
         var textes = new List<(FormattedText Texte, double Y)>();
+        var codes = new List<(bool[,] Matrice, int X, int Y, int Carre)>();
         var y = (double)Marge;
 
         Rect? cadreLogo = null;
@@ -81,6 +82,23 @@ internal static class RenduTicket
 
         foreach (var ligne in lignes)
         {
+            if (ligne.Style == StyleLigne.CodeQr)
+            {
+                // Chaque carré du code couvre un nombre entier de points et
+                // commence sur un point entier : aucun bord ne tombe entre
+                // deux points de la tête, et le code sort net.
+                var matrice = CodeQr.Matrice(ligne.Texte);
+                var carre = CodeQr.PointsParCarre(matrice.GetLength(0));
+                var taille = matrice.GetLength(0) * carre;
+                var silence = CodeQr.ZoneDeSilence * carre;
+
+                y = Math.Ceiling(y) + silence;
+                codes.Add((matrice, (largeur - taille) / 2, (int)y, carre));
+                y += taille + silence;
+
+                continue;
+            }
+
             var (police, corps) = ligne.Style switch
             {
                 StyleLigne.Grand => (grasse, corpsGrand),
@@ -105,9 +123,10 @@ internal static class RenduTicket
         // moins de deux cents points.
         RenderOptions.SetBitmapScalingMode(visuel, BitmapScalingMode.HighQuality);
 
-        // Lettres sans lissage : la tête ne connaît que le noir et le blanc,
-        // et un bord à demi gris se perdrait au seuillage.
+        // Lettres et carrés sans lissage : la tête ne connaît que le noir et
+        // le blanc, et un bord à demi gris se perdrait au seuillage.
         TextOptions.SetTextRenderingMode(visuel, TextRenderingMode.Aliased);
+        RenderOptions.SetEdgeMode(visuel, EdgeMode.Aliased);
 
         using (var contexte = visuel.RenderOpen())
         {
@@ -121,6 +140,25 @@ internal static class RenduTicket
             foreach (var (texte, position) in textes)
             {
                 contexte.DrawText(texte, new Point(0, position));
+            }
+
+            foreach (var (matrice, x, haut, carre) in codes)
+            {
+                var cote = matrice.GetLength(0);
+
+                for (var rangee = 0; rangee < cote; rangee++)
+                {
+                    for (var colonne = 0; colonne < cote; colonne++)
+                    {
+                        if (matrice[rangee, colonne])
+                        {
+                            contexte.DrawRectangle(
+                                Brushes.Black,
+                                null,
+                                new Rect(x + colonne * carre, haut + rangee * carre, carre, carre));
+                        }
+                    }
+                }
             }
         }
 

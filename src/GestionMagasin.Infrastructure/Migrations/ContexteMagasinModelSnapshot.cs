@@ -807,6 +807,11 @@ namespace GestionMagasin.Infrastructure.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("informations_ticket");
 
+                    b.Property<string>("LienQrCodeTicket")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("lien_qr_code_ticket");
+
                     b.Property<string>("Logo")
                         .HasMaxLength(400)
                         .HasColumnType("character varying(400)")

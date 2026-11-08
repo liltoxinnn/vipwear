@@ -16,7 +16,13 @@ public enum StyleLigne
     /// total. Une ligne de ce corps contient deux tiers des caractères d'une
     /// ligne normale.
     /// </summary>
-    Grand
+    Grand,
+
+    /// <summary>
+    /// QR code, centré. Le texte de la ligne est le contenu du code, et non
+    /// du texte à imprimer : c'est le dessin qui le transforme en carrés.
+    /// </summary>
+    CodeQr
 }
 
 /// <summary>
@@ -204,8 +210,25 @@ public static class CompositionTicket
         AjouterCentre(
             $"Échange ou retour sous {magasin.DelaiRetourJours} jours sur présentation du ticket.");
 
+        // Le QR code ferme le ticket : c'est la dernière chose qu'on regarde
+        // avant de le ranger, et il ne gêne la lecture de rien.
+        if (!string.IsNullOrWhiteSpace(magasin.LienQrCodeTicket))
+        {
+            // Pas de ligne blanche avant : la marge que le code exige autour
+            // de lui en tient lieu.
+            Ajouter(magasin.LienQrCodeTicket.Trim(), StyleLigne.CodeQr);
+            AjouterCentre(LegendeQrCode);
+        }
+
         return lignes;
     }
+
+    /// <summary>
+    /// Ligne imprimée sous le QR code. Elle dit ce qu'on gagne à le scanner,
+    /// sans nommer de réseau : le même texte vaut pour un lien Instagram,
+    /// Facebook ou Linktree. Elle tient sur une ligne de 58 mm.
+    /// </summary>
+    public const string LegendeQrCode = "Suivez-nous sur nos réseaux";
 
     /// <summary>Caractères d'une ligne en grand corps, pour une largeur normale donnée.</summary>
     public static int ColonnesGrandes(int colonnes) => colonnes * 2 / 3;

@@ -1,5 +1,6 @@
 using GestionMagasin.Application.Common;
 using GestionMagasin.Application.DTOs;
+using GestionMagasin.Application.Impression;
 using GestionMagasin.Application.Services.Abstractions;
 using GestionMagasin.Domain.Entities;
 using QuestPDF.Fluent;
@@ -154,6 +155,15 @@ public class ServiceDocumentsPdf : IServiceDocumentsPdf
                     colonne.Item().PaddingTop(2).AlignCenter()
                         .Text($"Échange ou retour sous {magasin.DelaiRetourJours} jours sur présentation du ticket.")
                         .FontSize(6.5f).FontColor(StyleDocuments.CouleurTexteAttenue);
+
+                    // Même QR code que sur le ticket imprimé, à la même taille.
+                    if (!string.IsNullOrWhiteSpace(magasin.LienQrCodeTicket))
+                    {
+                        colonne.Item().PaddingTop(4).AlignCenter().Width(18, Unit.Millimetre)
+                            .Image(CodeQr.Png(magasin.LienQrCodeTicket));
+
+                        colonne.Item().AlignCenter().Text(CompositionTicket.LegendeQrCode).FontSize(7f);
+                    }
                 });
             });
         }).GeneratePdf();

@@ -77,6 +77,10 @@ public partial class VueModeleParametres : VueModeleBase
     [ObservableProperty]
     private string _informationsTicket = string.Empty;
 
+    /// <summary>Lien imprimé en QR code en bas des tickets ; vide, pas de QR code.</summary>
+    [ObservableProperty]
+    private string _lienQrCodeTicket = string.Empty;
+
     [ObservableProperty]
     private string _registreCommerce = string.Empty;
 
@@ -127,6 +131,7 @@ public partial class VueModeleParametres : VueModeleBase
             Devise = magasin.Devise;
             SymboleDevise = magasin.SymboleDevise;
             InformationsTicket = magasin.InformationsTicket ?? string.Empty;
+            LienQrCodeTicket = magasin.LienQrCodeTicket ?? string.Empty;
             RegistreCommerce = magasin.RegistreCommerce ?? string.Empty;
             NumeroIdentificationFiscale = magasin.NumeroIdentificationFiscale ?? string.Empty;
             ArticleImposition = magasin.ArticleImposition ?? string.Empty;
@@ -400,6 +405,7 @@ public partial class VueModeleParametres : VueModeleBase
                     Devise = Devise,
                     SymboleDevise = SymboleDevise,
                     InformationsTicket = InformationsTicket,
+                    LienQrCodeTicket = LienQrCodeTicket,
                     RegistreCommerce = RegistreCommerce,
                     NumeroIdentificationFiscale = NumeroIdentificationFiscale,
                     ArticleImposition = ArticleImposition,

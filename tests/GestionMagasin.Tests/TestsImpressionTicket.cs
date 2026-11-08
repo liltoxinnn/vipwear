@@ -151,6 +151,7 @@ public class TestsImpressionTicket
         magasin.NomMagasin = "VIP MEN'S STORE — PRÊT-À-PORTER MASCULIN DE QUALITÉ";
         magasin.Adresse = "Cité des 1000 logements, bâtiment 12, entrée B, Béjaïa 06000, Algérie";
         magasin.InformationsTicket = "Un message volontairement très long pour vérifier qu'il se replie proprement";
+        magasin.LienQrCodeTicket = "https://linktr.ee/VIPMENSSTORE";
 
         var vente = Vente(
             Article("PANTALON CHINO SLIM STRETCH COTON BIOLOGIQUE — Bleu marine / 42", 1, 125_000m),
@@ -161,7 +162,9 @@ public class TestsImpressionTicket
 
         Assert.NotEmpty(lignes);
 
-        foreach (var ligne in lignes)
+        // Le texte d'une ligne de QR code est son contenu, pas ce qui
+        // s'imprime : sa largeur est vérifiée en points par ailleurs.
+        foreach (var ligne in lignes.Where(l => l.Style != StyleLigne.CodeQr))
         {
             Assert.True(ligne.Texte.Length <= Largeur(ligne, reglages),
                 $"« {ligne.Texte} » ({ligne.Texte.Length} car.) dépasse {Largeur(ligne, reglages)} en {ligne.Style}");

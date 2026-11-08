@@ -35,7 +35,14 @@
                             <TextBlock Text="Message imprimé en bas des tickets"
                                        Style="{StaticResource TexteEtiquette}" />
                             <TextBox Style="{StaticResource ChampTexte}" Text="{Binding InformationsTicket}"
-                                     AcceptsReturn="True" Height="60" TextWrapping="Wrap" />
+                                     AcceptsReturn="True" Height="60" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                            <TextBlock Text="Lien du QR code imprimé en bas des tickets"
+                                       Style="{StaticResource TexteEtiquette}" />
+                            <TextBox Style="{StaticResource ChampTexte}" Text="{Binding LienQrCodeTicket}"
+                                     ToolTip="Le QR code est fabriqué à partir de ce lien : collez-le tel quel" />
+                            <TextBlock Style="{StaticResource TexteAttenue}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                       Text="Votre page Instagram, Facebook ou Linktree, par exemple https://linktr.ee/VIPMENSSTORE. Laissez vide pour ne pas imprimer de QR code." />
                         </StackPanel>
                     </Border>
 
