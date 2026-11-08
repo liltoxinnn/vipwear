@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Printing;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using GestionMagasin.Application.Impression;
 
 namespace GestionMagasin.App.Impression;
 
@@ -30,12 +31,41 @@ internal static class SpouleurWindows
     private const int ErreurTypeDonneesInvalide = 1804;
 
     /// <summary>
-    /// Imprimantes installées sur le poste, par ordre alphabétique. Une liste
-    /// vide si le spouleur de Windows est arrêté : l'écran des réglages le
-    /// dit alors, au lieu de tomber en erreur.
+    /// Imprimantes installées sur le poste, par ordre alphabétique, sans les
+    /// imprimantes virtuelles (PDF, XPS, OneNote, fax) : elles ne savent pas
+    /// imprimer un ticket. Une liste vide si le spouleur de Windows est
+    /// arrêté : l'écran des réglages le dit alors, au lieu de tomber en erreur.
     /// </summary>
     public static IReadOnlyList<string> ListerImprimantes()
     {
+        var noms = Recenser()
+            .Where(imprimante => !imprimante.Virtuelle)
+            .Select(imprimante => imprimante.Nom)
+            .ToList();
+
+        noms.Sort(StringComparer.CurrentCultureIgnoreCase);
+
+        return noms;
+    }
+
+    /// <summary>
+    /// Vrai si l'imprimante désignée fabrique un fichier au lieu d'imprimer,
+    /// d'après son nom, et d'après son port et son pilote si Windows la
+    /// connaît encore.
+    /// </summary>
+    public static bool EstVirtuelle(string nomImprimante) =>
+        PropositionImprimante.EstVirtuelle(nomImprimante)
+        || Recenser().Any(imprimante => imprimante.Virtuelle
+                                        && string.Equals(imprimante.Nom, nomImprimante,
+                                            StringComparison.OrdinalIgnoreCase));
+
+    private readonly record struct ImprimanteWindows(string Nom, bool Virtuelle);
+
+    /// <summary>Toutes les files d'impression du poste, locales et partagées.</summary>
+    private static List<ImprimanteWindows> Recenser()
+    {
+        var imprimantes = new List<ImprimanteWindows>();
+
         try
         {
             using var serveur = new LocalPrintServer();
@@ -43,24 +73,43 @@ internal static class SpouleurWindows
             var files = serveur.GetPrintQueues(
                 [EnumeratedPrintQueueTypes.Local, EnumeratedPrintQueueTypes.Connections]);
 
-            var noms = new List<string>();
-
             foreach (var file in files)
             {
                 using (file)
                 {
-                    noms.Add(file.FullName);
+                    var nom = file.FullName;
+
+                    imprimantes.Add(new ImprimanteWindows(
+                        nom,
+                        PropositionImprimante.EstVirtuelle(nom, Lire(() => file.QueuePort?.Name),
+                            Lire(() => file.QueueDriver?.Name))));
                 }
             }
-
-            noms.Sort(StringComparer.CurrentCultureIgnoreCase);
-
-            return noms;
         }
         catch (Exception erreur) when (erreur is PrintSystemException or Win32Exception
                                            or InvalidOperationException)
         {
-            return [];
+            // Spouleur arrêté : aucune imprimante, plutôt qu'une erreur.
+        }
+
+        return imprimantes;
+    }
+
+    /// <summary>
+    /// Lit une propriété d'une file d'impression. Le port ou le pilote d'une
+    /// imprimante partagée par un autre poste éteint peut être illisible :
+    /// on se passe alors de lui, sans écarter l'imprimante pour autant.
+    /// </summary>
+    private static string? Lire(Func<string?> lecture)
+    {
+        try
+        {
+            return lecture();
+        }
+        catch (Exception erreur) when (erreur is PrintSystemException or Win32Exception
+                                           or InvalidOperationException)
+        {
+            return null;
         }
     }
 

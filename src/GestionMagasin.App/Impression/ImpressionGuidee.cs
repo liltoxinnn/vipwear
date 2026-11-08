@@ -33,13 +33,27 @@ internal static class ImpressionGuidee
         ILogger journal)
     {
         var reglages = impression.Reglages;
+        string? avertissement = null;
 
         if (reglages.EstConfiguree)
         {
-            return SuiteChoixImprimante.Imprimer;
+            // Une imprimante PDF retenue par erreur ne produit que des
+            // fichiers vides : la question est reposée, en disant pourquoi.
+            if (!impression.EstVirtuelle(reglages.NomImprimante!))
+            {
+                return SuiteChoixImprimante.Imprimer;
+            }
+
+            journal.LogWarning(
+                "Imprimante de tickets : « {Imprimante} » est une imprimante virtuelle, la question est reposée.",
+                reglages.NomImprimante);
+
+            avertissement =
+                $"« {reglages.NomImprimante} » n'est pas une imprimante : elle fabrique un fichier PDF " +
+                "qui sortirait vide. Choisissez l'imprimante de tickets, ou « En PDF, cette fois ».";
         }
 
-        var choix = dialogue.ChoisirImprimanteTicket(impression.ListerImprimantes());
+        var choix = dialogue.ChoisirImprimanteTicket(impression.ListerImprimantes(), avertissement);
 
         if (choix.Suite != SuiteChoixImprimante.Imprimer)
         {

@@ -6,7 +6,8 @@ using GestionMagasin.Application.Impression;
 namespace GestionMagasin.App.Views.Dialogues;
 
 /// <summary>
-/// Choix de l'imprimante de tickets, au premier ticket d'un poste.
+/// Choix de l'imprimante de tickets, au premier ticket d'un poste, ou
+/// quand l'imprimante retenue ne peut pas imprimer de ticket.
 ///
 /// L'imprimante qui s'annonce comme une imprimante de caisse est
 /// présélectionnée, avec la largeur que suggère son nom : dans le cas
@@ -14,9 +15,19 @@ namespace GestionMagasin.App.Views.Dialogues;
 /// </summary>
 public partial class FenetreChoixImprimante : Window
 {
-    public FenetreChoixImprimante(IReadOnlyList<string> imprimantes)
+    /// <param name="imprimantes">Imprimantes proposées, sans les imprimantes virtuelles.</param>
+    /// <param name="avertissement">
+    /// Pourquoi la question est posée de nouveau — l'imprimante retenue
+    /// fabriquait des PDF vides, par exemple —, affiché en tête de fenêtre.
+    /// </param>
+    public FenetreChoixImprimante(IReadOnlyList<string> imprimantes, string? avertissement = null)
     {
         InitializeComponent();
+
+        TexteAvertissement.Text = avertissement ?? string.Empty;
+        TexteAvertissement.Visibility = string.IsNullOrWhiteSpace(avertissement)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
 
         ListeImprimantes.ItemsSource = imprimantes;
 

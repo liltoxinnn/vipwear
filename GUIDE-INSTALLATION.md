@@ -216,6 +216,14 @@ les réglages sont retenus.
 > pilote **Generic / Text Only**, sur son port USB (USB001 en général). Le
 > logiciel envoie lui-même ses commandes à l'imprimante : ce pilote suffit.
 
+> **Microsoft Print to PDF** (et les autres imprimantes PDF, XPS, OneNote,
+> fax) n'est pas une imprimante de tickets : elle ne comprend pas les
+> commandes d'une imprimante de caisse et en tirerait un PDF vide, de 0 Ko,
+> que le lecteur PDF déclare endommagé. Le logiciel ne la propose donc pas,
+> et refuse d'y envoyer un ticket. Pour avoir les tickets en PDF en
+> attendant l'imprimante, répondez **En PDF, cette fois**, ou choisissez
+> **Ne plus utiliser d'imprimante** dans Paramètres.
+
 > Le réglage appartient **au poste**, pas au magasin : il est enregistré sur
 > cet ordinateur. Un second poste de caisse choisit sa propre imprimante.
 

@@ -63,6 +63,83 @@ public class TestsPropositionImprimante
         Assert.Equal(LargeurRouleau.Rouleau58, PropositionImprimante.LargeurSupposee("HP LaserJet 1080"));
     }
 
+    [Theory]
+    [InlineData("Microsoft Print to PDF")]
+    [InlineData("Microsoft Print to PDF (redirection 2)")]
+    [InlineData("Microsoft XPS Document Writer")]
+    [InlineData("OneNote (Desktop)")]
+    [InlineData("OneNote for Windows 10")]
+    [InlineData("Send To OneNote 2016")]
+    [InlineData("Fax")]
+    [InlineData("Adobe PDF")]
+    [InlineData("PDF24")]
+    [InlineData("PDFCreator")]
+    [InlineData("CutePDF Writer")]
+    [InlineData("doPDF 11")]
+    [InlineData("Foxit PDF Editor Printer")]
+    public void Une_imprimante_qui_fabrique_un_fichier_est_virtuelle(string nom)
+    {
+        Assert.True(PropositionImprimante.EstVirtuelle(nom));
+    }
+
+    [Theory]
+    [InlineData("Otala R58P")]
+    [InlineData("POS-58")]
+    [InlineData("XP-58")]
+    [InlineData("EPSON TM-T20II Receipt")]
+    [InlineData("Generic / Text Only")]
+    [InlineData("HP LaserJet Pro M1080")]
+    [InlineData("Caisse")]
+    public void Une_vraie_imprimante_n_est_pas_virtuelle(string nom)
+    {
+        Assert.False(PropositionImprimante.EstVirtuelle(nom, "USB001", nom));
+    }
+
+    [Theory]
+    [InlineData("PORTPROMPT:")]
+    [InlineData("portprompt:")]
+    [InlineData("XPSPort:")]
+    [InlineData("SHRFAX:")]
+    [InlineData("nul:")]
+    [InlineData(@"C:\Users\Caisse\Documents\ticket.pdf")]
+    public void Une_imprimante_renommee_se_trahit_par_son_port(string port)
+    {
+        Assert.True(PropositionImprimante.EstVirtuelle("Caisse", port));
+    }
+
+    [Theory]
+    [InlineData("USB001")]
+    [InlineData("COM3:")]
+    [InlineData("LPT1:")]
+    [InlineData("FILE:")]
+    [InlineData("IP_192.168.1.50")]
+    public void Un_port_d_imprimante_reelle_ou_de_fichier_brut_est_accepte(string port)
+    {
+        // « FILE: » avec le pilote Generic / Text Only enregistre les
+        // commandes du ticket telles quelles : c'est un moyen de vérifier ce
+        // qui partirait à l'imprimante, pas une imprimante PDF.
+        Assert.False(PropositionImprimante.EstVirtuelle("Generic / Text Only", port, "Generic / Text Only"));
+    }
+
+    [Fact]
+    public void Une_imprimante_pdf_renommee_se_trahit_par_son_pilote()
+    {
+        Assert.True(PropositionImprimante.EstVirtuelle("Ticket caisse", "USB001", "Microsoft Print To PDF"));
+    }
+
+    [Fact]
+    public void Une_imprimante_pdf_n_est_jamais_proposee_meme_si_son_nom_evoque_la_caisse()
+    {
+        Assert.Null(PropositionImprimante.Proposer(["POS PDF Printer", "PDF Ticket 58mm", "Receipt to XPS"]));
+    }
+
+    [Fact]
+    public void Un_nom_absent_n_est_pas_virtuel()
+    {
+        Assert.False(PropositionImprimante.EstVirtuelle(null));
+        Assert.False(PropositionImprimante.EstVirtuelle("  ", " ", null));
+    }
+
     [Fact]
     public void Une_liste_vide_ne_propose_rien()
     {
