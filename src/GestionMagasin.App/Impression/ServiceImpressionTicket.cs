@@ -19,8 +19,14 @@ public interface IServiceImpressionTicket
     /// <summary>Enregistre les réglages du poste.</summary>
     void Enregistrer(ReglagesTicket reglages);
 
-    /// <summary>Imprimantes installées dans Windows.</summary>
+    /// <summary>Imprimantes installées dans Windows, sans les imprimantes virtuelles.</summary>
     IReadOnlyList<string> ListerImprimantes();
+
+    /// <summary>
+    /// Vrai si l'imprimante fabrique un fichier (PDF, XPS…) au lieu
+    /// d'imprimer : elle ne peut pas servir d'imprimante de tickets.
+    /// </summary>
+    bool EstVirtuelle(string nomImprimante);
 
     /// <summary>Imprime le ticket d'une vente.</summary>
     /// <param name="vente">Vente enregistrée.</param>
@@ -74,6 +80,16 @@ public sealed class ServiceImpressionTicket : IServiceImpressionTicket
     }
 
     public IReadOnlyList<string> ListerImprimantes() => SpouleurWindows.ListerImprimantes();
+
+    public bool EstVirtuelle(string nomImprimante) => SpouleurWindows.EstVirtuelle(nomImprimante);
+
+    /// <summary>Refus d'imprimer un ticket sur une imprimante qui fabrique un fichier.</summary>
+    public static string MessageImprimanteVirtuelle(string nomImprimante) =>
+        $"« {nomImprimante} » n'est pas une imprimante : elle fabrique un fichier PDF, et ne comprend " +
+        "pas les commandes d'une imprimante de tickets — le fichier sortirait vide, de 0 Ko." +
+        Environment.NewLine + Environment.NewLine +
+        "Choisissez l'imprimante de tickets dans Paramètres, onglet Imprimante de tickets, ou " +
+        "« Ne plus utiliser d'imprimante » pour obtenir les tickets en PDF.";
 
     public async Task ImprimerAsync(VenteDto vente, decimal? montantRecu = null)
     {
@@ -135,6 +151,15 @@ public sealed class ServiceImpressionTicket : IServiceImpressionTicket
 
     private async Task ImprimerAsync(VenteDto vente, ReglagesTicket reglages, decimal? montantRecu, string? mention)
     {
+        var nomImprimante = reglages.NomImprimante!;
+
+        // Une imprimante PDF accepte le travail sans broncher et en tire un
+        // fichier vide : le ticket serait perdu sans que personne ne le sache.
+        if (SpouleurWindows.EstVirtuelle(nomImprimante))
+        {
+            throw new ImpressionTicketException(MessageImprimanteVirtuelle(nomImprimante));
+        }
+
         var magasin = await _parametres.ObtenirAsync().ConfigureAwait(true);
 
         var lignes = CompositionTicket.Composer(vente, magasin, reglages, montantRecu, mention);
@@ -145,7 +170,6 @@ public sealed class ServiceImpressionTicket : IServiceImpressionTicket
         // servir des objets graphiques de WPF ; la suite n'en a plus besoin.
         var image = RenduTicket.Dessiner(lignes, reglages, logo);
 
-        var nomImprimante = reglages.NomImprimante!;
         var nomDocument = $"Ticket {vente.NumeroVente}";
 
         _journal.LogInformation(

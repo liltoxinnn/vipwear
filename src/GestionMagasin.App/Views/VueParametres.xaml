@@ -460,7 +460,7 @@
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource TexteSecondaire}">
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding ImprimanteChoisieExiste}" Value="False">
+                                            <DataTrigger Binding="{Binding ImprimanteChoisieUtilisable}" Value="False">
                                                 <Setter Property="Foreground" Value="{StaticResource PinceauDanger}" />
                                                 <Setter Property="FontWeight" Value="SemiBold" />
                                             </DataTrigger>

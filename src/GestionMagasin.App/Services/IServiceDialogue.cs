@@ -56,5 +56,7 @@ public interface IServiceDialogue
     /// Demande sur quelle imprimante sortent les tickets, l'imprimante de
     /// caisse présélectionnée si l'une s'annonce comme telle.
     /// </summary>
-    ChoixImprimanteTicket ChoisirImprimanteTicket(IReadOnlyList<string> imprimantes);
+    /// <param name="imprimantes">Imprimantes proposées.</param>
+    /// <param name="avertissement">Pourquoi la question est posée de nouveau, s'il y a lieu.</param>
+    ChoixImprimanteTicket ChoisirImprimanteTicket(IReadOnlyList<string> imprimantes, string? avertissement = null);
 }

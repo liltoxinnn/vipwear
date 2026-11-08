@@ -155,8 +155,14 @@ public partial class VueModeleParametres : VueModeleBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EtatImprimante))]
-    [NotifyPropertyChangedFor(nameof(ImprimanteChoisieExiste))]
+    [NotifyPropertyChangedFor(nameof(ImprimanteChoisieUtilisable))]
     private string? _imprimanteChoisie;
+
+    /// <summary>L'imprimante choisie fabrique des fichiers (PDF, XPS…) au lieu d'imprimer.</summary>
+    private bool _choisieVirtuelle;
+
+    partial void OnImprimanteChoisieChanged(string? value) =>
+        _choisieVirtuelle = value is not null && _impression.EstVirtuelle(value);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Rouleau58))]
@@ -195,20 +201,25 @@ public partial class VueModeleParametres : VueModeleBase
     }
 
     /// <summary>
-    /// Faux lorsque l'imprimante enregistrée n'apparaît plus dans Windows :
+    /// Faux lorsque l'imprimante enregistrée ne peut pas imprimer de ticket :
+    /// c'est une imprimante PDF, ou elle n'apparaît plus dans Windows —
     /// renommée, débranchée et désinstallée, ou installée sous un autre nom
     /// après une réinstallation du pilote.
     /// </summary>
-    public bool ImprimanteChoisieExiste =>
-        ImprimanteChoisie is null || Imprimantes.Contains(ImprimanteChoisie);
+    public bool ImprimanteChoisieUtilisable =>
+        ImprimanteChoisie is null || (!_choisieVirtuelle && Imprimantes.Contains(ImprimanteChoisie));
 
     /// <summary>Ce que fera la caisse, en une phrase.</summary>
     public string EtatImprimante => ImprimanteChoisie is null
         ? "Aucune imprimante choisie : les tickets sont produits en PDF."
-        : ImprimanteChoisieExiste
-            ? $"Les tickets partent directement sur « {ImprimanteChoisie} »."
-            : $"« {ImprimanteChoisie} » n'est plus installée dans Windows. " +
-              "Choisissez-la de nouveau dans la liste.";
+        : _choisieVirtuelle
+            ? $"« {ImprimanteChoisie} » n'est pas une imprimante de tickets : elle fabrique un fichier " +
+              "PDF, qui sortirait vide (0 Ko). Choisissez l'imprimante de tickets dans la liste, ou " +
+              "« Ne plus utiliser d'imprimante » pour avoir les tickets en PDF."
+            : ImprimanteChoisieUtilisable
+                ? $"Les tickets partent directement sur « {ImprimanteChoisie} »."
+                : $"« {ImprimanteChoisie} » n'est plus installée dans Windows. " +
+                  "Choisissez-la de nouveau dans la liste.";
 
     private void ChargerImprimante()
     {
@@ -244,7 +255,7 @@ public partial class VueModeleParametres : VueModeleBase
             Imprimantes.Add(aConserver);
         }
 
-        OnPropertyChanged(nameof(ImprimanteChoisieExiste));
+        OnPropertyChanged(nameof(ImprimanteChoisieUtilisable));
         OnPropertyChanged(nameof(EtatImprimante));
     }
 
@@ -294,6 +305,21 @@ public partial class VueModeleParametres : VueModeleBase
 
     private bool Sauvegarder()
     {
+        if (_choisieVirtuelle)
+        {
+            Dialogue.Avertir(
+                $"« {ImprimanteChoisie} » ne peut pas servir d'imprimante de tickets : elle fabrique un " +
+                "fichier PDF, et ne comprend pas les commandes d'une imprimante de caisse — chaque ticket " +
+                "sortirait en fichier vide, de 0 Ko." +
+                Environment.NewLine + Environment.NewLine +
+                "Choisissez l'imprimante de tickets dans la liste. Si elle n'y figure pas, installez son " +
+                "pilote, puis appuyez sur Actualiser. Pour avoir les tickets en PDF, appuyez sur " +
+                "« Ne plus utiliser d'imprimante ».",
+                "Imprimante PDF");
+
+            return false;
+        }
+
         try
         {
             _impression.Enregistrer(ReglagesSaisis());

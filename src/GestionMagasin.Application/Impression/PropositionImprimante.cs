@@ -18,11 +18,28 @@ public sealed record ImprimanteProposee(string Nom, LargeurRouleau Largeur);
 public static partial class PropositionImprimante
 {
     /// <summary>
-    /// Noms qui ne sont jamais une imprimante de tickets : imprimantes
-    /// virtuelles de Windows et d'Office.
+    /// Noms d'imprimante ou de pilote qui ne sont jamais une imprimante de
+    /// tickets : imprimantes virtuelles de Windows et d'Office, et logiciels
+    /// qui fabriquent un fichier (PDF24, PDFCreator, CutePDF, doPDF…). Le
+    /// mot est cherché partout dans le nom, pas seulement isolé : « PDF24 »
+    /// et « CutePDF Writer » sont des imprimantes PDF aussi.
     /// </summary>
-    [GeneratedRegex(@"\b(pdf|xps|onenote|fax|send to|envoyer)\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(
+        @"pdf|xps|onenote|document writer|\bfax\b|send to|envoyer vers|print to file|imprimer dans un fichier",
+        RegexOptions.IgnoreCase)]
     private static partial Regex Virtuelle();
+
+    /// <summary>
+    /// Ports des imprimantes qui écrivent un fichier au lieu d'imprimer :
+    /// « PORTPROMPT: » (Microsoft Print to PDF et XPS Document Writer, qui
+    /// demandent où enregistrer), « XPSPort: », « SHRFAX: » (télécopie),
+    /// « nul: » (OneNote), ou un chemin de fichier PDF / XPS. Le port
+    /// « FILE: » n'en fait pas partie : branché sur le pilote « Generic /
+    /// Text Only », il enregistre les commandes du ticket telles quelles,
+    /// ce qui sert à les vérifier sans imprimante.
+    /// </summary>
+    [GeneratedRegex(@"^(portprompt|xpsport|shrfax|nul):?$|\.(pdf|o?xps)$", RegexOptions.IgnoreCase)]
+    private static partial Regex PortVirtuel();
 
     /// <summary>
     /// Marques sûres d'une imprimante de caisse : « POS », « thermique »,
@@ -46,11 +63,29 @@ public static partial class PropositionImprimante
 
         var nom = imprimantes
             .Where(n => !string.IsNullOrWhiteSpace(n))
-            .Where(n => !Virtuelle().IsMatch(n))
+            .Where(n => !EstVirtuelle(n))
             .FirstOrDefault(n => DeCaisse().IsMatch(n));
 
         return nom is null ? null : new ImprimanteProposee(nom, LargeurSupposee(nom));
     }
+
+    /// <summary>
+    /// Vrai pour une imprimante qui fabrique un fichier au lieu d'imprimer :
+    /// « Microsoft Print to PDF », « Microsoft XPS Document Writer »,
+    /// OneNote, le fax, PDF24…
+    ///
+    /// Une telle imprimante ne doit jamais recevoir un ticket. Elle accepte
+    /// le travail sans erreur, mais ne comprend pas les commandes d'une
+    /// imprimante de caisse : elle en tire un fichier PDF vide, de 0 Ko, que
+    /// le lecteur PDF déclare endommagé — et le ticket est perdu.
+    /// </summary>
+    /// <param name="nom">Nom de l'imprimante dans Windows.</param>
+    /// <param name="port">Port de l'imprimante, quand on le connaît.</param>
+    /// <param name="pilote">Nom de son pilote, quand on le connaît : une imprimante PDF renommée « Caisse » reste une imprimante PDF.</param>
+    public static bool EstVirtuelle(string? nom, string? port = null, string? pilote = null) =>
+        (!string.IsNullOrWhiteSpace(nom) && Virtuelle().IsMatch(nom))
+        || (!string.IsNullOrWhiteSpace(port) && PortVirtuel().IsMatch(port.Trim()))
+        || (!string.IsNullOrWhiteSpace(pilote) && Virtuelle().IsMatch(pilote));
 
     /// <summary>
     /// Largeur lue dans le nom : « 80 » s'il y figure en tant que nombre, 58
