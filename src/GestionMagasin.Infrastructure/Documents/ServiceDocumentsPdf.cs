@@ -3,6 +3,7 @@ using GestionMagasin.Application.DTOs;
 using GestionMagasin.Application.Impression;
 using GestionMagasin.Application.Services.Abstractions;
 using GestionMagasin.Domain.Entities;
+using QuestPDF.Drawing.Exceptions;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -17,19 +18,52 @@ namespace GestionMagasin.Infrastructure.Documents;
 public class ServiceDocumentsPdf : IServiceDocumentsPdf
 {
     private readonly IServiceParametres _parametres;
+    private readonly ILogoMagasin _logo;
 
-    public ServiceDocumentsPdf(IServiceParametres parametres)
+    public ServiceDocumentsPdf(IServiceParametres parametres, ILogoMagasin logo)
     {
         _parametres = parametres;
+        _logo = logo;
     }
 
     // ==================================================================
     // Ticket de caisse
     // ==================================================================
 
+    /// <summary>
+    /// Largeur du logo sur le ticket PDF : à peu près celle qu'il occupe sur
+    /// un rouleau thermique, la moitié de la largeur imprimable.
+    /// </summary>
+    private const float LargeurLogoTicket = 26f;
+
+    /// <summary>
+    /// Logo du magasin prêt à être placé, ou rien. Un fichier abîmé ou d'un
+    /// format inconnu ne doit pas empêcher le ticket de sortir : il sort
+    /// alors sans logo.
+    /// </summary>
+    private Image? ChargerLogo()
+    {
+        if (_logo.Lire() is not { Length: > 0 } octets)
+        {
+            return null;
+        }
+
+        try
+        {
+            return Image.FromBinaryData(octets);
+        }
+        catch (Exception erreur) when (erreur is DocumentComposeException or ArgumentException
+                                           or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
     public async Task<byte[]> GenererTicketAsync(VenteDto vente, CancellationToken jeton = default)
     {
         var magasin = await _parametres.ObtenirAsync(jeton).ConfigureAwait(false);
+
+        using var logo = ChargerLogo();
 
         return Document.Create(document =>
         {
@@ -46,7 +80,13 @@ public class ServiceDocumentsPdf : IServiceDocumentsPdf
                 {
                     colonne.Spacing(4);
 
-                    // En-tête du magasin
+                    // En-tête du magasin : le logo en tête, comme sur le
+                    // ticket de l'imprimante de caisse.
+                    if (logo is not null)
+                    {
+                        colonne.Item().AlignCenter().Width(LargeurLogoTicket, Unit.Millimetre).Image(logo);
+                    }
+
                     colonne.Item().AlignCenter().Text(magasin.NomMagasin)
                         .Bold().FontSize(12).FontColor(StyleDocuments.CouleurPrincipale);
 

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
+using GestionMagasin.Application.Common;
 
 namespace GestionMagasin.App.Views;
 
@@ -12,19 +13,11 @@ namespace GestionMagasin.App.Views;
 /// enseigne. Si le magasin fournit son propre logo, c'est lui qui est repris
 /// partout — écran de connexion et menu — sans qu'il faille recompiler.
 ///
-/// Le fichier est cherché à deux endroits, dans cet ordre :
-/// 1. le dossier de données du poste, où l'écran Paramètres l'installe ;
-/// 2. à côté du programme, où le script de publication le dépose.
-///
-/// Le premier l'emporte : un magasin peut ainsi changer son logo lui-même
-/// sans toucher au dossier d'installation, qui est parfois protégé par
-/// Windows.
+/// Le fichier est cherché aux emplacements de <see cref="EmplacementsLogo"/>,
+/// les mêmes que pour les tickets en PDF.
 /// </summary>
 public sealed partial class Enseigne : ObservableObject
 {
-    /// <summary>Noms acceptés à côté du programme, par ordre de préférence.</summary>
-    private static readonly string[] NomsFichiers = ["logo.png", "logo.jpg", "logo.jpeg", "logo.bmp"];
-
     private Enseigne() => Recharger();
 
     /// <summary>
@@ -34,10 +27,7 @@ public sealed partial class Enseigne : ObservableObject
     public static Enseigne Courante { get; } = new();
 
     /// <summary>Emplacement du logo installé depuis l'écran Paramètres.</summary>
-    public static string CheminInstalle { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "GestionMagasin",
-        "logo.png");
+    public static string CheminInstalle => EmplacementsLogo.CheminInstalle;
 
     [ObservableProperty]
     private BitmapImage? _logo;
@@ -94,16 +84,11 @@ public sealed partial class Enseigne : ObservableObject
 
     private static BitmapImage? Chercher()
     {
-        if (Lire(CheminInstalle) is { } installe)
+        foreach (var chemin in EmplacementsLogo.Candidats())
         {
-            return installe;
-        }
-
-        foreach (var nom in NomsFichiers)
-        {
-            if (Lire(Path.Combine(AppContext.BaseDirectory, nom)) is { } livre)
+            if (Lire(chemin) is { } image)
             {
-                return livre;
+                return image;
             }
         }
 

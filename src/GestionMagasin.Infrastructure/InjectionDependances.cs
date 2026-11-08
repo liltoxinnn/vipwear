@@ -83,6 +83,7 @@ public static class InjectionDependances
         services.AddSingleton<CacheParametresMagasin>();
 
         // --- Documents ---
+        services.AddSingleton<ILogoMagasin, LogoMagasinFichier>();
         services.AddScoped<IServiceDocumentsPdf, ServiceDocumentsPdf>();
         services.AddScoped<IServiceExportExcel, ServiceExportExcel>();
 
