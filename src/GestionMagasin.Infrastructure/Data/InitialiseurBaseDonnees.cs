@@ -403,9 +403,12 @@ public class InitialiseurBaseDonnees
         {
             Id = 1,
             NomMagasin = "VIP MEN’S STORE",
+            Adresse = "Ighil Ouazoug, à 50 mètres à côté de la mosquée",
+            Telephone = "0557174909",
             Devise = "DZD",
             SymboleDevise = "DA",
             InformationsTicket = "Merci de votre visite et à bientôt !",
+            LienQrCodeTicket = "https://linktr.ee/VIPMENSSTORE",
             TauxTva = 19m,
             DelaiRetourJours = 30,
             DateModification = _horodatage.MaintenantUtc

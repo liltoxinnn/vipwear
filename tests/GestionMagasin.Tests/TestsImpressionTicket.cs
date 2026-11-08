@@ -339,6 +339,54 @@ public class TestsImpressionTicket
         Assert.DoesNotContain(lignes, l => l.Contains('\u00A0'));
     }
 
+    /// <summary>
+    /// L'adresse du magasin, trop longue pour une ligne de 58 mm, se coupe
+    /// après sa virgule : le lieu-dit, puis le repère.
+    /// </summary>
+    [Fact]
+    public void Une_adresse_trop_longue_se_coupe_apres_sa_virgule()
+    {
+        var lignes = CompositionTicket.RepartirCentre("Ighil Ouazoug, à 50 mètres à côté de la mosquée", 32);
+
+        Assert.Equal(["Ighil Ouazoug,", "à 50 mètres à côté de la mosquée"], lignes);
+    }
+
+    /// <summary>
+    /// Le champ Adresse accepte les retours à la ligne. Laissé dans le texte,
+    /// un retour aurait été dessiné au milieu d'une ligne et décalé tout le
+    /// ticket.
+    /// </summary>
+    [Fact]
+    public void Les_retours_a_la_ligne_saisis_sont_respectes_et_jamais_imprimes()
+    {
+        var magasin = Magasin();
+        magasin.Adresse = "Ighil Ouazoug\r\nà 50 mètres à côté de la mosquée\n";
+
+        var lignes = CompositionTicket.Composer(Vente(Article("HOODIE", 1, 1_000m)), magasin, Rouleau58);
+
+        Assert.DoesNotContain(lignes, l => l.Texte.Contains('\n') || l.Texte.Contains('\r'));
+        Assert.Contains(lignes, l => l.Texte.Trim() == "Ighil Ouazoug");
+        Assert.Contains(lignes, l => l.Texte.Trim() == "à 50 mètres à côté de la mosquée");
+    }
+
+    [Fact]
+    public void Un_texte_centre_sur_deux_lignes_les_equilibre()
+    {
+        var lignes = CompositionTicket.RepartirCentre("Merci de votre visite et à bientôt !", 32);
+
+        Assert.Equal(["Merci de votre visite", "et à bientôt !"], lignes);
+    }
+
+    [Fact]
+    public void Sans_virgule_utile_le_texte_se_replie_entre_les_mots()
+    {
+        var lignes = CompositionTicket.RepartirCentre(
+            "Un message sans virgule qui ne tient pas sur une seule ligne", 32);
+
+        Assert.All(lignes, l => Assert.True(l.Length <= 32));
+        Assert.Equal("Un message sans virgule qui ne tient pas sur une seule ligne", string.Join(' ', lignes));
+    }
+
     [Fact]
     public void Un_mot_plus_long_que_la_ligne_est_coupe_net()
     {

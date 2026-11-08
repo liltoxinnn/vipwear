@@ -86,7 +86,7 @@ public static class CompositionTicket
 
             var largeur = style == StyleLigne.Grand ? grandes : colonnes;
 
-            foreach (var morceau in Envelopper(texte, largeur))
+            foreach (var morceau in RepartirCentre(texte, largeur))
             {
                 Ajouter(Centrer(morceau, largeur), style);
             }
@@ -197,15 +197,9 @@ public static class CompositionTicket
 
         // ---------------- Pied ----------------
 
-        if (!string.IsNullOrWhiteSpace(magasin.InformationsTicket))
-        {
-            // Le message peut tenir sur plusieurs lignes saisies à la main :
-            // chacune est respectée, puis repliée si elle est trop longue.
-            foreach (var paragraphe in magasin.InformationsTicket.Replace("\r", string.Empty).Split('\n'))
-            {
-                AjouterCentre(paragraphe);
-            }
-        }
+        // Le message peut tenir sur plusieurs lignes saisies à la main :
+        // chacune est respectée, puis repliée si elle est trop longue.
+        AjouterCentre(magasin.InformationsTicket);
 
         // Les conditions d'échange ne sont pas imprimées : le magasin a choisi
         // de les retirer du ticket. Le délai reste réglé dans les paramètres,
@@ -239,6 +233,107 @@ public static class CompositionTicket
     // ==================================================================
 
     /// <summary>
+    /// Découpe un texte destiné à être centré : adresse, message de pied.
+    ///
+    /// Les retours à la ligne saisis sont respectés — le champ Adresse en
+    /// accepte, et un retour laissé dans le texte aurait été dessiné au
+    /// milieu d'une ligne, décalant tout le reste. Une ligne trop longue
+    /// est coupée de préférence après une virgule, là où l'auteur a marqué
+    /// la pause : « Ighil Ouazoug, » puis « à 50 mètres à côté de la
+    /// mosquée », plutôt que « Ighil Ouazoug, à 50 mètres à » puis « côté
+    /// de la mosquée ».
+    /// </summary>
+    public static IReadOnlyList<string> RepartirCentre(string? texte, int largeur)
+    {
+        var lignes = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(texte) || largeur <= 0)
+        {
+            return lignes;
+        }
+
+        foreach (var brut in texte.Replace("\r", string.Empty).Split('\n'))
+        {
+            var paragraphe = brut.Trim();
+
+            if (paragraphe.Length == 0)
+            {
+                continue;
+            }
+
+            if (paragraphe.Length <= largeur)
+            {
+                lignes.Add(paragraphe);
+                continue;
+            }
+
+            var virgule = paragraphe.LastIndexOf(", ", StringComparison.Ordinal);
+
+            while (virgule > 0)
+            {
+                var debut = paragraphe[..(virgule + 1)];
+                var fin = paragraphe[(virgule + 2)..];
+
+                if (debut.Length <= largeur && fin.Length <= largeur)
+                {
+                    lignes.Add(debut);
+                    lignes.Add(fin);
+                    break;
+                }
+
+                virgule = paragraphe.LastIndexOf(", ", virgule - 1, StringComparison.Ordinal);
+            }
+
+            if (virgule <= 0)
+            {
+                lignes.AddRange(Equilibrer(paragraphe, largeur));
+            }
+        }
+
+        return lignes;
+    }
+
+    /// <summary>
+    /// Replie un texte centré. S'il tient en deux lignes, la coupure est
+    /// choisie pour que les deux soient de longueur voisine : « Merci de
+    /// votre visite » puis « et à bientôt ! », plutôt qu'une première ligne
+    /// pleine et « bientôt ! » orphelin dessous.
+    /// </summary>
+    private static IReadOnlyList<string> Equilibrer(string paragraphe, int largeur)
+    {
+        var gourmand = Envelopper(paragraphe, largeur);
+
+        if (gourmand.Count != 2)
+        {
+            return gourmand;
+        }
+
+        var mots = paragraphe.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        IReadOnlyList<string> meilleur = gourmand;
+        var plusLongue = Math.Max(gourmand[0].Length, gourmand[1].Length);
+
+        for (var coupure = 1; coupure < mots.Length; coupure++)
+        {
+            var debut = string.Join(' ', mots[..coupure]);
+            var fin = string.Join(' ', mots[coupure..]);
+            var longueur = Math.Max(debut.Length, fin.Length);
+
+            // À longueur égale, la ligne du haut la plus longue l'emporte :
+            // un texte centré se lit mieux en pointe vers le bas.
+            var meilleure = longueur < plusLongue
+                            || (longueur == plusLongue && debut.Length > meilleur[0].Length);
+
+            if (debut.Length <= largeur && fin.Length <= largeur && meilleure)
+            {
+                meilleur = [debut, fin];
+                plusLongue = longueur;
+            }
+        }
+
+        return meilleur;
+    }
+
+    /// <summary>
     /// Replie un texte sur plusieurs lignes, entre les mots. Un mot plus long
     /// que la ligne — une référence, un courriel — est coupé net : mieux vaut
     /// un mot sur deux lignes qu'une ligne qui sort du papier.
@@ -257,6 +352,10 @@ public static class CompositionTicket
         // sa couleur. L'espace qui suit le tiret devient insécable le temps
         // du repli, puis redevient une espace ordinaire.
         const char Insecable = '\u00A0';
+
+        // Un retour à la ligne égaré ne doit jamais atteindre le dessin : il
+        // y casserait la ligne et décalerait tout ce qui suit.
+        texte = texte.Replace("\r", " ").Replace('\n', ' ');
 
         texte = texte.Replace(" — ", " —" + Insecable).Replace(" - ", " -" + Insecable);
 
