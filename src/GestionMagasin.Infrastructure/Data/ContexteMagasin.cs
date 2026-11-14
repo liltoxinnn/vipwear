@@ -62,6 +62,7 @@ public class ContexteMagasin : DbContext
         modelBuilder.HasSequence<long>(SequencesDocuments.Ventes).StartsAt(1).IncrementsBy(1);
         modelBuilder.HasSequence<long>(SequencesDocuments.Achats).StartsAt(1).IncrementsBy(1);
         modelBuilder.HasSequence<long>(SequencesDocuments.Retours).StartsAt(1).IncrementsBy(1);
+        modelBuilder.HasSequence<long>(SequencesDocuments.CodesBarres).StartsAt(1).IncrementsBy(1);
 
         ConventionsNommage.AppliquerSnakeCase(modelBuilder);
     }

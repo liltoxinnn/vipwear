@@ -22,6 +22,8 @@ namespace GestionMagasin.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence("sequence_code_barres");
+
             modelBuilder.HasSequence("sequence_numero_achat");
 
             modelBuilder.HasSequence("sequence_numero_retour");

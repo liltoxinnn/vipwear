@@ -153,6 +153,59 @@ public partial class VueModeleProduits : VueModeleBase
     /// <summary>Déclenché pour demander la génération groupée de déclinaisons.</summary>
     public event EventHandler<ProduitDto>? GenerationVariantesDemandee;
 
+    /// <summary>
+    /// Déclenché pour ouvrir l'impression des étiquettes d'un produit, avec
+    /// le nombre proposé par déclinaison (une par article en stock à défaut).
+    /// </summary>
+    public event EventHandler<(ProduitDto Produit, IReadOnlyDictionary<int, int>? Nombres)>? EtiquettesDemandees;
+
+    /// <summary>Ouvre l'impression des étiquettes code-barres du produit affiché.</summary>
+    [RelayCommand]
+    private void ImprimerEtiquettes()
+    {
+        if (Fiche is null)
+        {
+            Dialogue.Avertir("Sélectionnez d'abord un produit dans la liste.", "Aucune sélection");
+            return;
+        }
+
+        if (!Fiche.Variantes.Any(v => v.Actif))
+        {
+            Dialogue.Avertir(
+                "Ce produit n'a aucune déclinaison active à étiqueter. Ajoutez d'abord ses tailles et couleurs.",
+                "Aucune déclinaison");
+
+            return;
+        }
+
+        EtiquettesDemandees?.Invoke(this, (Fiche, null));
+    }
+
+    /// <summary>
+    /// Propose d'imprimer les étiquettes d'une déclinaison qui vient d'être
+    /// créée avec du stock : c'est le moment où les articles sont en main.
+    /// </summary>
+    public void ProposerEtiquettes(VarianteDto variante)
+    {
+        if (Fiche is null || variante.QuantiteDisponible <= 0)
+        {
+            return;
+        }
+
+        var nombre = variante.QuantiteDisponible;
+
+        if (Dialogue.Confirmer(
+                $"Déclinaison enregistrée, avec le code-barres {variante.CodeBarres}." +
+                Environment.NewLine + Environment.NewLine +
+                (nombre == 1
+                    ? "Imprimer son étiquette maintenant ?"
+                    : $"Imprimer ses {nombre} étiquettes maintenant, une par article ?"),
+                "Étiquettes code-barres"))
+        {
+            EtiquettesDemandees?.Invoke(this, (Fiche, new Dictionary<int, int> { [variante.Id] = nombre }));
+        }
+    }
+
     [RelayCommand]
     private void NouveauProduit()
     {

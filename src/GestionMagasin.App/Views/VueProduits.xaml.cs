@@ -37,6 +37,7 @@ public partial class VueProduits : UserControl
         _vueModele.FormulaireProduitDemande += SurFormulaireProduit;
         _vueModele.FormulaireVarianteDemande += SurFormulaireVariante;
         _vueModele.GenerationVariantesDemandee += SurGenerationVariantes;
+        _vueModele.EtiquettesDemandees += SurEtiquettes;
     }
 
     private void Detacher()
@@ -49,6 +50,7 @@ public partial class VueProduits : UserControl
         _vueModele.FormulaireProduitDemande -= SurFormulaireProduit;
         _vueModele.FormulaireVarianteDemande -= SurFormulaireVariante;
         _vueModele.GenerationVariantesDemandee -= SurGenerationVariantes;
+        _vueModele.EtiquettesDemandees -= SurEtiquettes;
         _vueModele = null;
     }
 
@@ -91,6 +93,11 @@ public partial class VueProduits : UserControl
         if (fenetre.ShowDialog() == true && _vueModele is not null)
         {
             await _vueModele.RechargerAsync(contexte.Produit.Id);
+
+            if (fenetre.VueModele.VarianteCreee is { } creee)
+            {
+                _vueModele.ProposerEtiquettes(creee);
+            }
         }
     }
 
@@ -106,6 +113,20 @@ public partial class VueProduits : UserControl
         if (fenetre.ShowDialog() == true && _vueModele is not null)
         {
             await _vueModele.RechargerAsync(produit.Id);
+        }
+    }
+
+    private void SurEtiquettes(object? sender, (ProduitDto Produit, IReadOnlyDictionary<int, int>? Nombres) demande)
+    {
+        using var isolee = Fabrique.Creer<FenetreEtiquettes>();
+        var fenetre = isolee.Fenetre;
+
+        fenetre.Owner = Window.GetWindow(this);
+        fenetre.VueModele.Preparer(demande.Produit.Nom, demande.Produit.Variantes, demande.Nombres);
+
+        if (fenetre.ShowDialog() == true && _vueModele is not null)
+        {
+            _vueModele.MessageStatut = fenetre.VueModele.CompteRendu;
         }
     }
 

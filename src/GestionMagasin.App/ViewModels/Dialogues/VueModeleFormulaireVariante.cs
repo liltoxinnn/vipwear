@@ -66,6 +66,9 @@ public partial class VueModeleFormulaireVariante : VueModeleBase
     /// <summary>La quantité initiale n'est proposée qu'à la création.</summary>
     public bool EstCreation => !IdentifiantEdite.HasValue;
 
+    /// <summary>Déclinaison créée par ce formulaire, pour en proposer les étiquettes.</summary>
+    public VarianteDto? VarianteCreee { get; private set; }
+
     public event EventHandler<bool>? FermetureDemandee;
 
     public async Task PreparerAsync(ProduitDto produit, VarianteDto? variante)
@@ -134,6 +137,13 @@ public partial class VueModeleFormulaireVariante : VueModeleBase
             QuantiteInitiale = QuantiteInitiale
         };
 
+        // Une déclinaison créée avec du stock n'affiche pas de message de
+        // réussite : l'écran Produits enchaîne aussitôt sur la question de
+        // ses étiquettes, une seule fenêtre au lieu de deux.
+        var annonce = IdentifiantEdite.HasValue || QuantiteInitiale <= 0
+            ? "Déclinaison enregistrée avec succès."
+            : null;
+
         var reussi = await ExecuterAsync(
             async () =>
             {
@@ -143,10 +153,10 @@ public partial class VueModeleFormulaireVariante : VueModeleBase
                 }
                 else
                 {
-                    await _produits.AjouterVarianteAsync(ProduitId, demande).ConfigureAwait(true);
+                    VarianteCreee = await _produits.AjouterVarianteAsync(ProduitId, demande).ConfigureAwait(true);
                 }
             },
-            "Déclinaison enregistrée avec succès.",
+            annonce,
             "enregistrement d'une déclinaison").ConfigureAwait(true);
 
         if (reussi)

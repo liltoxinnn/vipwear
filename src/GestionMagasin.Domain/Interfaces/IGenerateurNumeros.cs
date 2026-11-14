@@ -15,4 +15,10 @@ public interface IGenerateurNumeros
 
     /// <summary>Retourne un numéro de retour du type « RET-2026-000007 ».</summary>
     Task<string> ProchainNumeroRetourAsync(CancellationToken jeton = default);
+
+    /// <summary>
+    /// Retourne un code-barres EAN-13 du magasin (« 2000000000015 ») qu'aucun
+    /// article ne porte encore, pas même saisi à la main.
+    /// </summary>
+    Task<string> ProchainCodeBarresAsync(CancellationToken jeton = default);
 }

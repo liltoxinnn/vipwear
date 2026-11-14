@@ -1,3 +1,5 @@
+using GestionMagasin.Domain.Common;
+using GestionMagasin.Domain.Entities;
 using GestionMagasin.Domain.Interfaces;
 using GestionMagasin.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +31,28 @@ public class GenerateurNumeros : IGenerateurNumeros
 
     public Task<string> ProchainNumeroRetourAsync(CancellationToken jeton = default) =>
         ConstruireAsync("RET", SequencesDocuments.Retours, jeton);
+
+    public async Task<string> ProchainCodeBarresAsync(CancellationToken jeton = default)
+    {
+        while (true)
+        {
+            var code = CodesBarres.ComposerCodeMagasin(
+                await ObtenirProchaineValeurAsync(SequencesDocuments.CodesBarres, jeton).ConfigureAwait(false));
+
+            // Deux codes tirés de la séquence ne sont jamais égaux. Mais un
+            // code de la forme « 20… » a pu être saisi à la main sur un autre
+            // article : il est alors sauté.
+            var pris = await _contexte.Set<VarianteProduit>()
+                .AsNoTracking()
+                .AnyAsync(v => v.CodeBarres == code, jeton)
+                .ConfigureAwait(false);
+
+            if (!pris)
+            {
+                return code;
+            }
+        }
+    }
 
     private async Task<string> ConstruireAsync(string prefixe, string sequence, CancellationToken jeton)
     {

@@ -47,8 +47,8 @@
 
                 <TextBlock Text="Code-barres" Style="{StaticResource TexteEtiquette}" />
                 <TextBox Style="{StaticResource ChampScan}" Text="{Binding CodeBarres}" Margin="0,0,0,4" />
-                <TextBlock Text="Scannez l'article pour renseigner ce champ automatiquement."
-                           Style="{StaticResource TexteAttenue}" Margin="0,0,0,12" />
+                <TextBlock Text="Laissez vide : le logiciel attribue un code-barres, à imprimer sur l'étiquette. Pour garder le code d'origine d'un article de marque, scannez-le ici."
+                           Style="{StaticResource TexteAttenue}" TextWrapping="Wrap" Margin="0,0,0,12" />
 
                 <Border Background="{StaticResource PinceauSurfaceAlterne}"
                         CornerRadius="6" Padding="14" Margin="0,0,0,12">

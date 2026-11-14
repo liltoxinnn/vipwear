@@ -1,0 +1,196 @@
+<Window x:Class="GestionMagasin.App.Views.Dialogues.FenetreEtiquettes"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Étiquettes code-barres"
+        Height="640" Width="960"
+        MinHeight="520" MinWidth="780"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        Background="{StaticResource PinceauFond}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <!--
+        Impression des étiquettes code-barres d'un produit. L'imprimante, la
+        taille et le contenu se règlent ici même, et sont retenus pour le
+        poste après la première impression.
+    -->
+    <Border Margin="18" Style="{StaticResource Carte}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,14">
+                <TextBlock Text="Imprimer les étiquettes" Style="{StaticResource TexteSousTitre}" />
+                <TextBlock Text="{Binding NomProduit}" Style="{StaticResource TexteAttenue}" Margin="0,4,0,0" />
+                <TextBlock Style="{StaticResource TexteSecondaire}" TextWrapping="Wrap" Margin="0,8,0,0"
+                           Text="Indiquez combien d'étiquettes imprimer pour chaque article. Collez-les sur les vêtements : en caisse, il suffit de les scanner." />
+            </StackPanel>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="18" />
+                    <ColumnDefinition Width="310" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Articles et nombre d'étiquettes -->
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <DataGrid Grid.Row="0"
+                              ItemsSource="{Binding Lignes}"
+                              SelectedItem="{Binding LigneSelectionnee}"
+                              Style="{StaticResource Tableau}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Article" Binding="{Binding Detail}" Width="*" />
+                            <DataGridTextColumn Header="Code-barres" Binding="{Binding CodeBarres}" Width="130" />
+                            <DataGridTextColumn Header="Stock" Binding="{Binding Stock}" Width="60" />
+
+                            <DataGridTemplateColumn Header="Étiquettes" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox Style="{StaticResource ChampTexte}"
+                                                 Text="{Binding Nombre, UpdateSourceTrigger=PropertyChanged}"
+                                                 HorizontalContentAlignment="Right"
+                                                 Width="76" Margin="0,2" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="Une par article en stock"
+                                Style="{StaticResource BoutonSecondaire}"
+                                Command="{Binding UneParArticleEnStockCommand}"
+                                ToolTip="Autant d'étiquettes que d'articles en stock : pour étiqueter le rayon"
+                                Margin="0,0,8,6" />
+                        <Button Content="Une de chaque"
+                                Style="{StaticResource BoutonSecondaire}"
+                                Command="{Binding UneDeChaqueCommand}"
+                                Margin="0,0,8,6" />
+                        <Button Content="Aucune"
+                                Style="{StaticResource BoutonSecondaire}"
+                                Command="{Binding AucuneCommand}"
+                                Margin="0,0,8,6" />
+                    </WrapPanel>
+                </Grid>
+
+                <!-- Aperçu et réglages -->
+                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Aperçu" Style="{StaticResource TexteEtiquette}" />
+
+                        <Border Background="White"
+                                BorderBrush="{StaticResource PinceauBordureForte}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="8"
+                                Margin="0,4,0,6"
+                                MinHeight="120">
+                            <Image Source="{Binding Apercu}"
+                                   Stretch="Uniform"
+                                   MaxWidth="270" MaxHeight="200"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                        </Border>
+
+                        <TextBlock Text="{Binding ProblemeApercu}"
+                                   Style="{StaticResource TexteSecondaire}"
+                                   Foreground="{StaticResource PinceauDanger}"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,6"
+                                   Visibility="{Binding ProblemeApercu, Converter={StaticResource NonVideVisibilite}}" />
+
+                        <TextBlock Text="Imprimante d'étiquettes" Style="{StaticResource TexteEtiquette}" Margin="0,8,0,0" />
+
+                        <Grid Margin="0,4,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <ComboBox Grid.Column="0"
+                                      Style="{StaticResource ChampListe}"
+                                      ItemsSource="{Binding Imprimantes}"
+                                      SelectedItem="{Binding ImprimanteChoisie}" />
+
+                            <Button Grid.Column="1"
+                                    Content="Actualiser"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding ActualiserImprimantesCommand}"
+                                    ToolTip="Relire la liste des imprimantes installées dans Windows"
+                                    Margin="8,0,0,0" />
+                        </Grid>
+
+                        <TextBlock Text="{Binding EtatImprimante}"
+                                   Style="{StaticResource TexteSecondaire}"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10" />
+
+                        <TextBlock Text="Taille d'une étiquette (mm)" Style="{StaticResource TexteEtiquette}" />
+
+                        <Grid Margin="0,4,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0"
+                                     Style="{StaticResource ChampTexte}"
+                                     Text="{Binding LargeurMm, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                     HorizontalContentAlignment="Right"
+                                     ToolTip="Largeur, en millimètres" />
+
+                            <TextBlock Grid.Column="1" Text="×" Style="{StaticResource TexteSecondaire}"
+                                       VerticalAlignment="Center" Margin="10,0" />
+
+                            <TextBox Grid.Column="2"
+                                     Style="{StaticResource ChampTexte}"
+                                     Text="{Binding HauteurMm, UpdateSourceTrigger=PropertyChanged, Delay=400}"
+                                     HorizontalContentAlignment="Right"
+                                     ToolTip="Hauteur, en millimètres, sans l'espace entre deux étiquettes" />
+                        </Grid>
+
+                        <CheckBox Style="{StaticResource CaseACocher}"
+                                  Content="Imprimer le prix"
+                                  IsChecked="{Binding AfficherPrix}" />
+
+                        <CheckBox Style="{StaticResource CaseACocher}"
+                                  Content="Imprimer le nom du magasin"
+                                  IsChecked="{Binding AfficherMagasin}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <Grid Grid.Row="2" Margin="0,14,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Annuler"
+                            Style="{StaticResource BoutonSecondaire}"
+                            Command="{Binding AnnulerCommand}"
+                            Width="120" IsCancel="True" Margin="0,0,10,0" />
+
+                    <Button Content="{Binding LibelleImprimer}"
+                            Style="{StaticResource BoutonPrincipal}"
+                            Command="{Binding ImprimerCommand}"
+                            MinWidth="200" IsDefault="True" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

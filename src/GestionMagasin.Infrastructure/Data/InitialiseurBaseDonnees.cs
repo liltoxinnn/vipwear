@@ -1,6 +1,7 @@
 using GestionMagasin.Domain.Entities;
 using GestionMagasin.Domain.Interfaces;
 using GestionMagasin.Domain.Securite;
+using GestionMagasin.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -79,6 +80,41 @@ public class InitialiseurBaseDonnees
         await AmorcerCouleursAsync(jeton).ConfigureAwait(false);
         await AmorcerParametresAsync(jeton).ConfigureAwait(false);
         await AmorcerAdministrateurAsync(jeton).ConfigureAwait(false);
+        await AttribuerCodesBarresManquantsAsync(jeton).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Donne un code-barres du magasin aux articles qui n'en ont pas : ceux
+    /// créés avant que le logiciel les attribue lui-même. Sans code, un
+    /// article ne peut ni être étiqueté ni être scanné en caisse.
+    ///
+    /// Rien n'est fait quand tous les articles en ont un : le contrôle ne
+    /// coûte qu'une requête au démarrage.
+    /// </summary>
+    private async Task AttribuerCodesBarresManquantsAsync(CancellationToken jeton)
+    {
+        var sansCode = await _contexte.Set<VarianteProduit>()
+            .Where(v => v.CodeBarres == null || v.CodeBarres.Trim() == string.Empty)
+            .OrderBy(v => v.Id)
+            .ToListAsync(jeton)
+            .ConfigureAwait(false);
+
+        if (sansCode.Count == 0)
+        {
+            return;
+        }
+
+        var numeros = new GenerateurNumeros(_contexte, _horodatage);
+
+        foreach (var variante in sansCode)
+        {
+            variante.CodeBarres = await numeros.ProchainCodeBarresAsync(jeton).ConfigureAwait(false);
+        }
+
+        await _contexte.SaveChangesAsync(jeton).ConfigureAwait(false);
+
+        _journal.LogInformation(
+            "{Nombre} article(s) sans code-barres ont reçu un code du magasin.", sansCode.Count);
     }
 
     private async Task AmorcerPermissionsAsync(CancellationToken jeton)

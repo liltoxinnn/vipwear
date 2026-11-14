@@ -248,6 +248,64 @@ La vente, elle, est toujours enregistrée.
 
 ---
 
+## Étiquettes code-barres
+
+Chaque article reçoit **automatiquement** son code-barres dès sa création.
+Les articles créés avant cette version en reçoivent un au premier démarrage.
+Il suffit ensuite d'imprimer les étiquettes, de les coller sur les
+vêtements, et de les scanner en caisse.
+
+> Les codes du logiciel commencent par **20** : cette plage est réservée aux
+> magasins, aucun article du commerce ne la porte. Pour garder le code
+> d'origine d'un article de marque, scannez-le dans le champ **Code-barres**
+> de la déclinaison : c'est lui qui sera imprimé et reconnu.
+
+### Installer l'imprimante d'étiquettes
+
+1. Branchez l'imprimante et installez le **pilote fourni** par le fabricant.
+2. Dans Windows → **Imprimantes et scanners** → l'imprimante → **Options
+   d'impression**, choisissez la **taille de vos étiquettes** (par exemple
+   40 × 30 mm) et le papier « étiquettes avec espace » (*gap*).
+3. Si l'imprimante a un bouton d'avance, faites-lui repérer les étiquettes
+   (souvent : maintenir le bouton jusqu'à ce qu'elle avance de deux ou trois
+   étiquettes).
+
+### Imprimer les étiquettes
+
+**Produits** → choisissez le produit → **Imprimer les étiquettes**.
+
+La fenêtre propose une étiquette par article en stock. Modifiez les nombres
+si besoin, choisissez l'imprimante et la taille des étiquettes la première
+fois, vérifiez l'aperçu, puis **Imprimer**. Ces choix sont retenus pour ce
+poste.
+
+Quand vous créez une déclinaison avec une quantité en stock, le logiciel
+propose aussitôt d'imprimer ses étiquettes.
+
+L'étiquette porte le nom du magasin, l'article, la taille, la couleur, le
+prix et le code-barres. Le prix et le nom du magasin peuvent être retirés
+(cases à cocher de la fenêtre).
+
+### Scanner
+
+La douchette se branche en USB et fonctionne comme un clavier : rien à
+installer.
+
+- **Caisse** : scannez l'étiquette, l'article s'ajoute au panier. Scannez-le
+  encore, la quantité augmente.
+- **Produits** et **Stock** : scannez dans le champ de recherche pour
+  retrouver l'article.
+
+**L'étiquette sort décalée, ou à cheval sur deux étiquettes ?** La taille
+réglée dans Windows n'est pas celle des étiquettes, ou l'imprimante ne les a
+pas repérées : reprenez les étapes 2 et 3 ci-dessus.
+
+**La douchette ne lit pas l'étiquette ?** Les barres sont peut-être trop
+pâles : augmentez la **densité** (ou *darkness*) dans les options
+d'impression de l'imprimante.
+
+---
+
 ## Sauvegarder vos données
 
 **C'est la partie la plus importante de ce guide.**

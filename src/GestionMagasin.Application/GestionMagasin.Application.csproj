@@ -16,6 +16,8 @@
     -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <PackageReference Include="QRCoder" Version="1.8.1" />
+    <!-- Motif des codes-barres des étiquettes (EAN-13, Code 128). Licence Apache 2.0. -->
+    <PackageReference Include="ZXing.Net" Version="0.16.11" />
   </ItemGroup>
 
   <ItemGroup>

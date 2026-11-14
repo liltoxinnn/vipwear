@@ -350,18 +350,26 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+                        <!-- Replié sur deux lignes plutôt que coupé sur un petit écran. -->
+                        <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Imprimer les étiquettes"
+                                    Style="{StaticResource BoutonPrincipal}"
+                                    Command="{Binding ImprimerEtiquettesCommand}"
+                                    ToolTip="Imprimer les étiquettes code-barres de ce produit, à scanner en caisse"
+                                    Margin="0,0,8,6" />
+
                             <Button Content="Modifier la déclinaison"
                                     Style="{StaticResource BoutonSecondaire}"
                                     Command="{Binding ModifierVarianteCommand}"
                                     IsEnabled="{Binding PeutModifier}"
-                                    Margin="0,0,8,0" />
+                                    Margin="0,0,8,6" />
 
                             <Button Content="Activer / Désactiver la déclinaison"
                                     Style="{StaticResource BoutonSecondaire}"
                                     Command="{Binding BasculerEtatVarianteCommand}"
-                                    IsEnabled="{Binding PeutModifier}" />
-                        </StackPanel>
+                                    IsEnabled="{Binding PeutModifier}"
+                                    Margin="0,0,8,6" />
+                        </WrapPanel>
                     </Grid>
                 </Grid>
             </Border>

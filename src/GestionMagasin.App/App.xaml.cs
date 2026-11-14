@@ -394,6 +394,7 @@ public partial class App : System.Windows.Application
                 // --- Services propres à l'interface ---
                 services.AddSingleton<IServiceDialogue, ServiceDialogue>();
                 services.AddScoped<Impression.IServiceImpressionTicket, Impression.ServiceImpressionTicket>();
+                services.AddScoped<Impression.IServiceImpressionEtiquettes, Impression.ServiceImpressionEtiquettes>();
                 services.AddSingleton<IServiceNavigation, ServiceNavigation>();
                 services.AddSingleton<IFabriqueFenetres, FabriqueFenetres>();
 
@@ -407,6 +408,7 @@ public partial class App : System.Windows.Application
                 services.AddTransient<FenetreProduit>();
                 services.AddTransient<FenetreVariante>();
                 services.AddTransient<FenetreGenerationVariantes>();
+                services.AddTransient<FenetreEtiquettes>();
                 services.AddTransient<FenetreMouvementStock>();
                 services.AddTransient<FenetreAchat>();
                 services.AddTransient<FenetreReception>();
@@ -431,6 +433,7 @@ public partial class App : System.Windows.Application
                 services.AddTransient<VueModeleFormulaireProduit>();
                 services.AddTransient<VueModeleFormulaireVariante>();
                 services.AddTransient<VueModeleGenerationVariantes>();
+                services.AddTransient<VueModeleEtiquettes>();
                 services.AddTransient<VueModeleMouvementStock>();
                 services.AddTransient<VueModeleFormulaireAchat>();
                 services.AddTransient<VueModeleReception>();

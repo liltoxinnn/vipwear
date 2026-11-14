@@ -1,6 +1,7 @@
 using GestionMagasin.Application.Common;
 using GestionMagasin.Application.DTOs;
 using GestionMagasin.Application.Services.Abstractions;
+using GestionMagasin.Domain.Common;
 using GestionMagasin.Domain.Entities;
 using GestionMagasin.Domain.Enums;
 using GestionMagasin.Domain.Exceptions;
@@ -19,6 +20,7 @@ public class ServiceProduits : IServiceProduits
     private readonly IServiceAudit _audit;
     private readonly ISessionUtilisateur _session;
     private readonly IFournisseurHorodatage _horodatage;
+    private readonly IGenerateurNumeros _numeros;
     private readonly ILogger<ServiceProduits> _journal;
 
     public ServiceProduits(
@@ -27,6 +29,7 @@ public class ServiceProduits : IServiceProduits
         IServiceAudit audit,
         ISessionUtilisateur session,
         IFournisseurHorodatage horodatage,
+        IGenerateurNumeros numeros,
         ILogger<ServiceProduits> journal)
     {
         _uniteDeTravail = uniteDeTravail;
@@ -34,6 +37,7 @@ public class ServiceProduits : IServiceProduits
         _audit = audit;
         _session = session;
         _horodatage = horodatage;
+        _numeros = numeros;
         _journal = journal;
     }
 
@@ -302,7 +306,11 @@ public class ServiceProduits : IServiceProduits
             TailleId = demande.TailleId,
             CouleurId = demande.CouleurId,
             SKU = sku,
-            CodeBarres = string.IsNullOrWhiteSpace(demande.CodeBarres) ? null : demande.CodeBarres.Trim(),
+            // Sans code saisi, l'article reçoit aussitôt le code du magasin :
+            // ses étiquettes peuvent être imprimées et scannées tout de suite.
+            CodeBarres = string.IsNullOrWhiteSpace(demande.CodeBarres)
+                ? await _numeros.ProchainCodeBarresAsync(jeton).ConfigureAwait(false)
+                : demande.CodeBarres.Trim(),
             PrixAchat = demande.PrixAchat,
             PrixVente = demande.PrixVente,
             SeuilMinimum = demande.SeuilMinimum,
@@ -374,7 +382,14 @@ public class ServiceProduits : IServiceProduits
 
         variante.TailleId = demande.TailleId;
         variante.CouleurId = demande.CouleurId;
-        variante.CodeBarres = string.IsNullOrWhiteSpace(demande.CodeBarres) ? null : demande.CodeBarres.Trim();
+        // Un champ vidé demande le code du magasin : celui que l'article
+        // porte déjà s'il en a un — ses étiquettes restent bonnes —, sinon un
+        // nouveau, à la place d'un code d'origine dont on ne veut plus.
+        variante.CodeBarres = !string.IsNullOrWhiteSpace(demande.CodeBarres)
+            ? demande.CodeBarres.Trim()
+            : CodesBarres.EstCodeMagasin(variante.CodeBarres)
+                ? variante.CodeBarres
+                : await _numeros.ProchainCodeBarresAsync(jeton).ConfigureAwait(false);
         variante.PrixAchat = demande.PrixAchat;
         variante.PrixVente = demande.PrixVente;
         variante.SeuilMinimum = demande.SeuilMinimum;
@@ -479,6 +494,7 @@ public class ServiceProduits : IServiceProduits
                     TailleId = tailleId,
                     CouleurId = couleurId,
                     SKU = await ComposerSkuAsync(produit, tailleId, couleurId, jeton).ConfigureAwait(false),
+                    CodeBarres = await _numeros.ProchainCodeBarresAsync(jeton).ConfigureAwait(false),
                     SeuilMinimum = seuilMinimum,
                     Actif = true
                 });
