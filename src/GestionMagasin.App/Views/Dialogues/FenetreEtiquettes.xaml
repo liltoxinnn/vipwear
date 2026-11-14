@@ -205,12 +205,12 @@
                                 <TextBlock Grid.Column="0" Text="Gauche / droite" Style="{StaticResource TexteSecondaire}"
                                            VerticalAlignment="Center" TextWrapping="Wrap" />
                                 <Button Grid.Column="1" Content="◀" Style="{StaticResource BoutonSecondaire}"
-                                        Command="{Binding DecalerAGaucheCommand}" ToolTip="Déplacer l'impression vers la gauche"
+                                        Command="{Binding DecalerAGaucheCommand}" ToolTip="Déplacer l'impression d'un millimètre vers la gauche"
                                         MinWidth="0" Padding="0" FontWeight="Bold" />
                                 <TextBlock Grid.Column="2" Text="{Binding LibelleDecalageHorizontal}" FontWeight="SemiBold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 <Button Grid.Column="3" Content="▶" Style="{StaticResource BoutonSecondaire}"
-                                        Command="{Binding DecalerADroiteCommand}" ToolTip="Déplacer l'impression vers la droite"
+                                        Command="{Binding DecalerADroiteCommand}" ToolTip="Déplacer l'impression d'un millimètre vers la droite"
                                         MinWidth="0" Padding="0" FontWeight="Bold" />
                             </Grid>
                             <Grid Margin="0,0,0,6">
@@ -224,12 +224,12 @@
                                 <TextBlock Grid.Column="0" Text="Haut / bas" Style="{StaticResource TexteSecondaire}"
                                            VerticalAlignment="Center" TextWrapping="Wrap" />
                                 <Button Grid.Column="1" Content="▲" Style="{StaticResource BoutonSecondaire}"
-                                        Command="{Binding MonterCommand}" ToolTip="Remonter l'impression sur l'étiquette"
+                                        Command="{Binding MonterCommand}" ToolTip="Remonter l'impression d'un millimètre"
                                         MinWidth="0" Padding="0" FontWeight="Bold" />
                                 <TextBlock Grid.Column="2" Text="{Binding LibelleDecalageVertical}" FontWeight="SemiBold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 <Button Grid.Column="3" Content="▼" Style="{StaticResource BoutonSecondaire}"
-                                        Command="{Binding DescendreCommand}" ToolTip="Descendre l'impression sur l'étiquette"
+                                        Command="{Binding DescendreCommand}" ToolTip="Descendre l'impression d'un millimètre"
                                         MinWidth="0" Padding="0" FontWeight="Bold" />
                             </Grid>
                             <Grid Margin="0,0,0,6">
@@ -259,7 +259,7 @@
                                     Margin="0,4,0,6" />
 
                             <TextBlock Style="{StaticResource TexteAttenue}" TextWrapping="Wrap"
-                                       Text="Le cadre doit suivre les bords de chaque étiquette. Il déborde à droite : appuyez sur ◀ ; il est trop bas : ▲. Il glisse un peu plus à chaque étiquette : corrigez l'espace. Réimprimez le réglage jusqu'à ce qu'il tombe juste." />
+                                       Text="Le cadre doit suivre les bords de chaque étiquette. Trop bas de 5 mm : appuyez 5 fois sur ▲ (1 mm par appui) ; trop haut : ▼ ; trop à droite : ◀. Il glisse un peu plus à chaque étiquette : corrigez l'espace. Réimprimez le réglage jusqu'à ce qu'il tombe juste." />
                         </StackPanel>
 
 

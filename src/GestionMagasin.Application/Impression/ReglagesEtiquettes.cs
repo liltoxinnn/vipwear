@@ -47,7 +47,7 @@ public sealed record ReglagesEtiquettes
     /// l'ancienne taille proposée d'office ; le magasin utilise des
     /// étiquettes de 40 × 20.
     /// </summary>
-    public const int VersionActuelle = 2;
+    public const int VersionActuelle = 3;
 
     /// <summary>Version du fichier relu ; zéro pour un fichier d'avant la numérotation.</summary>
     public int Version { get; init; }
@@ -92,19 +92,23 @@ public sealed record ReglagesEtiquettes
 
     /// <summary>
     /// Imprimante de tickets : avance avant la première étiquette, en
-    /// millimètres, quand un espace entre deux étiquettes est au ras de la
-    /// barre de découpe. C'est, à peu de chose près, le pas des étiquettes
-    /// moins la distance de la tête à la barre de découpe.
+    /// millimètres. Nulle d'office : l'impression commence là où est le
+    /// papier, sans blanc. ▲ et ▼ la corrigent si les étiquettes sortent
+    /// trop bas ou trop haut.
     /// </summary>
     public double DecalageVerticalMm { get; init; } = DecalageVerticalParDefaut;
 
     public const double EspaceParDefaut = 2.0;
 
+    /// <summary>Aucun blanc avant la première étiquette.</summary>
+    public const double DecalageVerticalParDefaut = 0;
+
     /// <summary>
-    /// Pour un pas de 22 mm et une tête à 11 mm de la barre de découpe,
-    /// l'écart le plus courant sur les imprimantes de 58 mm.
+    /// Ancienne avance d'office : elle supposait un espace entre deux
+    /// étiquettes au ras de la barre de découpe, et faisait sortir chaque
+    /// étiquette 11 mm trop bas.
     /// </summary>
-    public const double DecalageVerticalParDefaut = 11.0;
+    private const double AncienDecalageVertical = 11.0;
 
     /// <summary>Sorte d'imprimante retenue, ou devinée d'après son nom.</summary>
     [JsonIgnore]
@@ -157,9 +161,16 @@ public sealed record ReglagesEtiquettes
             // version, retenue telle quelle à la première impression : sur les
             // étiquettes de 40 × 20 du magasin, chaque impression débordait
             // sur l'étiquette suivante. Une taille choisie depuis est gardée.
-            if (lus.Version < VersionActuelle && lus is { LargeurMm: 40, HauteurMm: 30 })
+            if (lus.Version < 2 && lus is { LargeurMm: 40, HauteurMm: 30 })
             {
                 lus = lus with { HauteurMm = HauteurParDefaut };
+            }
+
+            // L'avance de 11 mm retenue par la version précédente n'avait été
+            // choisie par personne : elle disparaît.
+            if (lus.Version < 3 && Math.Abs(lus.DecalageVerticalMm - AncienDecalageVertical) < 0.05)
+            {
+                lus = lus with { DecalageVerticalMm = DecalageVerticalParDefaut };
             }
 
             return lus.Normaliser();

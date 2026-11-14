@@ -281,21 +281,21 @@ reconnaît à son nom (« Imprimante de tickets 58 mm » dans la fenêtre des
 
 La position se règle **une seule fois** :
 
-1. Placez le rouleau bien au milieu de l'imprimante, puis faites sortir le
-   papier jusqu'à ce qu'un **espace entre deux étiquettes** soit au ras de la
-   barre de découpe.
+1. Placez le rouleau bien au milieu de l'imprimante.
 2. Fenêtre des étiquettes → **Imprimer le réglage (5 étiquettes)**. Chacune
    porte un cadre qui doit suivre exactement ses bords.
-3. Le cadre déborde à droite : **◀** ; à gauche : **▶** ; il est trop bas :
-   **▲** ; trop haut : **▼**. Il glisse un peu plus à chaque étiquette :
-   corrigez l'**espace entre deux étiquettes**. Réimprimez le réglage jusqu'à
-   ce qu'il tombe juste.
+3. Le cadre est trop bas de 5 mm : appuyez **5 fois sur ▲** (un millimètre
+   par appui) ; trop haut : **▼** ; trop à droite : **◀** ; trop à gauche :
+   **▶**. Il glisse un peu plus à chaque étiquette : corrigez l'**espace
+   entre deux étiquettes**. Réimprimez le réglage jusqu'à ce qu'il tombe
+   juste.
 
-Ensuite, chaque série retombe juste d'elle-même : le logiciel fait toujours
-avancer le papier d'un nombre entier d'étiquettes. La dernière ressort
-au-delà de la barre de découpe, prête à décoller ; l'étiquette suivante
-reste vierge. **N'appuyez pas sur le bouton d'avance du papier** entre deux
-séries : sinon, refaites l'étape 1.
+L'impression commence aussitôt, sans blanc avant la première étiquette, et
+chaque série avance le papier d'un nombre entier d'étiquettes : une fois
+réglée, chaque série retombe juste d'elle-même. La dernière étiquette
+imprimée ressort au-delà de la barre de découpe, prête à décoller ; celle
+qui la suit reste vierge. **N'appuyez pas sur le bouton d'avance du papier**
+entre deux séries : sinon, réimprimez le réglage.
 
 ### Imprimer les étiquettes
 

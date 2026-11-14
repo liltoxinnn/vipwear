@@ -200,6 +200,30 @@ public class TestsEtiquettesSurTickets
     }
 
     [Fact]
+    public void Par_defaut_la_premiere_etiquette_commence_sans_aucun_blanc()
+    {
+        var reglages = new ReglagesEtiquettes { NomImprimante = "POS-58 R58P" };
+
+        var (gris, largeur, _) = BandeEtiquettes.Assembler([Noire(1)], reglages);
+
+        Assert.Equal(0, reglages.DecalageVerticalMm);
+        Assert.Equal(0, gris[0 * largeur + (384 - 320) / 2]);
+    }
+
+    [Fact]
+    public void L_ancienne_avance_de_11_mm_retenue_disparait()
+    {
+        var anciens = ReglagesEtiquettes.DepuisJson(
+            """{ "Version": 2, "NomImprimante": "POS-58 R58P", "LargeurMm": 40, "HauteurMm": 20, "DecalageVerticalMm": 11 }""");
+
+        Assert.Equal(0, anciens.DecalageVerticalMm);
+
+        // Une avance réglée depuis, même de 11 mm, est gardée.
+        var reglee = R58P with { DecalageVerticalMm = 11 };
+        Assert.Equal(11, ReglagesEtiquettes.DepuisJson(reglee.VersJson()).DecalageVerticalMm);
+    }
+
+    [Fact]
     public void Les_reglages_de_position_sont_retenus_et_bornes()
     {
         var reglages = R58P with

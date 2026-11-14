@@ -191,9 +191,10 @@ public partial class VueModeleEtiquettes : VueModeleBase
         : ImprimanteChoisie is null
             ? "Choisissez l'imprimante d'étiquettes. Le choix est retenu pour ce poste."
             : SurImprimanteDeTickets
-                ? "Les étiquettes partent directement, au pas exact du rouleau. Une imprimante de tickets ne " +
-                  "voit pas les étiquettes : réglez une fois la position avec « Imprimer le réglage ». Ensuite, " +
-                  "chaque série retombe juste — tant qu'on n'appuie pas sur le bouton d'avance du papier."
+                ? "Les étiquettes partent directement, au pas exact du rouleau, sans blanc avant la première. " +
+                  "Une imprimante de tickets ne voit pas les étiquettes : réglez une fois la position avec " +
+                  "« Imprimer le réglage » et ▲ ▼. Ensuite, chaque série retombe juste — tant qu'on n'appuie " +
+                  "pas sur le bouton d'avance du papier."
                 : "Réglez la même taille d'étiquette dans les préférences de l'imprimante, dans Windows.";
 
     /// <summary>Ce qui a été imprimé, une fois la fenêtre fermée.</summary>
@@ -427,7 +428,7 @@ public partial class VueModeleEtiquettes : VueModeleBase
     // Position sur une imprimante de tickets
     // ------------------------------------------------------------------
 
-    private const double PasDecalage = 0.5;
+    private const double PasDecalage = 1.0;
 
     private const double PasEspace = 0.1;
 
@@ -438,12 +439,32 @@ public partial class VueModeleEtiquettes : VueModeleBase
     [RelayCommand]
     private void DecalerADroite() => DecalageHorizontalMm = Borne(DecalageHorizontalMm + PasDecalage, -20, 20);
 
-    /// <summary>L'impression remonte vers le haut de l'étiquette : moins d'avance avant la première.</summary>
+    /// <summary>
+    /// L'impression remonte d'un millimètre sur l'étiquette. Sans blanc à
+    /// retirer, elle passe à l'étiquette suivante, au même endroit moins un
+    /// millimètre : les étiquettes se répètent à chaque pas.
+    /// </summary>
     [RelayCommand]
-    private void Monter() => DecalageVerticalMm = Borne(DecalageVerticalMm - PasDecalage, 0, 40);
+    private void Monter() => DecalageVerticalMm = Tourner(DecalageVerticalMm - PasDecalage);
 
+    /// <summary>L'impression descend d'un millimètre sur l'étiquette.</summary>
     [RelayCommand]
-    private void Descendre() => DecalageVerticalMm = Borne(DecalageVerticalMm + PasDecalage, 0, 40);
+    private void Descendre() => DecalageVerticalMm = Tourner(DecalageVerticalMm + PasDecalage);
+
+    /// <summary>Ramène l'avance entre zéro et un pas d'étiquette.</summary>
+    private double Tourner(double valeur)
+    {
+        var pas = HauteurMm + EspaceMm;
+
+        if (pas <= 0)
+        {
+            return 0;
+        }
+
+        valeur %= pas;
+
+        return Math.Round(valeur < 0 ? valeur + pas : valeur, 1);
+    }
 
     [RelayCommand]
     private void EspaceMoins() => EspaceMm = Borne(EspaceMm - PasEspace, 0, 10);
