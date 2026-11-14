@@ -96,13 +96,47 @@ if (-not ($sdks | Where-Object { $_ -match "^10\." })) {
 # Une version precedemment publiee peut encore tourner et retenir ses
 # fichiers : la suppression echouerait alors sur un « Access denied »
 # incomprehensible. On ferme donc ce qui traine avant de reconstruire.
-foreach ($nom in @("GestionMagasin", "postgres")) {
-    $processus = Get-Process -Name $nom -ErrorAction SilentlyContinue
+$logiciel = Get-Process -Name "GestionMagasin" -ErrorAction SilentlyContinue
 
-    if ($processus) {
-        Write-Host "Fermeture de $nom encore en cours d'execution..." -ForegroundColor Gray
-        $processus | Stop-Process -Force -ErrorAction SilentlyContinue
+if ($logiciel) {
+    Write-Host "Fermeture de GestionMagasin encore en cours d'execution..." -ForegroundColor Gray
+    $logiciel | Stop-Process -Force -ErrorAction SilentlyContinue
+}
+
+# La base de donnees est d'abord arretee proprement. Tuee de force, elle
+# reste « mal fermee » : le demarrage suivant doit la remettre en ordre
+# avant d'accepter le logiciel, et peut depasser le delai d'attente.
+$donnees = Join-Path $env:LOCALAPPDATA "GestionMagasin\donnees"
+$pgCtl = @(
+    (Join-Path $PSScriptRoot "pgsql\bin\pg_ctl.exe"),
+    (Join-Path $cheminSortie "pgsql\bin\pg_ctl.exe")
+) | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+if ($pgCtl -and (Test-Path (Join-Path $donnees "postmaster.pid"))) {
+    Write-Host "Arret de la base de donnees du logiciel..." -ForegroundColor Gray
+
+    # pg_ctl ecrit sur la sortie d'erreur quand aucun serveur ne tourne.
+    # Avec « Stop », Windows PowerShell en ferait une erreur fatale et la
+    # publication s'arreterait la : on tolere, le temps de cet appel.
+    $preference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+
+    try {
+        & $pgCtl -D $donnees -m fast -w -t 30 stop *> $null
     }
+    catch {
+        # Rien a faire : les processus restants sont fermes juste apres.
+    }
+    finally {
+        $ErrorActionPreference = $preference
+    }
+}
+
+$restes = Get-Process -Name "postgres" -ErrorAction SilentlyContinue
+
+if ($restes) {
+    Write-Host "Fermeture de postgres encore en cours d'execution..." -ForegroundColor Gray
+    $restes | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
 Start-Sleep -Milliseconds 800

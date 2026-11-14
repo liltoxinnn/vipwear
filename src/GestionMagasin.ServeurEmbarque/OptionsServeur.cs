@@ -31,8 +31,13 @@ public sealed record OptionsServeur
     /// </summary>
     public string? RacineBinaires { get; init; }
 
-    /// <summary>Délai maximal accordé au serveur pour devenir disponible.</summary>
-    public TimeSpan DelaiDemarrage { get; init; } = TimeSpan.FromSeconds(60);
+    /// <summary>
+    /// Délai maximal accordé au serveur pour devenir disponible. Large : après
+    /// un arrêt brutal, le serveur remet ses fichiers en ordre avant
+    /// d'accepter quiconque, et un antivirus peut analyser chacun de ses
+    /// programmes au premier lancement d'une nouvelle version.
+    /// </summary>
+    public TimeSpan DelaiDemarrage { get; init; } = TimeSpan.FromSeconds(120);
 
     /// <summary>Fichier journal du serveur, dans le dossier des données.</summary>
     public string CheminJournal => Path.Combine(DossierDonnees, "..", "serveur-postgres.log");

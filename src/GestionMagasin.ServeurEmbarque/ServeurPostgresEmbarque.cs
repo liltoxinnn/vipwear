@@ -506,92 +506,75 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
         var journal = Path.GetFullPath(_options.CheminJournal);
         Directory.CreateDirectory(Path.GetDirectoryName(journal)!);
 
+        // Le journal garde les lignes des sessions passées : seule la suite,
+        // écrite par cette tentative, dira pourquoi elle échoue.
+        var debutJournal = TailleDuJournal(journal);
+        var secondes = Math.Max(10, (int)_options.DelaiDemarrage.TotalSeconds);
+
         var resultat = await ExecuterAsync(
             LocalisateurOutils.Outil(_dossierBin, "pg_ctl"),
             [
                 "-D", _options.DossierDonnees,
                 "-l", journal,
                 "-o", $"-p {PortEffectif} -h 127.0.0.1",
-                "-w", "start"
+                "-w",
+                "-t", secondes.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                "start"
             ],
             jeton).ConfigureAwait(false);
 
-        if (resultat.CodeSortie != 0)
+        if (resultat.CodeSortie == 0)
         {
-            // La raison figure dans le journal du serveur, pas dans la sortie
-            // de pg_ctl. Sans elle à l'écran, la personne devant le poste n'a
-            // que « redémarrez l'ordinateur » — et si cela ne suffit pas,
-            // plus rien.
-            var cause = DerniereErreurDuJournal(journal);
+            return;
+        }
 
-            throw new ServeurEmbarqueException(
-                "Le serveur de base de données n'a pas pu démarrer." +
-                (cause is null ? string.Empty : Environment.NewLine + Environment.NewLine + "Cause : " + cause) +
-                Environment.NewLine + Environment.NewLine +
-                "Redémarrez l'ordinateur puis relancez le logiciel. Si le message" + Environment.NewLine +
-                "revient, vérifiez que l'antivirus ne bloque pas le logiciel." + Environment.NewLine +
-                Environment.NewLine +
-                $"Journal du serveur : « {journal} ».")
-            {
-                DetailTechnique = resultat.Sortie + Environment.NewLine + LireFinDuJournal(journal)
-            };
+        // pg_ctl cesse d'attendre au bout de son délai, mais le serveur, lui,
+        // poursuit son démarrage. Après un arrêt brutal, il remet d'abord ses
+        // fichiers en ordre ; un antivirus qui analyse des programmes tout
+        // juste copiés le ralentit aussi. S'il tourne, on l'attend au lieu de
+        // déclarer un échec.
+        if (await GrappeEnMarcheAsync(jeton).ConfigureAwait(false))
+        {
+            Journaliser("Le serveur démarre lentement : il est attendu.");
+            return;
+        }
+
+        var nouveau = LireDepuis(journal, debutJournal);
+        var cause = DiagnosticDemarrage.Expliquer(nouveau, resultat.Sortie);
+
+        throw new ServeurEmbarqueException(
+            "Le serveur de base de données n'a pas pu démarrer." +
+            (cause is null ? string.Empty : Environment.NewLine + Environment.NewLine + "Cause : " + cause) +
+            Environment.NewLine + Environment.NewLine +
+            "Redémarrez l'ordinateur puis relancez le logiciel. Si le message" + Environment.NewLine +
+            "revient, vérifiez que l'antivirus ne bloque pas le logiciel." + Environment.NewLine +
+            Environment.NewLine +
+            $"Journal du serveur : « {journal} ».")
+        {
+            DetailTechnique =
+                "pg_ctl :" + Environment.NewLine + resultat.Sortie + Environment.NewLine + Environment.NewLine +
+                "Journal du serveur (cette tentative) :" + Environment.NewLine +
+                (string.IsNullOrWhiteSpace(nouveau) ? "(rien d'écrit)" : nouveau)
+        };
+    }
+
+    private static long TailleDuJournal(string journal)
+    {
+        try
+        {
+            return File.Exists(journal) ? new FileInfo(journal).Length : 0;
+        }
+        catch (Exception erreur) when (erreur is IOException or UnauthorizedAccessException)
+        {
+            return 0;
         }
     }
 
     /// <summary>
-    /// Dernière erreur inscrite au journal du serveur, traduite lorsqu'elle
-    /// fait partie des causes connues.
-    ///
-    /// PostgreSQL écrit en anglais. Une phrase telle que « FATAL: lock file
-    /// "postmaster.pid" already exists » n'apprend rien à un commerçant, mais
-    /// « une session précédente ne s'est pas fermée » lui dit quoi faire.
+    /// Ce que le journal a reçu depuis la position donnée, limité à ses
+    /// dernières lignes.
     /// </summary>
-    private static string? DerniereErreurDuJournal(string journal)
-    {
-        var lignes = LireFinDuJournal(journal);
-
-        if (string.IsNullOrWhiteSpace(lignes))
-        {
-            return null;
-        }
-
-        (string Motif, string Explication)[] causesConnues =
-        [
-            // Les motifs sont examinés dans l'ordre, du plus précis au plus
-            // général : « Permission denied » apparaît aussi bien pour un port
-            // refusé que pour un dossier interdit en écriture, et seule la
-            // phrase complète les distingue.
-            ("could not create any TCP/IP sockets",
-                "Windows a refusé au logiciel l'ouverture de son port réseau local"),
-            ("could not bind", "le port de la base de données n'a pas pu être ouvert"),
-            ("address already in use", "le port de la base de données est déjà occupé par un autre programme"),
-            ("lock file", "une session précédente ne s'est pas refermée correctement"),
-            ("incompatible", "les fichiers de données proviennent d'une autre version de PostgreSQL"),
-            ("invalid permissions", "le dossier de données a des droits que PostgreSQL refuse"),
-            ("could not open file", "un fichier de la base de données n'a pas pu être lu"),
-            ("permission denied", "le logiciel n'a pas le droit d'écrire dans son dossier de données"),
-            ("administrative permissions",
-                "le logiciel a été lancé en tant qu'administrateur, ce que la base de données refuse"),
-            ("no space left", "le disque est plein"),
-            ("data directory", "le dossier de données est inutilisable")
-        ];
-
-        foreach (var (motif, explication) in causesConnues)
-        {
-            if (lignes.Contains(motif, StringComparison.OrdinalIgnoreCase))
-            {
-                return explication + ".";
-            }
-        }
-
-        // Cause inconnue : la dernière ligne « FATAL » vaut mieux que rien.
-        return lignes
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .LastOrDefault(l => l.Contains("FATAL", StringComparison.OrdinalIgnoreCase)
-                                || l.Contains("PANIC", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static string LireFinDuJournal(string journal, int lignes = 25)
+    private static string LireDepuis(string journal, long position, int lignes = 60)
     {
         try
         {
@@ -604,6 +587,10 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
             // l'écrire, et une lecture exclusive échouerait.
             using var flux = new FileStream(
                 journal, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+
+            // Un journal plus court qu'avant a été vidé entre-temps : tout
+            // ce qu'il contient est alors neuf.
+            flux.Seek(position <= flux.Length ? position : 0, SeekOrigin.Begin);
 
             using var lecteur = new StreamReader(flux);
 
@@ -827,8 +814,13 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
 
         using var _ = processus;
 
-        var lectureSortie = processus.StandardOutput.ReadToEndAsync(jeton);
-        var lectureErreurs = processus.StandardError.ReadToEndAsync(jeton);
+        // La sortie est recueillie au fil de l'eau, et non d'un bloc à la
+        // fermeture des tuyaux : celle-ci peut ne jamais venir (voir plus
+        // bas), et le message de pg_ctl — la seule explication d'un échec
+        // quand le serveur n'a rien écrit — était alors perdu.
+        var recueil = new StringBuilder();
+        var lectureSortie = RecueillirAsync(processus.StandardOutput, recueil);
+        var lectureErreurs = RecueillirAsync(processus.StandardError, recueil);
 
         await processus.WaitForExitAsync(jeton).ConfigureAwait(false);
 
@@ -837,29 +829,43 @@ public sealed class ServeurPostgresEmbarque : IAsyncDisposable
         // qu'il démarre en hériter : ces tuyaux restent ouverts tant que le
         // serveur tourne, c'est-à-dire indéfiniment. Attendre qu'ils se
         // ferment bloquerait le logiciel au démarrage.
-        var texte = await LireCeQuiEstDisponibleAsync(lectureSortie, lectureErreurs)
+        await Task.WhenAny(Task.WhenAll(lectureSortie, lectureErreurs), Task.Delay(TimeSpan.FromSeconds(2)))
             .ConfigureAwait(false);
+
+        string texte;
+
+        lock (recueil)
+        {
+            texte = recueil.ToString().Trim();
+        }
 
         return new ResultatCommande(processus.ExitCode, texte);
     }
 
     /// <summary>
-    /// Récupère la sortie des programmes appelés sans jamais s'y bloquer.
-    /// Ce texte ne sert qu'à rédiger les messages d'erreur : mieux vaut un
-    /// diagnostic incomplet qu'une application figée.
+    /// Recopie ce qu'écrit un programme, au fur et à mesure. S'arrête à la
+    /// fermeture du tuyau, ou quand le processus est libéré.
     /// </summary>
-    private static async Task<string> LireCeQuiEstDisponibleAsync(
-        Task<string> sortie,
-        Task<string> erreurs)
+    private static async Task RecueillirAsync(StreamReader source, StringBuilder cible)
     {
-        var lectures = Task.WhenAll(sortie, erreurs);
+        var tampon = new char[1024];
 
-        await Task.WhenAny(lectures, Task.Delay(TimeSpan.FromSeconds(2))).ConfigureAwait(false);
+        try
+        {
+            int lus;
 
-        static string Recuperer(Task<string> lecture) =>
-            lecture.IsCompletedSuccessfully ? lecture.Result : string.Empty;
-
-        return (Recuperer(sortie) + Environment.NewLine + Recuperer(erreurs)).Trim();
+            while ((lus = await source.ReadAsync(tampon.AsMemory()).ConfigureAwait(false)) > 0)
+            {
+                lock (cible)
+                {
+                    cible.Append(tampon, 0, lus);
+                }
+            }
+        }
+        catch (Exception erreur) when (erreur is IOException or ObjectDisposedException or InvalidOperationException)
+        {
+            // Processus libéré pendant la lecture : ce qui est recueilli suffit.
+        }
     }
 
     internal OptionsServeur Options => _options;

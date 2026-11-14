@@ -197,9 +197,10 @@ public partial class VueModeleProduits : VueModeleBase
         if (Dialogue.Confirmer(
                 $"Déclinaison enregistrée, avec le code-barres {variante.CodeBarres}." +
                 Environment.NewLine + Environment.NewLine +
+                "Imprimer ses étiquettes maintenant ?" + Environment.NewLine +
                 (nombre == 1
-                    ? "Imprimer son étiquette maintenant ?"
-                    : $"Imprimer ses {nombre} étiquettes maintenant, une par article ?"),
+                    ? "Une est proposée ; vous choisirez combien dans la fenêtre suivante."
+                    : $"{nombre} sont proposées, une par article ; vous choisirez combien dans la fenêtre suivante."),
                 "Étiquettes code-barres"))
         {
             EtiquettesDemandees?.Invoke(this, (Fiche, new Dictionary<int, int> { [variante.Id] = nombre }));

@@ -40,6 +40,14 @@ public partial class LigneEtiquette : ObservableObject
     [ObservableProperty]
     private int _nombre;
 
+    /// <summary>Une étiquette de plus pour cet article.</summary>
+    [RelayCommand]
+    private void Plus() => Nombre++;
+
+    /// <summary>Une étiquette de moins pour cet article, jamais en dessous de zéro.</summary>
+    [RelayCommand]
+    private void Moins() => Nombre = Math.Max(0, Nombre - 1);
+
     partial void OnNombreChanged(int value)
     {
         if (value < 0)
@@ -102,6 +110,10 @@ public partial class VueModeleEtiquettes : VueModeleBase
 
     [ObservableProperty]
     private bool _afficherMagasin = true;
+
+    /// <summary>Nombre à donner d'un coup à tous les articles.</summary>
+    [ObservableProperty]
+    private int _nombrePourTous = 1;
 
     [ObservableProperty]
     private BitmapSource? _apercu;
@@ -313,6 +325,18 @@ public partial class VueModeleEtiquettes : VueModeleBase
         foreach (var ligne in Lignes)
         {
             ligne.Nombre = 1;
+        }
+    }
+
+    /// <summary>Le même nombre d'étiquettes pour tous les articles.</summary>
+    [RelayCommand]
+    private void AppliquerATous()
+    {
+        var nombre = Math.Clamp(NombrePourTous, 0, LigneEtiquette.NombreMaximal);
+
+        foreach (var ligne in Lignes)
+        {
+            ligne.Nombre = nombre;
         }
     }
 

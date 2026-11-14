@@ -29,7 +29,7 @@
                 <TextBlock Text="Imprimer les étiquettes" Style="{StaticResource TexteSousTitre}" />
                 <TextBlock Text="{Binding NomProduit}" Style="{StaticResource TexteAttenue}" Margin="0,4,0,0" />
                 <TextBlock Style="{StaticResource TexteSecondaire}" TextWrapping="Wrap" Margin="0,8,0,0"
-                           Text="Indiquez combien d'étiquettes imprimer pour chaque article. Collez-les sur les vêtements : en caisse, il suffit de les scanner." />
+                           Text="Choisissez combien d'étiquettes imprimer pour chaque article : tapez le nombre, ou utilisez − et +. Collez-les sur les vêtements : en caisse, il suffit de les scanner." />
             </StackPanel>
 
             <Grid Grid.Row="1">
@@ -49,19 +49,47 @@
                     <DataGrid Grid.Row="0"
                               ItemsSource="{Binding Lignes}"
                               SelectedItem="{Binding LigneSelectionnee}"
-                              Style="{StaticResource Tableau}">
+                              Style="{StaticResource Tableau}"
+                              RowHeight="46">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Article" Binding="{Binding Detail}" Width="*" />
                             <DataGridTextColumn Header="Code-barres" Binding="{Binding CodeBarres}" Width="130" />
                             <DataGridTextColumn Header="Stock" Binding="{Binding Stock}" Width="60" />
 
-                            <DataGridTemplateColumn Header="Étiquettes" Width="100">
+                            <DataGridTemplateColumn Header="Combien d'étiquettes" Width="170">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Style="{StaticResource ChampTexte}"
-                                                 Text="{Binding Nombre, UpdateSourceTrigger=PropertyChanged}"
-                                                 HorizontalContentAlignment="Right"
-                                                 Width="76" Margin="0,2" />
+                                        <!-- Un clic dans le nombre le sélectionne : il suffit de taper. -->
+                                        <Grid Margin="0,3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="34" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="34" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Button Grid.Column="0"
+                                                    Content="−"
+                                                    Style="{StaticResource BoutonSecondaire}"
+                                                    Command="{Binding MoinsCommand}"
+                                                    ToolTip="Une étiquette de moins"
+                                                    MinWidth="0" Padding="0" FontWeight="Bold" />
+
+                                            <TextBox Grid.Column="1"
+                                                     Style="{StaticResource ChampTexte}"
+                                                     Text="{Binding Nombre, UpdateSourceTrigger=PropertyChanged}"
+                                                     HorizontalContentAlignment="Center"
+                                                     FontWeight="SemiBold"
+                                                     GotKeyboardFocus="SurChampNombreActive"
+                                                     PreviewMouseLeftButtonDown="SurClicChampNombre"
+                                                     Margin="4,0" />
+
+                                            <Button Grid.Column="2"
+                                                    Content="+"
+                                                    Style="{StaticResource BoutonSecondaire}"
+                                                    Command="{Binding PlusCommand}"
+                                                    ToolTip="Une étiquette de plus"
+                                                    MinWidth="0" Padding="0" FontWeight="Bold" />
+                                        </Grid>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -81,7 +109,22 @@
                         <Button Content="Aucune"
                                 Style="{StaticResource BoutonSecondaire}"
                                 Command="{Binding AucuneCommand}"
-                                Margin="0,0,8,6" />
+                                Margin="0,0,16,6" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <TextBlock Text="Pour tous :" Style="{StaticResource TexteSecondaire}"
+                                       VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Style="{StaticResource ChampTexte}"
+                                     Text="{Binding NombrePourTous, UpdateSourceTrigger=PropertyChanged}"
+                                     HorizontalContentAlignment="Center"
+                                     GotKeyboardFocus="SurChampNombreActive"
+                                     PreviewMouseLeftButtonDown="SurClicChampNombre"
+                                     Width="64" Margin="0,0,8,0" />
+                            <Button Content="Appliquer"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding AppliquerATousCommand}"
+                                    ToolTip="Donner ce nombre d'étiquettes à tous les articles" />
+                        </StackPanel>
                     </WrapPanel>
                 </Grid>
 
