@@ -61,6 +61,9 @@ public partial class LigneEtiquette : ObservableObject
     }
 }
 
+/// <summary>Sorte d'imprimante proposée dans la liste.</summary>
+public sealed record ChoixTypeImprimante(TypeImprimanteEtiquettes Valeur, string Libelle);
+
 /// <summary>
 /// Impression des étiquettes code-barres des déclinaisons d'un produit.
 ///
@@ -92,6 +95,47 @@ public partial class VueModeleEtiquettes : VueModeleBase
 
     public ObservableCollection<string> Imprimantes { get; } = [];
 
+    public IReadOnlyList<ChoixTypeImprimante> Types { get; } =
+    [
+        new(TypeImprimanteEtiquettes.Etiquettes, "Imprimante d'étiquettes"),
+        new(TypeImprimanteEtiquettes.Tickets58, "Imprimante de tickets 58 mm"),
+        new(TypeImprimanteEtiquettes.Tickets80, "Imprimante de tickets 80 mm")
+    ];
+
+    /// <summary>Vrai pendant le chargement des réglages : le type retenu ne doit pas être redeviné.</summary>
+    private bool _chargement;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SurImprimanteDeTickets))]
+    [NotifyPropertyChangedFor(nameof(EtatImprimante))]
+    private TypeImprimanteEtiquettes _typeChoisi;
+
+    /// <summary>Vrai quand les étiquettes sortent d'une imprimante de tickets : les réglages de position s'affichent.</summary>
+    public bool SurImprimanteDeTickets => TypeChoisi != TypeImprimanteEtiquettes.Etiquettes;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LibelleEspace))]
+    private double _espaceMm = ReglagesEtiquettes.EspaceParDefaut;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LibelleDecalageHorizontal))]
+    private double _decalageHorizontalMm;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LibelleDecalageVertical))]
+    private double _decalageVerticalMm = ReglagesEtiquettes.DecalageVerticalParDefaut;
+
+    public string LibelleEspace => Millimetres(EspaceMm);
+
+    public string LibelleDecalageHorizontal => Millimetres(DecalageHorizontalMm);
+
+    public string LibelleDecalageVertical => Millimetres(DecalageVerticalMm);
+
+    private static string Millimetres(double valeur) =>
+        valeur.ToString("0.0", System.Globalization.CultureInfo.GetCultureInfo("fr-FR")) + " mm";
+
+    [ObservableProperty]
+    private bool _afficherDetail;
     [ObservableProperty]
     private string _nomProduit = string.Empty;
 
@@ -146,7 +190,11 @@ public partial class VueModeleEtiquettes : VueModeleBase
         ? "Windows ne signale aucune imprimante. Installez le pilote de l'imprimante d'étiquettes, puis appuyez sur Actualiser."
         : ImprimanteChoisie is null
             ? "Choisissez l'imprimante d'étiquettes. Le choix est retenu pour ce poste."
-            : "Réglez la même taille d'étiquette dans les préférences de l'imprimante, dans Windows.";
+            : SurImprimanteDeTickets
+                ? "Les étiquettes partent directement, au pas exact du rouleau. Une imprimante de tickets ne " +
+                  "voit pas les étiquettes : réglez une fois la position avec « Imprimer le réglage ». Ensuite, " +
+                  "chaque série retombe juste — tant qu'on n'appuie pas sur le bouton d'avance du papier."
+                : "Réglez la même taille d'étiquette dans les préférences de l'imprimante, dans Windows.";
 
     /// <summary>Ce qui a été imprimé, une fois la fenêtre fermée.</summary>
     public string? CompteRendu { get; private set; }
@@ -169,13 +217,22 @@ public partial class VueModeleEtiquettes : VueModeleBase
 
         var reglages = _impression.Reglages;
 
+        _chargement = true;
+
         LargeurMm = reglages.LargeurMm;
         HauteurMm = reglages.HauteurMm;
         AfficherPrix = reglages.AfficherPrix;
         AfficherMagasin = reglages.AfficherMagasin;
+        AfficherDetail = reglages.AfficherDetail;
+        EspaceMm = reglages.EspaceMm;
+        DecalageHorizontalMm = reglages.DecalageHorizontalMm;
+        DecalageVerticalMm = reglages.DecalageVerticalMm;
 
         RemplirImprimantes(reglages.NomImprimante);
         ImprimanteChoisie = reglages.NomImprimante;
+        TypeChoisi = reglages.TypeEffectif;
+
+        _chargement = false;
 
         foreach (var ligne in Lignes)
         {
@@ -246,7 +303,12 @@ public partial class VueModeleEtiquettes : VueModeleBase
         LargeurMm = LargeurMm,
         HauteurMm = HauteurMm,
         AfficherPrix = AfficherPrix,
-        AfficherMagasin = AfficherMagasin
+        AfficherMagasin = AfficherMagasin,
+        AfficherDetail = AfficherDetail,
+        Type = TypeChoisi,
+        EspaceMm = EspaceMm,
+        DecalageHorizontalMm = DecalageHorizontalMm,
+        DecalageVerticalMm = DecalageVerticalMm
     }.Normaliser();
 
     // ------------------------------------------------------------------
@@ -267,7 +329,17 @@ public partial class VueModeleEtiquettes : VueModeleBase
         _ = VerifierFormatAsync();
     }
 
-    partial void OnImprimanteChoisieChanged(string? value) => _ = VerifierFormatAsync();
+    partial void OnImprimanteChoisieChanged(string? value)
+    {
+        // Une autre imprimante choisie à la main : sa sorte est devinée à son
+        // nom — « POS-58 R58P » est une imprimante de tickets de 58 mm.
+        if (!_chargement && value is not null)
+        {
+            TypeChoisi = ReglagesEtiquettes.Deviner(value);
+        }
+
+        _ = VerifierFormatAsync();
+    }
 
     /// <summary>
     /// Demande au pilote sur quel papier il imprimera. Fait en arrière-plan :
@@ -299,6 +371,10 @@ public partial class VueModeleEtiquettes : VueModeleBase
     partial void OnAfficherPrixChanged(bool value) => _ = ActualiserApercuAsync();
 
     partial void OnAfficherMagasinChanged(bool value) => _ = ActualiserApercuAsync();
+
+    partial void OnAfficherDetailChanged(bool value) => _ = ActualiserApercuAsync();
+
+    partial void OnTypeChoisiChanged(TypeImprimanteEtiquettes value) => _ = VerifierFormatAsync();
 
     /// <summary>
     /// Redessine l'étiquette de l'article sélectionné. Une étiquette
@@ -346,6 +422,80 @@ public partial class VueModeleEtiquettes : VueModeleBase
     // ------------------------------------------------------------------
     // Commandes
     // ------------------------------------------------------------------
+
+    // ------------------------------------------------------------------
+    // Position sur une imprimante de tickets
+    // ------------------------------------------------------------------
+
+    private const double PasDecalage = 0.5;
+
+    private const double PasEspace = 0.1;
+
+    /// <summary>L'impression part vers la gauche de l'étiquette.</summary>
+    [RelayCommand]
+    private void DecalerAGauche() => DecalageHorizontalMm = Borne(DecalageHorizontalMm - PasDecalage, -20, 20);
+
+    [RelayCommand]
+    private void DecalerADroite() => DecalageHorizontalMm = Borne(DecalageHorizontalMm + PasDecalage, -20, 20);
+
+    /// <summary>L'impression remonte vers le haut de l'étiquette : moins d'avance avant la première.</summary>
+    [RelayCommand]
+    private void Monter() => DecalageVerticalMm = Borne(DecalageVerticalMm - PasDecalage, 0, 40);
+
+    [RelayCommand]
+    private void Descendre() => DecalageVerticalMm = Borne(DecalageVerticalMm + PasDecalage, 0, 40);
+
+    [RelayCommand]
+    private void EspaceMoins() => EspaceMm = Borne(EspaceMm - PasEspace, 0, 10);
+
+    [RelayCommand]
+    private void EspacePlus() => EspaceMm = Borne(EspaceMm + PasEspace, 0, 10);
+
+    private static double Borne(double valeur, double minimum, double maximum) =>
+        Math.Round(Math.Clamp(valeur, minimum, maximum), 1);
+
+    /// <summary>
+    /// Imprime cinq étiquettes encadrées : le cadre doit suivre les bords de
+    /// chacune. Les réglages en cours sont retenus aussitôt, pour que la
+    /// série suivante parte de là.
+    /// </summary>
+    [RelayCommand]
+    private async Task ImprimerReglageAsync()
+    {
+        if (ImprimanteChoisie is null)
+        {
+            Dialogue.Avertir("Choisissez d'abord l'imprimante dans la liste.", "Aucune imprimante");
+            return;
+        }
+
+        var reglages = ReglagesSaisis();
+
+        EstOccupe = true;
+
+        try
+        {
+            await _impression.ImprimerReglageAsync(reglages).ConfigureAwait(true);
+        }
+        catch (ImpressionEtiquettesException erreur)
+        {
+            Journal.LogWarning(erreur, "Réglage des étiquettes non imprimé.");
+            Dialogue.Avertir(erreur.Message, "Réglage non imprimé");
+            return;
+        }
+        finally
+        {
+            EstOccupe = false;
+        }
+
+        try
+        {
+            _impression.Enregistrer(reglages);
+        }
+        catch (Exception erreur) when (erreur is IOException or UnauthorizedAccessException)
+        {
+            Journal.LogWarning(erreur, "Réglages des étiquettes non enregistrés.");
+        }
+    }
 
     [RelayCommand]
     private void ActualiserImprimantes()

@@ -75,10 +75,34 @@ public class TestsEtiquettes
     }
 
     [Fact]
-    public void Sur_40_x_20_la_taille_la_couleur_et_le_prix_partagent_une_ligne()
+    public void Par_defaut_l_etiquette_porte_le_magasin_l_article_le_prix_et_le_code_sans_la_taille()
     {
         var etiquette = CompositionEtiquette.Composer(
             Article(CodesBarres.ComposerCodeMagasin(7)), "VIP MEN’S STORE", "DA", ReglagesDuMagasin);
+
+        Assert.False(ReglagesDuMagasin.AfficherDetail);
+        Assert.DoesNotContain(etiquette.Textes, t => t.Texte.Contains("Taille"));
+        Assert.Contains(etiquette.Textes, t => t.Texte == "VIP MEN’S STORE");
+        Assert.Contains(etiquette.Textes, t => t.Texte == "t shirt nike");
+
+        // Le prix a sa ligne à lui, en grand, sous le nom de l'article.
+        var nom = etiquette.Textes.Single(t => t.Texte == "t shirt nike");
+        var prix = etiquette.Textes.Single(t => t.Texte == "2 500 DA");
+
+        Assert.True(prix.Haut > nom.Haut);
+        Assert.True(prix.Corps > nom.Corps);
+
+        var hauteurBarres = etiquette.Barres.Min(b => b.Hauteur);
+        Assert.True(hauteurBarres >= 6.5 * PointsParMm - 1, $"Barres de {hauteurBarres / PointsParMm:N1} mm seulement.");
+        Assert.Equal(CodesBarres.ComposerCodeMagasin(7), Lire(etiquette, BarcodeFormat.EAN_13));
+    }
+
+    [Fact]
+    public void Sur_40_x_20_la_taille_la_couleur_et_le_prix_partagent_une_ligne()
+    {
+        var etiquette = CompositionEtiquette.Composer(
+            Article(CodesBarres.ComposerCodeMagasin(7)), "VIP MEN’S STORE", "DA",
+            ReglagesDuMagasin with { AfficherDetail = true });
 
         var detail = etiquette.Textes.Single(t => t.Texte == "Taille M — Noir");
         var prix = etiquette.Textes.Single(t => t.Texte == "2 500 DA");
@@ -92,7 +116,7 @@ public class TestsEtiquettes
 
         // Et c'est ce qui laisse au code-barres la hauteur qu'il lui faut.
         var hauteurBarres = etiquette.Barres.Min(b => b.Hauteur);
-        Assert.True(hauteurBarres >= 7 * PointsParMm - 1, $"Barres de {hauteurBarres / PointsParMm:N1} mm seulement.");
+        Assert.True(hauteurBarres >= 6.5 * PointsParMm - 1, $"Barres de {hauteurBarres / PointsParMm:N1} mm seulement.");
 
         Assert.Contains(etiquette.Textes, t => t.Texte == "t shirt nike");
     }
@@ -101,7 +125,8 @@ public class TestsEtiquettes
     public void Sur_une_etiquette_haute_le_prix_a_sa_propre_ligne_en_grand()
     {
         var etiquette = CompositionEtiquette.Composer(
-            Article(CodesBarres.ComposerCodeMagasin(7)), "VIP MEN’S STORE", "DA", Reglages40x30);
+            Article(CodesBarres.ComposerCodeMagasin(7)), "VIP MEN’S STORE", "DA",
+            Reglages40x30 with { AfficherDetail = true });
 
         var detail = etiquette.Textes.Single(t => t.Texte == "Taille M — Noir");
         var prix = etiquette.Textes.Single(t => t.Texte == "2 500 DA");

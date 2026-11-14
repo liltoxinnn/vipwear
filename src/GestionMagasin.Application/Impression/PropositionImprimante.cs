@@ -56,6 +56,13 @@ public static partial class PropositionImprimante
     [GeneratedRegex(@"(^|\D)80(\D|$)")]
     private static partial Regex Quatrevingts();
 
+    /// <summary>
+    /// Vrai pour une imprimante de caisse reconnue à son nom — « POS-58 »,
+    /// « R58P », « XP-80 »… —, et non pour une imprimante virtuelle.
+    /// </summary>
+    public static bool EstImprimanteDeCaisse(string? nom) =>
+        !string.IsNullOrWhiteSpace(nom) && !EstVirtuelle(nom) && DeCaisse().IsMatch(nom);
+
     /// <summary>Propose l'imprimante de tickets, ou rien si aucune ne s'annonce comme telle.</summary>
     public static ImprimanteProposee? Proposer(IEnumerable<string> imprimantes)
     {

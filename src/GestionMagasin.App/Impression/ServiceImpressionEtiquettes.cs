@@ -46,6 +46,12 @@ public interface IServiceImpressionEtiquettes
     /// </returns>
     string? VerifierFormat(ReglagesEtiquettes reglages);
 
+    /// <summary>
+    /// Imprime une série d'étiquettes de réglage, encadrées : sur une
+    /// imprimante de tickets, elles montrent de combien déplacer l'impression.
+    /// </summary>
+    Task ImprimerReglageAsync(ReglagesEtiquettes reglages);
+
     /// <summary>Imprime les étiquettes demandées et retourne leur nombre.</summary>
     /// <exception cref="ImpressionEtiquettesException">Imprimante absente, refus de Windows.</exception>
     /// <exception cref="EtiquetteImpossibleException">Un article ne tient pas sur l'étiquette.</exception>
@@ -169,6 +175,17 @@ public sealed class ServiceImpressionEtiquettes : IServiceImpressionEtiquettes
 
         var magasin = await Magasin().ConfigureAwait(true);
 
+        if (reglages.SurImprimanteDeTickets)
+        {
+            var images = aImprimer
+                .Select(d => Image(d.Article, magasin.NomMagasin, magasin.SymboleDevise, reglages, d.Nombre))
+                .ToList();
+
+            await EnvoyerSurTicketsAsync(images, reglages, "Étiquettes").ConfigureAwait(true);
+
+            return total;
+        }
+
         using var serveur = new LocalPrintServer();
         using var file = Trouver(serveur, nomImprimante)
             ?? throw new ImpressionEtiquettesException(
@@ -222,6 +239,98 @@ public sealed class ServiceImpressionEtiquettes : IServiceImpressionEtiquettes
         }
     }
 
+    public async Task ImprimerReglageAsync(ReglagesEtiquettes reglages)
+    {
+        reglages = reglages.Normaliser();
+
+        if (!reglages.EstConfiguree)
+        {
+            throw new ImpressionEtiquettesException("Choisissez d'abord l'imprimante d'étiquettes.");
+        }
+
+        if (!reglages.SurImprimanteDeTickets)
+        {
+            throw new ImpressionEtiquettesException(
+                "Le réglage ne concerne que les imprimantes de tickets : une imprimante d'étiquettes repère " +
+                "elle-même chaque étiquette.");
+        }
+
+        // Cinq étiquettes : un glissement d'une étiquette à l'autre — espace
+        // mal réglé — se voit nettement sur la cinquième.
+        var images = Enumerable.Range(1, NombreEtiquettesDeReglage)
+            .Select(numero =>
+            {
+                var mise = CompositionEtiquette.Reglage(reglages, numero, BandeEtiquettes.Resolution);
+                return new ImageEtiquette(RenduEtiquette.Gris(mise), mise.Largeur, mise.Hauteur, 1);
+            })
+            .ToList();
+
+        await EnvoyerSurTicketsAsync(images, reglages, "Réglage des étiquettes").ConfigureAwait(true);
+    }
+
+    /// <summary>Nombre d'étiquettes d'une série de réglage.</summary>
+    public const int NombreEtiquettesDeReglage = 5;
+
+    /// <summary>
+    /// Envoi direct d'une série à une imprimante de tickets, comme les tickets
+    /// de caisse : une seule image, au pas exact des étiquettes.
+    /// </summary>
+    private async Task EnvoyerSurTicketsAsync(
+        IReadOnlyList<ImageEtiquette> images,
+        ReglagesEtiquettes reglages,
+        string nomDocument)
+    {
+        var nomImprimante = reglages.NomImprimante!;
+
+        if (SpouleurWindows.EstVirtuelle(nomImprimante))
+        {
+            throw new ImpressionEtiquettesException(
+                $"« {nomImprimante} » n'est pas une imprimante : elle fabrique un fichier. Choisissez " +
+                "l'imprimante dans la liste.");
+        }
+
+        var (gris, largeur, hauteur) = BandeEtiquettes.Assembler(images, reglages);
+
+        _journal.LogInformation(
+            "{Document} : {Nombre} étiquette(s) de {Largeur} × {Hauteur} mm, pas de {Pas} points, vers la " +
+            "tête de {Tete} points de « {Imprimante} ».",
+            nomDocument, images.Sum(i => i.Nombre), reglages.LargeurMm, reglages.HauteurMm,
+            BandeEtiquettes.Pas(reglages), largeur, nomImprimante);
+
+        try
+        {
+            await Task.Run(() =>
+            {
+                var points = Monochrome.VersPoints(gris, largeur, hauteur);
+                SpouleurWindows.EnvoyerBrut(nomImprimante, nomDocument, EscPos.Etiquettes(points, largeur, hauteur));
+            }).ConfigureAwait(true);
+        }
+        catch (ImpressionTicketException erreur)
+        {
+            throw new ImpressionEtiquettesException(erreur.Message, erreur);
+        }
+    }
+
+    /// <summary>Étiquette d'un article, dessinée pour une imprimante de tickets.</summary>
+    private static ImageEtiquette Image(
+        ArticleEtiquette article,
+        string nomMagasin,
+        string symboleDevise,
+        ReglagesEtiquettes reglages,
+        int nombre)
+    {
+        try
+        {
+            var mise = CompositionEtiquette.Composer(article, nomMagasin, symboleDevise, reglages, BandeEtiquettes.Resolution);
+
+            return new ImageEtiquette(RenduEtiquette.Gris(mise), mise.Largeur, mise.Hauteur, nombre);
+        }
+        catch (EtiquetteImpossibleException erreur)
+        {
+            throw new EtiquetteImpossibleException($"« {article.Nom} » : {erreur.Message}");
+        }
+    }
+
     private static BitmapSource Dessiner(
         ArticleEtiquette article,
         string nomMagasin,
@@ -245,7 +354,10 @@ public sealed class ServiceImpressionEtiquettes : IServiceImpressionEtiquettes
     {
         reglages = reglages.Normaliser();
 
-        if (!reglages.EstConfiguree || PropositionImprimante.EstVirtuelle(reglages.NomImprimante))
+        // Une imprimante de tickets reçoit les étiquettes directement : son
+        // pilote, et son papier, n'entrent pas en jeu.
+        if (!reglages.EstConfiguree || PropositionImprimante.EstVirtuelle(reglages.NomImprimante)
+                                    || reglages.SurImprimanteDeTickets)
         {
             return null;
         }

@@ -71,6 +71,20 @@ internal static class RenduEtiquette
     /// <summary>Dessine l'étiquette, prête à imprimer à <paramref name="pointsParPouce"/>.</summary>
     public static BitmapSource Dessiner(MiseEnPageEtiquette etiquette, int pointsParPouce)
     {
+        var gris = Gris(etiquette);
+
+        var image = BitmapSource.Create(
+            etiquette.Largeur, etiquette.Hauteur, pointsParPouce, pointsParPouce, PixelFormats.Gray8, null, gris,
+            etiquette.Largeur);
+
+        image.Freeze();
+
+        return image;
+    }
+
+    /// <summary>L'étiquette en points noirs (0) et blancs (255), rangée après rangée.</summary>
+    public static byte[] Gris(MiseEnPageEtiquette etiquette)
+    {
         var largeur = etiquette.Largeur;
         var hauteur = etiquette.Hauteur;
 
@@ -114,11 +128,6 @@ internal static class RenduEtiquette
             gris[i] = luminance < 128 ? (byte)0 : (byte)255;
         }
 
-        var image = BitmapSource.Create(
-            largeur, hauteur, pointsParPouce, pointsParPouce, PixelFormats.Gray8, null, gris, largeur);
-
-        image.Freeze();
-
-        return image;
+        return gris;
     }
 }

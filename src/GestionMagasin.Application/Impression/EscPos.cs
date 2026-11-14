@@ -103,6 +103,38 @@ public static class EscPos
     /// et la hauteur en rangées, chacune sur deux octets, poids faible
     /// d'abord.
     /// </summary>
+    /// <summary>
+    /// Commandes d'une série d'étiquettes sur une imprimante de tickets :
+    /// l'image seule, sans avance ni coupe. L'image porte déjà, au point
+    /// près, l'avance qui laisse le rouleau prêt pour la série suivante ; une
+    /// avance en lignes de texte la fausserait.
+    /// </summary>
+    public static byte[] Etiquettes(byte[] points, int largeur, int hauteur)
+    {
+        ArgumentNullException.ThrowIfNull(points);
+
+        var pas = Monochrome.OctetsParRangee(largeur);
+
+        if (points.Length < pas * hauteur)
+        {
+            throw new ArgumentException("L'image est plus courte que ses dimensions.", nameof(points));
+        }
+
+        using var flux = new MemoryStream();
+
+        flux.Write(Initialiser);
+
+        for (var debut = 0; debut < hauteur; debut += RangeesParBande)
+        {
+            var rangees = Math.Min(RangeesParBande, hauteur - debut);
+
+            flux.Write(EnteteImage(pas, rangees));
+            flux.Write(points, debut * pas, rangees * pas);
+        }
+
+        return flux.ToArray();
+    }
+
     public static byte[] EnteteImage(int octetsParRangee, int rangees) =>
     [
         0x1D, 0x76, 0x30, 0x00,

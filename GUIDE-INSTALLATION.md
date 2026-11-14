@@ -271,6 +271,32 @@ vêtements, et de les scanner en caisse.
    (souvent : maintenir le bouton jusqu'à ce qu'elle avance de deux ou trois
    étiquettes).
 
+### Sur l'imprimante de tickets (POS-58, R58P…)
+
+Une imprimante de tickets garnie d'un rouleau d'étiquettes de 40 × 20 mm
+convient aussi. Elle ne voit pas les étiquettes : le logiciel les lui
+envoie directement, chacune exactement à sa place sur le rouleau. Il la
+reconnaît à son nom (« Imprimante de tickets 58 mm » dans la fenêtre des
+étiquettes) ; ses options dans Windows n'ont pas à être touchées.
+
+La position se règle **une seule fois** :
+
+1. Placez le rouleau bien au milieu de l'imprimante, puis faites sortir le
+   papier jusqu'à ce qu'un **espace entre deux étiquettes** soit au ras de la
+   barre de découpe.
+2. Fenêtre des étiquettes → **Imprimer le réglage (5 étiquettes)**. Chacune
+   porte un cadre qui doit suivre exactement ses bords.
+3. Le cadre déborde à droite : **◀** ; à gauche : **▶** ; il est trop bas :
+   **▲** ; trop haut : **▼**. Il glisse un peu plus à chaque étiquette :
+   corrigez l'**espace entre deux étiquettes**. Réimprimez le réglage jusqu'à
+   ce qu'il tombe juste.
+
+Ensuite, chaque série retombe juste d'elle-même : le logiciel fait toujours
+avancer le papier d'un nombre entier d'étiquettes. La dernière ressort
+au-delà de la barre de découpe, prête à décoller ; l'étiquette suivante
+reste vierge. **N'appuyez pas sur le bouton d'avance du papier** entre deux
+séries : sinon, refaites l'étape 1.
+
 ### Imprimer les étiquettes
 
 **Produits** → choisissez le produit → **Imprimer les étiquettes**.
@@ -283,9 +309,9 @@ poste.
 Quand vous créez une déclinaison avec une quantité en stock, le logiciel
 propose aussitôt d'imprimer ses étiquettes.
 
-L'étiquette porte le nom du magasin, l'article, la taille, la couleur, le
-prix et le code-barres. Le prix et le nom du magasin peuvent être retirés
-(cases à cocher de la fenêtre).
+L'étiquette porte le nom du magasin, l'article, le prix en grand et le
+code-barres. La taille et la couleur peuvent être ajoutées, le prix et le
+nom du magasin retirés (cases à cocher de la fenêtre).
 
 ### Scanner
 

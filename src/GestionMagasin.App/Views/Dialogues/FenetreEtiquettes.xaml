@@ -180,6 +180,89 @@
                                    TextWrapping="Wrap"
                                    Margin="0,0,0,10" />
 
+                        <TextBlock Text="Sorte d'imprimante" Style="{StaticResource TexteEtiquette}" />
+
+                        <ComboBox Style="{StaticResource ChampListe}"
+                                  ItemsSource="{Binding Types}"
+                                  DisplayMemberPath="Libelle"
+                                  SelectedValuePath="Valeur"
+                                  SelectedValue="{Binding TypeChoisi}"
+                                  Margin="0,4,0,10" />
+
+                        <!-- Imprimante de tickets : elle ne voit pas les étiquettes, la position se règle ici. -->
+                        <StackPanel Visibility="{Binding SurImprimanteDeTickets, Converter={StaticResource BooleenVisibilite}}"
+                                    Margin="0,0,0,10">
+                            <TextBlock Text="Position sur le rouleau" Style="{StaticResource TexteEtiquette}" Margin="0,0,0,4" />
+
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="38" />
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="38" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Gauche / droite" Style="{StaticResource TexteSecondaire}"
+                                           VerticalAlignment="Center" TextWrapping="Wrap" />
+                                <Button Grid.Column="1" Content="◀" Style="{StaticResource BoutonSecondaire}"
+                                        Command="{Binding DecalerAGaucheCommand}" ToolTip="Déplacer l'impression vers la gauche"
+                                        MinWidth="0" Padding="0" FontWeight="Bold" />
+                                <TextBlock Grid.Column="2" Text="{Binding LibelleDecalageHorizontal}" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <Button Grid.Column="3" Content="▶" Style="{StaticResource BoutonSecondaire}"
+                                        Command="{Binding DecalerADroiteCommand}" ToolTip="Déplacer l'impression vers la droite"
+                                        MinWidth="0" Padding="0" FontWeight="Bold" />
+                            </Grid>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="38" />
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="38" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Haut / bas" Style="{StaticResource TexteSecondaire}"
+                                           VerticalAlignment="Center" TextWrapping="Wrap" />
+                                <Button Grid.Column="1" Content="▲" Style="{StaticResource BoutonSecondaire}"
+                                        Command="{Binding MonterCommand}" ToolTip="Remonter l'impression sur l'étiquette"
+                                        MinWidth="0" Padding="0" FontWeight="Bold" />
+                                <TextBlock Grid.Column="2" Text="{Binding LibelleDecalageVertical}" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <Button Grid.Column="3" Content="▼" Style="{StaticResource BoutonSecondaire}"
+                                        Command="{Binding DescendreCommand}" ToolTip="Descendre l'impression sur l'étiquette"
+                                        MinWidth="0" Padding="0" FontWeight="Bold" />
+                            </Grid>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="38" />
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="38" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Espace entre deux étiquettes" Style="{StaticResource TexteSecondaire}"
+                                           VerticalAlignment="Center" TextWrapping="Wrap" />
+                                <Button Grid.Column="1" Content="−" Style="{StaticResource BoutonSecondaire}"
+                                        Command="{Binding EspaceMoinsCommand}" ToolTip="Espace plus petit d'un dixième de millimètre"
+                                        MinWidth="0" Padding="0" FontWeight="Bold" />
+                                <TextBlock Grid.Column="2" Text="{Binding LibelleEspace}" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <Button Grid.Column="3" Content="+" Style="{StaticResource BoutonSecondaire}"
+                                        Command="{Binding EspacePlusCommand}" ToolTip="Espace plus grand d'un dixième de millimètre"
+                                        MinWidth="0" Padding="0" FontWeight="Bold" />
+                            </Grid>
+
+                            <Button Content="Imprimer le réglage (5 étiquettes)"
+                                    Style="{StaticResource BoutonSecondaire}"
+                                    Command="{Binding ImprimerReglageCommand}"
+                                    ToolTip="Cinq étiquettes encadrées : le cadre doit suivre les bords de chacune"
+                                    Margin="0,4,0,6" />
+
+                            <TextBlock Style="{StaticResource TexteAttenue}" TextWrapping="Wrap"
+                                       Text="Le cadre doit suivre les bords de chaque étiquette. Il déborde à droite : appuyez sur ◀ ; il est trop bas : ▲. Il glisse un peu plus à chaque étiquette : corrigez l'espace. Réimprimez le réglage jusqu'à ce qu'il tombe juste." />
+                        </StackPanel>
+
+
                         <!-- Le pilote imprimerait sur un autre papier : dit avant de gâcher le rouleau. -->
                         <TextBlock Text="{Binding ProblemeFormat}"
                                    Style="{StaticResource TexteSecondaire}"
@@ -221,6 +304,10 @@
                         <CheckBox Style="{StaticResource CaseACocher}"
                                   Content="Imprimer le nom du magasin"
                                   IsChecked="{Binding AfficherMagasin}" />
+
+                        <CheckBox Style="{StaticResource CaseACocher}"
+                                  Content="Imprimer la taille et la couleur"
+                                  IsChecked="{Binding AfficherDetail}" />
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

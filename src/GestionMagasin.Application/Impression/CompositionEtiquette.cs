@@ -87,7 +87,7 @@ public static class CompositionEtiquette
     private const double ModuleMaximalMm = 0.42;
 
     /// <summary>Hauteur des barres visée : une douchette lit sans peine à partir de là.</summary>
-    private const double BarresConfortablesMm = 7;
+    private const double BarresConfortablesMm = 6.5;
 
     /// <summary>En dessous, la douchette doit être tenue bien droite : on n'y descend qu'en dernier recours.</summary>
     private const double BarresMinimalesMm = 4.5;
@@ -192,7 +192,7 @@ public static class CompositionEtiquette
 
         foreach (var (disposition, echelle, avecMagasin) in essais)
         {
-            var rangees = Rangees(disposition, avecMagasin ? magasin : null, article, prix);
+            var rangees = Rangees(disposition, avecMagasin ? magasin : null, article, prix, reglages.AfficherDetail);
 
             int Corps(Cellule cellule) => Math.Max(Points(CorpsMinimalMm), Points(cellule.Mm * echelle));
             int HauteurRangee(Rangee rangee) => rangee.Cellules.Max(c => HauteurLigne(Corps(c)));
@@ -308,10 +308,15 @@ public static class CompositionEtiquette
     }
 
     /// <summary>Lignes de texte de l'étiquette, selon la disposition.</summary>
-    private static List<Rangee> Rangees(Disposition disposition, string? magasin, ArticleEtiquette article, string? prix)
+    private static List<Rangee> Rangees(
+        Disposition disposition,
+        string? magasin,
+        ArticleEtiquette article,
+        string? prix,
+        bool afficherDetail)
     {
         var rangees = new List<Rangee>();
-        var detail = string.IsNullOrWhiteSpace(article.Detail) ? null : article.Detail.Trim();
+        var detail = !afficherDetail || string.IsNullOrWhiteSpace(article.Detail) ? null : article.Detail.Trim();
 
         if (magasin is not null)
         {
@@ -342,6 +347,61 @@ public static class CompositionEtiquette
         }
 
         return rangees;
+    }
+
+    /// <summary>
+    /// Étiquette de réglage : un cadre qui doit suivre exactement les bords
+    /// de l'étiquette. Décalé, il montre de combien, et dans quel sens,
+    /// déplacer l'impression.
+    /// </summary>
+    /// <param name="reglages">Dimensions des étiquettes et décalages en cours.</param>
+    /// <param name="numero">Rang de l'étiquette dans la série de réglage.</param>
+    /// <param name="pointsParPouce">Résolution de l'imprimante.</param>
+    public static MiseEnPageEtiquette Reglage(ReglagesEtiquettes reglages, int numero, int pointsParPouce = ResolutionCourante)
+    {
+        ArgumentNullException.ThrowIfNull(reglages);
+
+        reglages = reglages.Normaliser();
+
+        var parMm = pointsParPouce / 25.4;
+        int Points(double mm) => (int)Math.Round(mm * parMm);
+
+        var largeur = Points(reglages.LargeurMm);
+        var hauteur = Points(reglages.HauteurMm);
+        var trait = Math.Max(2, Points(0.3));
+
+        // Le cadre, puis un repère au milieu de chaque bord : on voit d'un
+        // coup d'œil de quel côté il déborde.
+        BarreEtiquette[] barres =
+        [
+            new(0, 0, largeur, trait),
+            new(0, hauteur - trait, largeur, trait),
+            new(0, 0, trait, hauteur),
+            new(largeur - trait, 0, trait, hauteur),
+            new(largeur / 2 - trait / 2, 0, trait, Points(2)),
+            new(largeur / 2 - trait / 2, hauteur - Points(2), trait, Points(2)),
+            new(0, hauteur / 2 - trait / 2, Points(2), trait),
+            new(largeur - Points(2), hauteur / 2 - trait / 2, Points(2), trait)
+        ];
+
+        var interieur = largeur - 2 * Points(3);
+        var corpsTitre = Points(2.6);
+        var corps = Points(1.9);
+        var ligne = (int)Math.Ceiling(corps * Interligne);
+        var haut = (hauteur - (int)Math.Ceiling(corpsTitre * Interligne) - 2 * ligne) / 2;
+
+        var decalages = string.Create(
+            System.Globalization.CultureInfo.GetCultureInfo("fr-FR"),
+            $"Côté : {reglages.DecalageHorizontalMm:0.#} mm   Haut : {reglages.DecalageVerticalMm:0.#} mm");
+
+        TexteEtiquette[] textes =
+        [
+            new($"RÉGLAGE {numero}", Points(3), haut, interieur, corpsTitre, true),
+            new("Le cadre suit les bords ?", Points(3), haut + (int)Math.Ceiling(corpsTitre * Interligne), interieur, corps, false),
+            new(decalages, Points(3), haut + (int)Math.Ceiling(corpsTitre * Interligne) + ligne, interieur, corps, false)
+        ];
+
+        return new MiseEnPageEtiquette(largeur, hauteur, FormatCodeBarres.Code128, 0, textes, barres);
     }
 
     /// <summary>

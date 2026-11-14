@@ -3,6 +3,25 @@ using System.Text.Json.Serialization;
 
 namespace GestionMagasin.Application.Impression;
 
+/// <summary>Sorte d'imprimante sur laquelle sortent les étiquettes.</summary>
+public enum TypeImprimanteEtiquettes
+{
+    /// <summary>
+    /// Imprimante d'étiquettes (Xprinter, TSC, Zebra…) : elle repère elle-même
+    /// chaque étiquette, et l'impression passe par son pilote Windows.
+    /// </summary>
+    Etiquettes,
+
+    /// <summary>
+    /// Imprimante de tickets de 58 mm garnie d'un rouleau d'étiquettes : elle
+    /// ne voit pas les étiquettes, le logiciel compte lui-même l'avance.
+    /// </summary>
+    Tickets58,
+
+    /// <summary>Imprimante de tickets de 80 mm garnie d'un rouleau d'étiquettes.</summary>
+    Tickets80
+}
+
 /// <summary>
 /// Réglages de l'imprimante d'étiquettes code-barres d'un poste.
 ///
@@ -48,11 +67,73 @@ public sealed record ReglagesEtiquettes
     /// <summary>Imprime le nom du magasin en tête d'étiquette.</summary>
     public bool AfficherMagasin { get; init; } = true;
 
+    /// <summary>
+    /// Imprime la taille et la couleur. Retirées d'office : sur une étiquette
+    /// de 40 × 20, le magasin préfère un prix bien lisible.
+    /// </summary>
+    public bool AfficherDetail { get; init; }
+
+    /// <summary>Sorte d'imprimante ; rien tant qu'elle est devinée d'après son nom.</summary>
+    public TypeImprimanteEtiquettes? Type { get; init; }
+
+    /// <summary>
+    /// Espace entre deux étiquettes du rouleau, en millimètres. Une
+    /// imprimante de tickets ne le voit pas : il faut le lui dire, au
+    /// dixième près, sinon chaque étiquette glisse un peu plus que la
+    /// précédente.
+    /// </summary>
+    public double EspaceMm { get; init; } = EspaceParDefaut;
+
+    /// <summary>
+    /// Imprimante de tickets : décalage de l'impression vers la droite (positif)
+    /// ou la gauche (négatif), en millimètres, à partir du milieu de la tête.
+    /// </summary>
+    public double DecalageHorizontalMm { get; init; }
+
+    /// <summary>
+    /// Imprimante de tickets : avance avant la première étiquette, en
+    /// millimètres, quand un espace entre deux étiquettes est au ras de la
+    /// barre de découpe. C'est, à peu de chose près, le pas des étiquettes
+    /// moins la distance de la tête à la barre de découpe.
+    /// </summary>
+    public double DecalageVerticalMm { get; init; } = DecalageVerticalParDefaut;
+
+    public const double EspaceParDefaut = 2.0;
+
+    /// <summary>
+    /// Pour un pas de 22 mm et une tête à 11 mm de la barre de découpe,
+    /// l'écart le plus courant sur les imprimantes de 58 mm.
+    /// </summary>
+    public const double DecalageVerticalParDefaut = 11.0;
+
+    /// <summary>Sorte d'imprimante retenue, ou devinée d'après son nom.</summary>
+    [JsonIgnore]
+    public TypeImprimanteEtiquettes TypeEffectif => Type ?? Deviner(NomImprimante);
+
+    /// <summary>Vrai quand les étiquettes sortent d'une imprimante de tickets.</summary>
+    [JsonIgnore]
+    public bool SurImprimanteDeTickets => TypeEffectif != TypeImprimanteEtiquettes.Etiquettes;
+
+    /// <summary>
+    /// Sorte d'imprimante d'après son nom : « POS-58 R58P » est une imprimante
+    /// de tickets de 58 mm, « Xprinter XP-365B » une imprimante d'étiquettes.
+    /// </summary>
+    public static TypeImprimanteEtiquettes Deviner(string? nomImprimante) =>
+        !PropositionImprimante.EstImprimanteDeCaisse(nomImprimante)
+            ? TypeImprimanteEtiquettes.Etiquettes
+            : PropositionImprimante.LargeurSupposee(nomImprimante!) == LargeurRouleau.Rouleau80
+                ? TypeImprimanteEtiquettes.Tickets80
+                : TypeImprimanteEtiquettes.Tickets58;
+
     /// <summary>Vrai lorsqu'une imprimante d'étiquettes a été choisie sur ce poste.</summary>
     [JsonIgnore]
     public bool EstConfiguree => !string.IsNullOrWhiteSpace(NomImprimante);
 
-    private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
 
     /// <summary>Met les réglages sous forme de texte, pour le fichier du poste.</summary>
     public string VersJson() => JsonSerializer.Serialize(Normaliser(), Options);
@@ -95,6 +176,14 @@ public sealed record ReglagesEtiquettes
         Version = VersionActuelle,
         NomImprimante = string.IsNullOrWhiteSpace(NomImprimante) ? null : NomImprimante.Trim(),
         LargeurMm = Math.Clamp(LargeurMm, DimensionMinimale, DimensionMaximale),
-        HauteurMm = Math.Clamp(HauteurMm, DimensionMinimale, DimensionMaximale)
+        HauteurMm = Math.Clamp(HauteurMm, DimensionMinimale, DimensionMaximale),
+        Type = Type is { } type && Enum.IsDefined(type) ? type : null,
+        EspaceMm = Borner(EspaceMm, 0, 10, EspaceParDefaut),
+        DecalageHorizontalMm = Borner(DecalageHorizontalMm, -20, 20, 0),
+        DecalageVerticalMm = Borner(DecalageVerticalMm, 0, 40, DecalageVerticalParDefaut)
     };
+
+    /// <summary>Valeur au dixième de millimètre, dans ses bornes ; la valeur d'origine si elle est illisible.</summary>
+    private static double Borner(double valeur, double minimum, double maximum, double origine) =>
+        double.IsFinite(valeur) ? Math.Round(Math.Clamp(valeur, minimum, maximum), 1) : origine;
 }
