@@ -36,6 +36,16 @@ public interface IServiceImpressionEtiquettes
     /// <exception cref="EtiquetteImpossibleException">Code illisible ou étiquette trop petite.</exception>
     Task<BitmapSource> ApercuAsync(ArticleEtiquette article, ReglagesEtiquettes reglages);
 
+    /// <summary>
+    /// Vérifie que le pilote de l'imprimante imprimera bien sur la taille
+    /// des étiquettes.
+    /// </summary>
+    /// <returns>
+    /// L'explication du désaccord et la marche à suivre, ou rien quand la
+    /// taille convient — ou ne peut pas être vérifiée.
+    /// </returns>
+    string? VerifierFormat(ReglagesEtiquettes reglages);
+
     /// <summary>Imprime les étiquettes demandées et retourne leur nombre.</summary>
     /// <exception cref="ImpressionEtiquettesException">Imprimante absente, refus de Windows.</exception>
     /// <exception cref="EtiquetteImpossibleException">Un article ne tient pas sur l'étiquette.</exception>
@@ -167,7 +177,7 @@ public sealed class ServiceImpressionEtiquettes : IServiceImpressionEtiquettes
 
         try
         {
-            var (ticket, resolution) = PreparerTicket(file, reglages);
+            var (ticket, resolution, _) = PreparerTicket(file, reglages);
 
             // Toutes les étiquettes sont composées avant le premier envoi : un
             // article qui ne tient pas sur l'étiquette arrête tout, au lieu de
@@ -231,16 +241,55 @@ public sealed class ServiceImpressionEtiquettes : IServiceImpressionEtiquettes
         }
     }
 
+    public string? VerifierFormat(ReglagesEtiquettes reglages)
+    {
+        reglages = reglages.Normaliser();
+
+        if (!reglages.EstConfiguree || PropositionImprimante.EstVirtuelle(reglages.NomImprimante))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var serveur = new LocalPrintServer();
+            using var file = Trouver(serveur, reglages.NomImprimante!);
+
+            // Une imprimante introuvable est signalée à l'impression, avec
+            // son propre message.
+            return file is null ? null : PreparerTicket(file, reglages).Probleme;
+        }
+        catch (Exception erreur) when (erreur is PrintSystemException or Win32Exception
+                                           or InvalidOperationException)
+        {
+            _journal.LogDebug(erreur, "Format du pilote des étiquettes non vérifiable.");
+            return null;
+        }
+    }
+
     /// <summary>
     /// Réglage du travail : une page de la taille de l'étiquette, et la
     /// résolution de l'imprimante, lue dans son pilote.
+    ///
+    /// Le pilote a le dernier mot sur la taille du papier. Beaucoup ignorent
+    /// une taille qu'ils ne connaissent pas et gardent la leur — 60 × 40 ou
+    /// 4 × 6 pouces, par exemple. L'imprimante, qui centre le rouleau sous sa
+    /// tête, pose alors l'image de travers : décalée sur le côté, et à
+    /// cheval sur deux étiquettes. On demande donc en priorité un format du
+    /// pilote lui-même aux bonnes dimensions, puis on vérifie ce qu'il a
+    /// réellement retenu.
     /// </summary>
-    private static (PrintTicket Ticket, int Resolution) PreparerTicket(PrintQueue file, ReglagesEtiquettes reglages)
+    private static (PrintTicket Ticket, int Resolution, string? Probleme) PreparerTicket(
+        PrintQueue file,
+        ReglagesEtiquettes reglages)
     {
+        var largeur = reglages.LargeurMm / 25.4 * 96;
+        var hauteur = reglages.HauteurMm / 25.4 * 96;
+
         var depart = file.UserPrintTicket ?? file.DefaultPrintTicket;
         var demande = depart.Clone();
 
-        demande.PageMediaSize = new PageMediaSize(reglages.LargeurMm / 25.4 * 96, reglages.HauteurMm / 25.4 * 96);
+        demande.PageMediaSize = FormatDuPilote(file, depart, largeur, hauteur) ?? new PageMediaSize(largeur, hauteur);
         demande.PageOrientation = PageOrientation.Portrait;
         demande.CopyCount = 1;
 
@@ -248,8 +297,40 @@ public sealed class ServiceImpressionEtiquettes : IServiceImpressionEtiquettes
 
         var resolution = ticket.PageResolution?.X ?? CompositionEtiquette.ResolutionCourante;
 
-        return (ticket, resolution is >= 150 and <= 1200 ? resolution : CompositionEtiquette.ResolutionCourante);
+        if (resolution is < 150 or > 1200)
+        {
+            resolution = CompositionEtiquette.ResolutionCourante;
+        }
+
+        // Un pilote qui ne dit rien de son papier n'est pas mis en cause :
+        // on ne sait pas, et l'on ne bloque pas une impression peut-être bonne.
+        var retenu = ticket.PageMediaSize;
+        var probleme = retenu?.Width is { } l && retenu.Height is { } h
+                       && !FormatPilote.Convient(EnMm(l), EnMm(h), reglages)
+            ? FormatPilote.Expliquer(file.FullName, reglages, EnMm(l), EnMm(h))
+            : null;
+
+        return (ticket, resolution, probleme);
     }
+
+    /// <summary>Format déclaré par le pilote aux dimensions de l'étiquette, s'il en a un.</summary>
+    private static PageMediaSize? FormatDuPilote(PrintQueue file, PrintTicket depart, double largeur, double hauteur)
+    {
+        try
+        {
+            return file.GetPrintCapabilities(depart).PageMediaSizeCapability?
+                .FirstOrDefault(f => f.Width is { } l && f.Height is { } h
+                                     && Math.Abs(EnMm(l) - EnMm(largeur)) <= FormatPilote.ToleranceMm
+                                     && Math.Abs(EnMm(h) - EnMm(hauteur)) <= FormatPilote.ToleranceMm);
+        }
+        catch (Exception erreur) when (erreur is PrintSystemException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Unités de WPF (1/96 de pouce) en millimètres.</summary>
+    private static double EnMm(double unites) => unites * 25.4 / 96;
 
     private static PageContent Page(BitmapSource image, double largeur, double hauteur)
     {

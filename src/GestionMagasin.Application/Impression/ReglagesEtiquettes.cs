@@ -23,6 +23,16 @@ public sealed record ReglagesEtiquettes
 
     public const int DimensionMaximale = 110;
 
+    /// <summary>
+    /// Version du fichier des réglages. La première retenait 40 × 30 mm,
+    /// l'ancienne taille proposée d'office ; le magasin utilise des
+    /// étiquettes de 40 × 20.
+    /// </summary>
+    public const int VersionActuelle = 2;
+
+    /// <summary>Version du fichier relu ; zéro pour un fichier d'avant la numérotation.</summary>
+    public int Version { get; init; }
+
     /// <summary>Nom de l'imprimante d'étiquettes tel que Windows le connaît.</summary>
     public string? NomImprimante { get; init; }
 
@@ -60,8 +70,18 @@ public sealed record ReglagesEtiquettes
 
         try
         {
-            return (JsonSerializer.Deserialize<ReglagesEtiquettes>(json, Options) ?? new ReglagesEtiquettes())
-                .Normaliser();
+            var lus = JsonSerializer.Deserialize<ReglagesEtiquettes>(json, Options) ?? new ReglagesEtiquettes();
+
+            // 40 × 30 était la taille proposée d'office par la première
+            // version, retenue telle quelle à la première impression : sur les
+            // étiquettes de 40 × 20 du magasin, chaque impression débordait
+            // sur l'étiquette suivante. Une taille choisie depuis est gardée.
+            if (lus.Version < VersionActuelle && lus is { LargeurMm: 40, HauteurMm: 30 })
+            {
+                lus = lus with { HauteurMm = HauteurParDefaut };
+            }
+
+            return lus.Normaliser();
         }
         catch (JsonException)
         {
@@ -72,6 +92,7 @@ public sealed record ReglagesEtiquettes
     /// <summary>Ramène chaque valeur dans ce que le logiciel sait imprimer.</summary>
     public ReglagesEtiquettes Normaliser() => this with
     {
+        Version = VersionActuelle,
         NomImprimante = string.IsNullOrWhiteSpace(NomImprimante) ? null : NomImprimante.Trim(),
         LargeurMm = Math.Clamp(LargeurMm, DimensionMinimale, DimensionMaximale),
         HauteurMm = Math.Clamp(HauteurMm, DimensionMinimale, DimensionMaximale)

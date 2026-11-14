@@ -246,6 +246,50 @@ public class TestsEtiquettes
     }
 
     [Fact]
+    public void L_ancienne_taille_retenue_de_40_x_30_devient_40_x_20()
+    {
+        // Fichier écrit par la première version, après une impression.
+        var anciens = ReglagesEtiquettes.DepuisJson(
+            """{ "NomImprimante": "Xprinter XP-365B", "LargeurMm": 40, "HauteurMm": 30, "AfficherPrix": true }""");
+
+        Assert.Equal(40, anciens.LargeurMm);
+        Assert.Equal(20, anciens.HauteurMm);
+        Assert.Equal("Xprinter XP-365B", anciens.NomImprimante);
+    }
+
+    [Fact]
+    public void Une_taille_choisie_depuis_est_gardee()
+    {
+        var choisis = new ReglagesEtiquettes { NomImprimante = "XP-365B", LargeurMm = 40, HauteurMm = 30 };
+        var autre = ReglagesEtiquettes.DepuisJson("""{ "LargeurMm": 50, "HauteurMm": 30 }""");
+
+        Assert.Equal(30, ReglagesEtiquettes.DepuisJson(choisis.VersJson()).HauteurMm);
+        Assert.Equal(30, autre.HauteurMm);
+    }
+
+    [Theory]
+    [InlineData(40, 20, true)]
+    [InlineData(40.4, 19.6, true)]
+    [InlineData(60, 40, false)]
+    [InlineData(101.6, 152.4, false)]
+    [InlineData(20, 40, false)]
+    public void Le_papier_du_pilote_doit_avoir_la_taille_des_etiquettes(double largeur, double hauteur, bool convient)
+    {
+        Assert.Equal(convient, FormatPilote.Convient(largeur, hauteur, ReglagesDuMagasin));
+    }
+
+    [Fact]
+    public void Un_pilote_sur_un_autre_papier_est_explique_avec_la_marche_a_suivre()
+    {
+        var message = FormatPilote.Expliquer("Xprinter XP-365B", ReglagesDuMagasin, 60, 40);
+
+        Assert.Contains("60 × 40 mm", message);
+        Assert.Contains("40 × 20 mm", message);
+        Assert.Contains("Options d'impression", message);
+        Assert.Contains("étiquettes avec espace", message);
+    }
+
+    [Fact]
     public void Les_reglages_abimes_reviennent_aux_valeurs_d_origine()
     {
         Assert.Equal(new ReglagesEtiquettes(), ReglagesEtiquettes.DepuisJson("{ pas du json"));

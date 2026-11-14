@@ -297,9 +297,13 @@ installer.
 - **Produits** et **Stock** : scannez dans le champ de recherche pour
   retrouver l'article.
 
-**L'étiquette sort décalée, ou à cheval sur deux étiquettes ?** La taille
-réglée dans Windows n'est pas celle des étiquettes, ou l'imprimante ne les a
-pas repérées : reprenez les étapes 2 et 3 ci-dessus.
+**L'étiquette sort décalée sur le côté, ou à cheval sur deux étiquettes ?**
+Le pilote de l'imprimante imprime sur un autre papier que vos étiquettes de
+40 × 20 mm : la fenêtre des étiquettes le signale alors en rouge, sous le
+nom de l'imprimante, avec la taille qu'il utilise. Réglez le format
+40 × 20 mm et le papier « étiquettes avec espace » dans les options
+d'impression de Windows (étape 2), faites repérer les étiquettes à
+l'imprimante (étape 3), puis rouvrez la fenêtre : la ligne rouge disparaît.
 
 **La douchette ne lit pas l'étiquette ?** Les barres sont peut-être trop
 pâles : augmentez la **densité** (ou *darkness*) dans les options

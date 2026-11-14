@@ -74,6 +74,9 @@ public partial class VueModeleEtiquettes : VueModeleBase
     /// <summary>Numéro de la dernière demande d'aperçu : seule la plus récente s'affiche.</summary>
     private int _apercuDemande;
 
+    /// <summary>Numéro de la dernière vérification du format du pilote.</summary>
+    private int _formatDemande;
+
     public VueModeleEtiquettes(
         IServiceImpressionEtiquettes impression,
         IServiceDialogue dialogue,
@@ -121,6 +124,13 @@ public partial class VueModeleEtiquettes : VueModeleBase
     /// <summary>Pourquoi l'étiquette ne peut pas être imprimée, s'il y a lieu.</summary>
     [ObservableProperty]
     private string? _problemeApercu;
+
+    /// <summary>
+    /// Désaccord entre la taille des étiquettes et le papier du pilote de
+    /// l'imprimante, avec la marche à suivre ; rien quand ils s'accordent.
+    /// </summary>
+    [ObservableProperty]
+    private string? _problemeFormat;
 
     /// <summary>Nombre total d'étiquettes demandées.</summary>
     public int Total => Lignes.Sum(l => l.Nombre);
@@ -245,9 +255,46 @@ public partial class VueModeleEtiquettes : VueModeleBase
 
     partial void OnLigneSelectionneeChanged(LigneEtiquette? value) => _ = ActualiserApercuAsync();
 
-    partial void OnLargeurMmChanged(int value) => _ = ActualiserApercuAsync();
+    partial void OnLargeurMmChanged(int value)
+    {
+        _ = ActualiserApercuAsync();
+        _ = VerifierFormatAsync();
+    }
 
-    partial void OnHauteurMmChanged(int value) => _ = ActualiserApercuAsync();
+    partial void OnHauteurMmChanged(int value)
+    {
+        _ = ActualiserApercuAsync();
+        _ = VerifierFormatAsync();
+    }
+
+    partial void OnImprimanteChoisieChanged(string? value) => _ = VerifierFormatAsync();
+
+    /// <summary>
+    /// Demande au pilote sur quel papier il imprimera. Fait en arrière-plan :
+    /// certains pilotes mettent une demi-seconde à répondre.
+    /// </summary>
+    private async Task VerifierFormatAsync()
+    {
+        var demande = ++_formatDemande;
+        var reglages = ReglagesSaisis();
+
+        string? probleme;
+
+        try
+        {
+            probleme = await Task.Run(() => _impression.VerifierFormat(reglages)).ConfigureAwait(true);
+        }
+        catch (Exception erreur) when (erreur is not OutOfMemoryException)
+        {
+            Journal.LogDebug(erreur, "Format du pilote non vérifié.");
+            probleme = null;
+        }
+
+        if (demande == _formatDemande)
+        {
+            ProblemeFormat = probleme;
+        }
+    }
 
     partial void OnAfficherPrixChanged(bool value) => _ = ActualiserApercuAsync();
 
@@ -371,6 +418,20 @@ public partial class VueModeleEtiquettes : VueModeleBase
         }
 
         var reglages = ReglagesSaisis();
+
+        // Le pilote imprimerait sur un autre papier : les étiquettes
+        // sortiraient décalées. On le dit avant de gâcher le rouleau.
+        var format = await Task.Run(() => _impression.VerifierFormat(reglages)).ConfigureAwait(true);
+
+        ProblemeFormat = format;
+
+        if (format is not null
+            && !Dialogue.Confirmer(
+                format + Environment.NewLine + Environment.NewLine + "Imprimer quand même ?",
+                "Taille du papier de l'imprimante"))
+        {
+            return;
+        }
 
         var demandes = Lignes
             .Where(l => l.Nombre > 0)
