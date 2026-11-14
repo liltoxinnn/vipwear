@@ -23,6 +23,51 @@ internal static class RenduEtiquette
 
     private static readonly Typeface Grasse = new(Police, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
 
+    /// <summary>Le texte trop long ne rapetisse pas au-delà : plus petit, il ne se lirait plus.</summary>
+    private const double ReductionMaximale = 0.75;
+
+    /// <summary>
+    /// Met le texte dans sa case. Trop long — un nom d'article, une couleur
+    /// à rallonge —, il rapetisse d'abord un peu, puis se termine par « … »
+    /// plutôt que de déborder sur le bord de l'étiquette ou sur le prix.
+    /// </summary>
+    /// <returns>Le texte prêt à dessiner, et de combien le descendre pour qu'un texte réduit reste sur sa ligne.</returns>
+    private static (FormattedText Texte, double Decalage) Ajuster(TexteEtiquette ligne)
+    {
+        var police = ligne.Gras ? Grasse : Normale;
+        var corps = (double)ligne.Corps;
+        var minimum = Math.Max(1, ligne.Corps * ReductionMaximale);
+
+        var texte = Formater(ligne.Texte, police, corps);
+
+        while (texte.WidthIncludingTrailingWhitespace > ligne.Largeur && corps - 1 >= minimum)
+        {
+            corps -= 1;
+            texte = Formater(ligne.Texte, police, corps);
+        }
+
+        texte.MaxTextWidth = Math.Max(1, ligne.Largeur);
+        texte.MaxLineCount = 1;
+        texte.Trimming = TextTrimming.CharacterEllipsis;
+        texte.TextAlignment = ligne.Alignement switch
+        {
+            AlignementTexte.Gauche => TextAlignment.Left,
+            AlignementTexte.Droite => TextAlignment.Right,
+            _ => TextAlignment.Center
+        };
+
+        return (texte, ligne.Corps - corps);
+    }
+
+    private static FormattedText Formater(string texte, Typeface police, double corps) =>
+        new(texte,
+            CultureInfo.GetCultureInfo("fr-FR"),
+            FlowDirection.LeftToRight,
+            police,
+            corps,
+            Brushes.Black,
+            pixelsPerDip: 1.0);
+
     /// <summary>Dessine l'étiquette, prête à imprimer à <paramref name="pointsParPouce"/>.</summary>
     public static BitmapSource Dessiner(MiseEnPageEtiquette etiquette, int pointsParPouce)
     {
@@ -47,24 +92,9 @@ internal static class RenduEtiquette
 
             foreach (var ligne in etiquette.Textes)
             {
-                var texte = new FormattedText(
-                    ligne.Texte,
-                    CultureInfo.GetCultureInfo("fr-FR"),
-                    FlowDirection.LeftToRight,
-                    ligne.Gras ? Grasse : Normale,
-                    ligne.Corps,
-                    Brushes.Black,
-                    pixelsPerDip: 1.0)
-                {
-                    // Un nom d'article trop long est raccourci d'un « … »
-                    // plutôt que de déborder sur le bord de l'étiquette.
-                    MaxTextWidth = ligne.LargeurMax,
-                    MaxLineCount = 1,
-                    Trimming = TextTrimming.CharacterEllipsis,
-                    TextAlignment = TextAlignment.Center
-                };
+                var (texte, decalage) = Ajuster(ligne);
 
-                contexte.DrawText(texte, new Point(ligne.CentreX - ligne.LargeurMax / 2.0, ligne.Haut));
+                contexte.DrawText(texte, new Point(ligne.X, ligne.Haut + decalage));
             }
         }
 

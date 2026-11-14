@@ -264,8 +264,9 @@ vêtements, et de les scanner en caisse.
 
 1. Branchez l'imprimante et installez le **pilote fourni** par le fabricant.
 2. Dans Windows → **Imprimantes et scanners** → l'imprimante → **Options
-   d'impression**, choisissez la **taille de vos étiquettes** (par exemple
-   40 × 30 mm) et le papier « étiquettes avec espace » (*gap*).
+   d'impression**, choisissez la **taille de vos étiquettes**,
+   **40 × 20 mm** comme dans le logiciel, et le papier « étiquettes avec
+   espace » (*gap*).
 3. Si l'imprimante a un bouton d'avance, faites-lui repérer les étiquettes
    (souvent : maintenir le bouton jusqu'à ce qu'elle avance de deux ou trois
    étiquettes).

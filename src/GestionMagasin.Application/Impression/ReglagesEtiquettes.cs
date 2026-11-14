@@ -13,11 +13,11 @@ namespace GestionMagasin.Application.Impression;
 /// </summary>
 public sealed record ReglagesEtiquettes
 {
-    /// <summary>Largeur d'étiquette la plus courante pour les vêtements.</summary>
+    /// <summary>Largeur des étiquettes du magasin.</summary>
     public const int LargeurParDefaut = 40;
 
-    /// <summary>Hauteur d'étiquette la plus courante pour les vêtements.</summary>
-    public const int HauteurParDefaut = 30;
+    /// <summary>Hauteur des étiquettes du magasin : des étiquettes de 40 × 20 mm.</summary>
+    public const int HauteurParDefaut = 20;
 
     public const int DimensionMinimale = 20;
 

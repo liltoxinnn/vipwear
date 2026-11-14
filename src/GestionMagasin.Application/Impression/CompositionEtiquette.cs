@@ -24,14 +24,29 @@ public enum FormatCodeBarres
 /// <summary>Barre noire, en points de l'imprimante.</summary>
 public sealed record BarreEtiquette(int X, int Y, int Largeur, int Hauteur);
 
+/// <summary>Position d'un texte dans sa case.</summary>
+public enum AlignementTexte
+{
+    Centre,
+    Gauche,
+    Droite
+}
+
 /// <summary>
-/// Ligne de texte, centrée sur <paramref name="CentreX"/>, dont le haut est
-/// à <paramref name="Haut"/>. Le texte trop long pour
-/// <paramref name="LargeurMax"/> est raccourci par des points de suspension
-/// au dessin.
+/// Texte posé dans la case qui va de <paramref name="X"/> à
+/// <paramref name="X"/> + <paramref name="Largeur"/>, son haut à
+/// <paramref name="Haut"/>. Trop long pour la case, il rapetisse un peu au
+/// dessin, puis se termine par des points de suspension.
 /// </summary>
 /// <param name="Corps">Corps du texte, en points de l'imprimante.</param>
-public sealed record TexteEtiquette(string Texte, int CentreX, int Haut, int Corps, int LargeurMax, bool Gras);
+public sealed record TexteEtiquette(
+    string Texte,
+    int X,
+    int Haut,
+    int Largeur,
+    int Corps,
+    bool Gras,
+    AlignementTexte Alignement = AlignementTexte.Centre);
 
 /// <summary>Étiquette prête à dessiner : tout y est exprimé en points de l'imprimante.</summary>
 public sealed record MiseEnPageEtiquette(
@@ -63,7 +78,7 @@ public static class CompositionEtiquette
     private const double Interligne = 1.2;
 
     /// <summary>Marge blanche autour de l'étiquette : une étiquette est rarement posée au dixième de millimètre.</summary>
-    private const double MargeMm = 1.2;
+    private const double MargeMm = 1.0;
 
     /// <summary>
     /// Largeur maximale d'un module (la barre la plus fine). Au-delà, le code
@@ -82,13 +97,21 @@ public static class CompositionEtiquette
 
     private const double CorpsMinimalMm = 1.4;
 
-    private enum Role
+    /// <summary>Part de la ligne laissée à la taille et à la couleur, quand le prix la partage.</summary>
+    private const double PartGauche = 0.58;
+
+    private enum Disposition
     {
-        Magasin,
-        Article,
-        Detail,
-        Prix
+        /// <summary>Une information par ligne, prix en grand.</summary>
+        Etagee,
+
+        /// <summary>Taille, couleur et prix sur une même ligne.</summary>
+        Compacte
     }
+
+    private sealed record Cellule(string Texte, double Mm, bool Gras);
+
+    private sealed record Rangee(IReadOnlyList<Cellule> Cellules);
 
     /// <summary>Compose l'étiquette d'un article.</summary>
     /// <param name="article">Article à étiqueter.</param>
@@ -143,65 +166,93 @@ public static class CompositionEtiquette
         }
 
         // --- Lignes de texte -----------------------------------------------
-        var lignes = new List<(Role Role, string Texte, double Mm, bool Gras)>();
-
-        if (reglages.AfficherMagasin && !string.IsNullOrWhiteSpace(nomMagasin))
-        {
-            lignes.Add((Role.Magasin, nomMagasin.Trim(), 1.9, true));
-        }
-
-        lignes.Add((Role.Article, (article.Nom ?? string.Empty).Trim(), 2.5, true));
-
-        if (!string.IsNullOrWhiteSpace(article.Detail))
-        {
-            lignes.Add((Role.Detail, article.Detail.Trim(), 2.2, false));
-        }
-
-        if (reglages.AfficherPrix)
-        {
-            lignes.Add((Role.Prix, FormaterPrix(article.Prix, symboleDevise), 3.4, true));
-        }
-
         const double chiffresMm = 2.0;
         var espace = Math.Max(1, Points(0.5));
+        var prix = reglages.AfficherPrix ? FormaterPrix(article.Prix, symboleDevise) : null;
+        var magasin = reglages.AfficherMagasin && !string.IsNullOrWhiteSpace(nomMagasin) ? nomMagasin.Trim() : null;
 
-        // Une petite étiquette ne peut pas tout porter en grand : le texte
-        // rapetisse un peu, puis le nom du magasin s'efface — l'article, son
-        // prix et le code restent toujours.
-        (double Echelle, bool AvecMagasin)[] essais =
-            [(1.0, true), (0.9, true), (0.9, false), (0.8, false), (0.7, false)];
+        // Les dispositions sont essayées de la plus aérée à la plus serrée.
+        // Une étiquette haute empile tout ; une étiquette basse — 40 × 20,
+        // la plus courante sur les vêtements — met la taille, la couleur et
+        // le prix sur une même ligne, pour laisser au code-barres la hauteur
+        // dont la douchette a besoin. Le nom du magasin, s'il est demandé,
+        // n'est sacrifié qu'en dernier ; l'article, son prix et le code
+        // restent toujours.
+        (Disposition Disposition, double Echelle, bool AvecMagasin)[] essais =
+        [
+            (Disposition.Etagee, 1.0, true),
+            (Disposition.Etagee, 0.9, true),
+            (Disposition.Compacte, 1.0, true),
+            (Disposition.Compacte, 0.9, true),
+            (Disposition.Etagee, 0.9, false),
+            (Disposition.Compacte, 1.0, false),
+            (Disposition.Compacte, 0.9, false),
+            (Disposition.Compacte, 0.8, false)
+        ];
 
-        foreach (var (echelle, avecMagasin) in essais)
+        foreach (var (disposition, echelle, avecMagasin) in essais)
         {
-            var retenues = lignes.Where(l => avecMagasin || l.Role != Role.Magasin).ToList();
-            var corps = retenues.Select(l => Math.Max(Points(CorpsMinimalMm), Points(l.Mm * echelle))).ToList();
-            var corpsChiffres = Math.Max(Points(CorpsMinimalMm), Points(chiffresMm * echelle));
+            var rangees = Rangees(disposition, avecMagasin ? magasin : null, article, prix);
 
-            var barres = hauteur - 2 * marge - corps.Sum(HauteurLigne) - espace - HauteurLigne(corpsChiffres);
-            var dernierEssai = (echelle, avecMagasin) == essais[^1];
+            int Corps(Cellule cellule) => Math.Max(Points(CorpsMinimalMm), Points(cellule.Mm * echelle));
+            int HauteurRangee(Rangee rangee) => rangee.Cellules.Max(c => HauteurLigne(Corps(c)));
+
+            var corpsChiffres = Math.Max(Points(CorpsMinimalMm), Points(chiffresMm * echelle));
+            var barres = hauteur - 2 * marge - rangees.Sum(HauteurRangee) - espace - HauteurLigne(corpsChiffres);
+            var dernierEssai = (disposition, echelle, avecMagasin) == essais[^1];
 
             if (barres >= Points(BarresConfortablesMm) || (dernierEssai && barres >= Points(BarresMinimalesMm)))
             {
-                return Disposer(retenues.Select(l => (l.Texte, l.Gras)).ToList(), corps, corpsChiffres, barres);
+                return Disposer(rangees, Corps, HauteurRangee, corpsChiffres, barres);
             }
         }
 
         throw new EtiquetteImpossibleException(
             $"Une étiquette de {reglages.LargeurMm} × {reglages.HauteurMm} mm est trop petite pour porter " +
-            "l'article et un code-barres lisible. Choisissez une étiquette plus haute dans Paramètres, " +
-            "onglet Étiquettes, ou retirez-en le prix ou le nom du magasin.");
+            "l'article et un code-barres lisible. Choisissez une étiquette plus haute, ou retirez-en le " +
+            "prix ou le nom du magasin.");
 
-        MiseEnPageEtiquette Disposer(List<(string Texte, bool Gras)> retenues, List<int> corps, int corpsChiffres, int barres)
+        MiseEnPageEtiquette Disposer(
+            List<Rangee> rangees,
+            Func<Cellule, int> corpsDe,
+            Func<Rangee, int> hauteurDe,
+            int corpsChiffres,
+            int barres)
         {
             var hauteurBarres = Math.Min(barres, Points(BarresMaximalesMm));
             var y = marge + (barres - hauteurBarres) / 2;
+            var ecart = Math.Max(2, Points(1));
 
             var textes = new List<TexteEtiquette>();
 
-            for (var i = 0; i < retenues.Count; i++)
+            foreach (var rangee in rangees)
             {
-                textes.Add(new TexteEtiquette(retenues[i].Texte, largeur / 2, y, corps[i], interieur, retenues[i].Gras));
-                y += HauteurLigne(corps[i]);
+                var hauteurRangee = hauteurDe(rangee);
+
+                if (rangee.Cellules.Count == 1)
+                {
+                    var seule = rangee.Cellules[0];
+                    textes.Add(new TexteEtiquette(seule.Texte, marge, y, interieur, corpsDe(seule), seule.Gras));
+                }
+                else
+                {
+                    // Taille et couleur à gauche, prix à droite, posés sur la
+                    // même ligne de pied : le prix, plus gros, ne flotte pas.
+                    var gauche = rangee.Cellules[0];
+                    var droite = rangee.Cellules[1];
+                    var largeurGauche = (int)(interieur * PartGauche) - ecart / 2;
+                    var largeurDroite = interieur - largeurGauche - ecart;
+
+                    textes.Add(new TexteEtiquette(
+                        gauche.Texte, marge, y + hauteurRangee - HauteurLigne(corpsDe(gauche)),
+                        largeurGauche, corpsDe(gauche), gauche.Gras, AlignementTexte.Gauche));
+
+                    textes.Add(new TexteEtiquette(
+                        droite.Texte, marge + interieur - largeurDroite, y + hauteurRangee - HauteurLigne(corpsDe(droite)),
+                        largeurDroite, corpsDe(droite), droite.Gras, AlignementTexte.Droite));
+                }
+
+                y += hauteurRangee;
             }
 
             y += espace;
@@ -241,17 +292,56 @@ public static class CompositionEtiquette
 
             if (format == FormatCodeBarres.Ean13)
             {
-                textes.Add(new TexteEtiquette(code[..1], debut - 6 * module, hautChiffres, corpsChiffres, 9 * module, false));
-                textes.Add(new TexteEtiquette(code[1..7], debut + 24 * module, hautChiffres, corpsChiffres, 42 * module, false));
-                textes.Add(new TexteEtiquette(code[7..], debut + 71 * module, hautChiffres, corpsChiffres, 42 * module, false));
+                // Premier chiffre dans la zone blanche de gauche, puis deux
+                // groupes de six sous chaque moitié du code.
+                textes.Add(new TexteEtiquette(code[..1], debut - 6 * module - 9 * module / 2, hautChiffres, 9 * module, corpsChiffres, false));
+                textes.Add(new TexteEtiquette(code[1..7], debut + 3 * module, hautChiffres, 42 * module, corpsChiffres, false));
+                textes.Add(new TexteEtiquette(code[7..], debut + 50 * module, hautChiffres, 42 * module, corpsChiffres, false));
             }
             else
             {
-                textes.Add(new TexteEtiquette(code, largeur / 2, hautChiffres, corpsChiffres, interieur, false));
+                textes.Add(new TexteEtiquette(code, marge, hautChiffres, interieur, corpsChiffres, false));
             }
 
             return new MiseEnPageEtiquette(largeur, hauteur, format, module, textes, traits);
         }
+    }
+
+    /// <summary>Lignes de texte de l'étiquette, selon la disposition.</summary>
+    private static List<Rangee> Rangees(Disposition disposition, string? magasin, ArticleEtiquette article, string? prix)
+    {
+        var rangees = new List<Rangee>();
+        var detail = string.IsNullOrWhiteSpace(article.Detail) ? null : article.Detail.Trim();
+
+        if (magasin is not null)
+        {
+            rangees.Add(new Rangee([new Cellule(magasin, 1.9, true)]));
+        }
+
+        rangees.Add(new Rangee([new Cellule((article.Nom ?? string.Empty).Trim(), 2.5, true)]));
+
+        if (disposition == Disposition.Etagee)
+        {
+            if (detail is not null)
+            {
+                rangees.Add(new Rangee([new Cellule(detail, 2.2, false)]));
+            }
+
+            if (prix is not null)
+            {
+                rangees.Add(new Rangee([new Cellule(prix, 3.4, true)]));
+            }
+        }
+        else if (detail is not null && prix is not null)
+        {
+            rangees.Add(new Rangee([new Cellule(detail, 2.2, false), new Cellule(prix, 2.6, true)]));
+        }
+        else if ((detail ?? prix) is { } seul)
+        {
+            rangees.Add(new Rangee([new Cellule(seul, prix is null ? 2.2 : 2.6, prix is not null)]));
+        }
+
+        return rangees;
     }
 
     /// <summary>
